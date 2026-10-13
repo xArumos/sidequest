@@ -1,0 +1,15 @@
+{
+  "name": "sidequest-database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "connection.js",
+  "engines": {
+    "node": ">=22.9.0"
+  },
+  "scripts": {
+    "check": "node --env-file-if-exists=../.env scripts/check.js"
+  },
+  "dependencies": {
+    "mongoose": "^9.11.2"
+  }
+}
