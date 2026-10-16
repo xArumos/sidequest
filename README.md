@@ -48,6 +48,21 @@ npm run dev          # http://localhost:5173
 | `npm run build` | Production build to `frontend/dist` |
 | `npm run preview` | Serve the production build locally |
 | `npm run lint` | Lint with oxlint |
+| `npm test` | Run tests once (Vitest + React Testing Library, jsdom) |
+| `npm run test:watch` | Run tests in watch mode |
+
+## Testing
+
+Each package runs its own tests with [Vitest](https://vitest.dev):
+
+```bash
+cd frontend && npm test   # component tests (jsdom + React Testing Library)
+cd database && npm test   # DB tests against an in-memory MongoDB (no Docker needed)
+```
+
+The database tests use `mongodb-memory-server`, which downloads a `mongod` binary on the first run. Test files sit next to the code as `*.test.jsx` (frontend) or under `database/tests/`.
+
+**CI:** GitHub Actions (`.github/workflows/ci.yml`) runs `npm ci`, lint, tests, and build for every package on every pull request and on pushes to `main`. When you add a new package (e.g. `server/`), add it to the workflow matrix.
 
 ## Repository layout
 
