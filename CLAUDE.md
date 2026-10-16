@@ -16,14 +16,16 @@ cp .env.example .env              # MONGODB_URI, MONGODB_DB_NAME
 
 cd database && npm install
 npm run check                     # ping DB using ../.env (node --env-file-if-exists)
+npm test                          # Vitest + mongodb-memory-server (no Docker needed)
 
 cd frontend && npm install
 npm run dev                       # Vite dev server, http://localhost:5173
 npm run build | npm run preview
 npm run lint                      # oxlint
+npm test | npm run test:watch     # Vitest + jsdom + React Testing Library
 ```
 
-There's no backend package or server start command yet, and no test runner.
+There's no backend package or server start command yet. CI (`.github/workflows/ci.yml`) runs `npm ci`, lint, test, and build per package on every PR. A new package must be added to its matrix.
 
 ## Repo structure
 
@@ -81,6 +83,8 @@ client/.vite/          stray committed Vite cache (not a real package; see Gaps)
   - Secrets go only in `.env`, never in `config/app.yaml` or code.
 - **Steam:** keep that code isolated and optional so it can never block the MVP.
 - **Testing:** test as you build. Every feature area has a testing PBI.
+  - Frontend tests go next to components as `*.test.jsx`, with setup in `frontend/src/test/setup.js`.
+  - DB/backend tests use `mongodb-memory-server`, never the dev database (see `database/tests/`).
 - **Module systems:** `database/` is CommonJS (`require`/`module.exports`) and `frontend/` is ESM. Match the package you're in.
 - **Lint:** the frontend uses oxlint with `react/rules-of-hooks` (error) and `react/only-export-components` (warn).
 - **Env config:** read via `process.env` with safe local defaults. Scripts load `../.env` with `node --env-file-if-exists`.
@@ -120,4 +124,3 @@ Dependencies: auth (who is rating), the catalog, and agreed schemas.
 4. `config/app.yaml` contains `jwt_secret: "REPLACE_ME"`. The real secret must come from `.env`, and nothing loads app.yaml yet.
 5. `client/.vite/deps/` is a committed Vite cache outside `frontend/`. It should be deleted and gitignored.
 6. `frontend/src/App.jsx` has unused imports (`useState`, hero/logo assets).
-7. No test framework or CI yet.
