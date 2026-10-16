@@ -7,7 +7,7 @@ server:
   port: 5000
 
 client:
-  port: 3000
+  port: 5173
 
 database:
   type: "mongodb"
@@ -24,4 +24,4 @@ logging:
 
 cors:
   allowed_origins:
-    - "http://localhost:3000"
+    - "http://localhost:5173"
