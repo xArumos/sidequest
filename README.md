@@ -1,92 +1,134 @@
 # SideQuest
 
-A platform for sharing video game experiences, ratings, and reviews.
-The backend provides Express startup, MongoDB connectivity, health endpoints, and Google account sign-in.
-See [Google authentication setup and frontend handoff](server/README.md) to enable login.
+*A way to discover and share games with friends.*
 
-## Local setup
+SideQuest is a social video game tracking and review site, like Letterboxd but for games. Users can rate and review games, track what they've played, want to play, or own but haven't played, and (later) connect Steam to show achievements next to their ratings.
 
-Requires Node.js 22.9 or newer, npm, and Docker with Compose.
+This is a university software engineering course project (Section 10705, Group 1), run in Scrum across two sprints.
+
+## Tech stack
+
+| Layer | Tech |
+|---|---|
+| Database | MongoDB 8 (via Docker Compose), Mongoose |
+| Backend | Node.js + Express 5, Google sign-in with MongoDB-backed sessions |
+| Frontend | React 19 + Vite |
+| External API | Steam Web API *(Sprint 2)* |
+
+## Prerequisites
+
+- Node.js **22.9+** and npm
+- Docker with Compose (for the local MongoDB container)
+
+## Quick start
 
 From the repository root:
 
-```sh
+```bash
+# 1. Create your local env file (never commit .env).
+#    If .env already exists, merge in any new settings instead of replacing it.
 cp .env.example .env
+
+# 2. Start MongoDB (binds to 127.0.0.1:27017)
 docker compose up -d mongodb
+
+# 3. Install the database package and verify the connection
 npm ci --prefix database
+npm run check --prefix database     # prints "Connected to sidequest_dev."
+
+# 4. Run the API server (http://127.0.0.1:5000)
 npm ci --prefix server
 npm run dev --prefix server
 ```
 
-If `.env` already exists, merge the example settings instead of replacing it.
-The server imports the existing database package through a local npm dependency, so install both packages as shown.
-The server waits for MongoDB before accepting HTTP requests.
-Use `npm start --prefix server` to run without automatic restarts.
-Press Ctrl+C to close the HTTP server and database connection.
+In a second terminal, run the frontend:
 
-To run the React frontend in another terminal:
-
-```sh
+```bash
 npm ci --prefix frontend
-npm run dev --prefix frontend
+npm run dev --prefix frontend       # http://localhost:5173
 ```
 
-Vite normally serves the frontend at `http://localhost:5173`.
-If it selects a different port, set `FRONTEND_ORIGIN` to the displayed origin and restart the backend.
+The server imports the `database` package as a local npm dependency, so install both. It waits for MongoDB before accepting requests, and Ctrl+C shuts down the HTTP server and database connection cleanly. If Vite picks a port other than 5173, set `FRONTEND_ORIGIN` to the URL it shows and restart the server.
 
-## Configuration
+Google sign-in stays disabled until `GOOGLE_CLIENT_ID` and `SESSION_SECRET` are set. See [server/README.md](server/README.md) for Google Cloud setup and the frontend integration guide.
 
-Server scripts load the root `.env` file when it exists.
-Environment variables already set in the shell take precedence.
-`config/app.yaml` is an unused historical planning reference, not runtime configuration.
+Stop MongoDB with `docker compose stop mongodb` when you're done.
+
+## Scripts
+
+| Package | Script | What it does |
+|---|---|---|
+| `server/` | `npm run dev` | API with automatic restarts on file changes |
+| | `npm start` | API without automatic restarts |
+| | `npm test` | Unit tests (no MongoDB needed) |
+| | `npm run test:integration` | Integration tests against local MongoDB |
+| `database/` | `npm run check` | Connect to MongoDB and print the database name |
+| | `npm test` | Tests against an in-memory MongoDB |
+| `frontend/` | `npm run dev` | Vite dev server with HMR on port 5173 |
+| | `npm run build` | Production build to `frontend/dist` |
+| | `npm run preview` | Serve the production build locally |
+| | `npm run lint` | Lint with oxlint |
+| | `npm test` / `npm run test:watch` | Component tests, once or in watch mode |
+
+Run any of these from the root with `--prefix <package>`, e.g. `npm test --prefix server`.
+
+## API overview
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/health` | `200` while the HTTP process is running |
+| GET | `/api/ready` | `200` once MongoDB answers a ping, otherwise `503` |
+| POST | `/api/auth/google` | Verify a Google ID token, find or create the account, start a session |
+| GET | `/api/auth/me` | The signed-in user, or `401` |
+| POST | `/api/auth/logout` | End the session (`204`) |
+
+Request limits, error formats, and auth details are in [server/README.md](server/README.md).
+
+## Testing
+
+```bash
+npm test --prefix server               # unit tests, real HTTP requests, no MongoDB needed
+npm run test:integration --prefix server   # needs local MongoDB running
+npm test --prefix database             # in-memory MongoDB (no Docker needed)
+npm test --prefix frontend             # Vitest + React Testing Library (jsdom)
+```
+
+- **server/** uses Node's built-in test runner (`node --test`). Integration tests start child server processes on temporary ports, use the `sidequest_test` database, and delete only the records they create. Set `MONGODB_TEST_URI` to point them at a different MongoDB instance.
+- **database/** and **frontend/** use [Vitest](https://vitest.dev). The database tests use `mongodb-memory-server`, which downloads a `mongod` binary on the first run. Frontend tests sit next to the code as `*.test.jsx`, and database tests are under `database/tests/`.
+
+**CI:** GitHub Actions (`.github/workflows/ci.yml`) runs `npm ci`, lint, tests, and build for every package in its matrix, on every pull request and on pushes to `main`. When you add a package, add it to the matrix. `server` isn't in the matrix yet.
+
+## Repository layout
+
+```
+server/              Express API: health checks, Google sign-in, sessions
+database/            Mongoose connection helper, models, `npm run check` script
+frontend/            Vite + React client
+config/app.yaml      Historical planning reference; no code loads it
+compose.yaml         Local MongoDB container
+.env.example         Environment variable names and local defaults
+```
+
+## Environment variables
+
+Server and database scripts load the root `.env` if it exists. Variables already set in your shell take precedence.
 
 | Variable | Default | Purpose |
-| --- | --- | --- |
+|---|---|---|
+| `MONGODB_URI` | `mongodb://127.0.0.1:27017/sidequest_dev` | MongoDB connection string |
+| `MONGODB_DB_NAME` | `sidequest_dev` | Database name |
 | `HOST` | `127.0.0.1` | HTTP bind address; use `0.0.0.0` inside a container |
-| `PORT` | `5000` | HTTP port |
-| `FRONTEND_ORIGIN` | `http://localhost:5173` | Browser origin allowed by CORS, without a trailing slash |
-| `MONGODB_URI` | `mongodb://127.0.0.1:27017/sidequest_dev` | MongoDB connection URI |
-| `MONGODB_DB_NAME` | `sidequest_dev` | MongoDB database name |
-| `GOOGLE_CLIENT_ID` | Empty | Google OAuth web client ID; required to enable sign-in |
-| `SESSION_SECRET` | Empty | Random session signing secret of at least 32 bytes; required with the client ID |
+| `PORT` | `5000` | HTTP port; pick another if 5000 is taken |
+| `FRONTEND_ORIGIN` | `http://localhost:5173` | Browser origin allowed by CORS, with no trailing slash |
+| `GOOGLE_CLIENT_ID` | *(empty)* | Google OAuth web client ID; required for sign-in |
+| `SESSION_SECRET` | *(empty)* | Random session signing secret, at least 32 bytes; required with the client ID |
 
-If port 5000 is occupied, choose a free `PORT` in `.env`.
-Google sign-in remains disabled until both authentication settings are configured.
-CORS controls browser access; account authentication uses a server-side session cookie.
+## Contributing
 
-## API
+- Branch off `main` using `feature/...`, `fix/...`, `docs/...`, or `ci/...`, keep commits small, and open a pull request. Don't push directly to `main`.
+- Validate and sanitize all input on the server, and never commit secrets.
+- Sprint planning and the product backlog live in Trello.
 
-| Method | Path | Response |
-| --- | --- | --- |
-| GET | `/api/health` | `200 {"status":"ok"}` while the HTTP process is running |
-| GET | `/api/ready` | `200 {"status":"ready"}` after a successful database ping, otherwise `503 {"status":"unavailable"}` |
-| POST | `/api/auth/google` | Verify a Google ID token, create or find the account, and start a session |
-| GET | `/api/auth/me` | Return the signed-in user, or `401` |
-| POST | `/api/auth/logout` | End the session and return `204` |
+## License
 
-Readiness pings have a 1.5-second timeout and responses are not cached.
-Unknown routes return a JSON `404`.
-Malformed JSON returns `400`, and JSON bodies larger than 100 KB return `413`.
-Errors use the shape `{"error":{"code":"NOT_FOUND","message":"Route not found."}}`.
-Unexpected errors return a generic `500` response without exposing internal details.
-
-```sh
-curl http://127.0.0.1:5000/api/health
-curl http://127.0.0.1:5000/api/ready
-```
-
-## Verification
-
-```sh
-npm test --prefix server
-npm run test:integration --prefix server
-npm run check --prefix database
-```
-
-Unit tests exercise real HTTP requests without requiring MongoDB.
-Integration tests require the local MongoDB service and launch child server processes on temporary ports.
-They verify database-backed readiness, shutdown signals, failed startup, and account/session persistence.
-Set `MONGODB_TEST_URI` to test against another MongoDB instance.
-Integration tests use the `sidequest_test` database, create uniquely identified test records, and remove only those records afterward.
-
-Stop local MongoDB with `docker compose stop mongodb` when finished.
+GPL-3.0. See [LICENSE](LICENSE).

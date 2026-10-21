@@ -81,6 +81,24 @@ Auth responses are marked `Cache-Control: no-store`.
 For deployment behind an HTTPS reverse proxy, configure Express's `trust proxy` for that trusted proxy before enabling production mode.
 Frontend and API must be on the same site for the current `SameSite=Lax` cookie setting.
 
+## Health checks and errors
+
+| Endpoint | Response |
+| --- | --- |
+| `GET /api/health` | `200 {"status":"ok"}` while the HTTP process is running |
+| `GET /api/ready` | `200 {"status":"ready"}` after a successful database ping, otherwise `503 {"status":"unavailable"}` |
+
+Readiness pings have a 1.5-second timeout and responses are not cached.
+Unknown routes return a JSON `404`.
+Malformed JSON returns `400`, and JSON bodies larger than 100 KB return `413`.
+Errors use the shape `{"error":{"code":"NOT_FOUND","message":"Route not found."}}`.
+Unexpected errors return a generic `500` response without exposing internal details.
+
+```sh
+curl http://127.0.0.1:5000/api/health
+curl http://127.0.0.1:5000/api/ready
+```
+
 ## Tests and limitations
 
 Run `npm test --prefix server` and `npm run test:integration --prefix server` from the repository root.
