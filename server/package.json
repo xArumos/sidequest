@@ -1,0 +1,24 @@
+{
+  "name": "sidequest-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22.9.0"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=../.env --watch src/index.js",
+    "start": "node --env-file-if-exists=../.env src/index.js",
+    "test": "node --test test/app.test.js test/config.test.js test/auth.test.js test/google.test.js",
+    "test:integration": "node --env-file-if-exists=../.env --test test/startup.test.js test/auth.integration.test.js"
+  },
+  "dependencies": {
+    "connect-mongo": "^6.0.0",
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "express-session": "^1.19.0",
+    "google-auth-library": "^11.3.1",
+    "sidequest-database": "file:../database"
+  }
+}
