@@ -1,3 +1,5 @@
+# Historical planning reference only. No application code loads this file.
+# Runtime configuration uses root .env / environment variables; see .env.example.
 app:
   name: "SideQuest"
   environment: "development"
