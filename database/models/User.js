@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
   avatarUrl: { type: String, default: '' },
   username: { type: String, unique: true, sparse: true, trim: true, lowercase: true },
   bio: { type: String, default: '', trim: true, maxlength: 300 },
+  wishlistVisibility: { type: String, enum: ['public', 'private'], default: 'private' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
