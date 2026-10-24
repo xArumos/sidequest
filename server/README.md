@@ -106,3 +106,17 @@ Tests cover signed-token verification, invalid credentials, cross-site requests,
 Test-only Google credentials are injected into test app instances; production always verifies through Google's SDK.
 A real browser Google sign-in still requires your own configured client ID and the frontend button.
 Password login, password recovery, account linking, and profile editing are outside this first version.
+
+## Game catalog import (IGDB)
+
+Games come from [IGDB](https://api-docs.igdb.com/), which uses Twitch app credentials.
+
+1. Turn on two-factor authentication for your Twitch account, then open the [Twitch developer console](https://dev.twitch.tv/console) and register an application (OAuth redirect `http://localhost`, category "Application Integration", client type "Confidential").
+2. Copy the client ID and a new client secret into `.env` as `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET`.
+3. With MongoDB running, import the most-rated games:
+
+```bash
+npm run import:games -- --limit 500
+```
+
+The import upserts by IGDB id, so re-running it refreshes titles, covers, genres, platforms, and Steam app IDs without touching stored ratings. Requests are throttled to IGDB's limit of 4 per second. Tests use `test/fixtures/igdb-games.json` and never call the live API.
