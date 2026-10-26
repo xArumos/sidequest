@@ -12,6 +12,8 @@ export default function GameCard({ game, isWishlisted, onToggleWishlist }) {
           </div>
           <button
             type="button"
+            disabled
+            title="Wishlist saving is awaiting the server API"
             className={`mini-button ${isWishlisted ? 'active' : ''}`}
             onClick={() => onToggleWishlist(game.id)}
           >

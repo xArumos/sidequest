@@ -1,10 +1,22 @@
-import { useMemo, useState } from 'react'
-import { Link, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import './App.css'
 import Layout from './components/Layout'
 import GameCard from './components/GameCard'
 import RatingInput from './components/RatingInput'
-import { communityHighlights, currentUser, games, reviewEntries, users } from './data/mockData'
+import GoogleSignIn from './components/GoogleSignIn'
+import { auth } from './services/auth'
+
+// No catalog HTTP contract exists yet. Never substitute fixture rankings.
+const games = []
+const communityHighlights = [
+  { label: 'Top Rated', value: 'Coming soon', meta: 'Waiting for community rating data' },
+  { label: 'Most Reviewed', value: 'Coming soon', meta: 'Waiting for review counts' },
+  { label: 'Community Mood', value: 'Unavailable', meta: 'No published community statistics yet' },
+]
+function Unavailable({ title, children }) {
+  return <section className="content-section card-panel"><h1>{title}</h1><p role="status">{children}</p><Link className="text-link" to="/games">Browse games</Link></section>
+}
 
 function ProtectedRoute({ isAuthenticated, children }) {
   if (!isAuthenticated) {
@@ -31,24 +43,21 @@ function LandingPage({ wishlist, onToggleWishlist }) {
           <p className="lead">
             SideQuest brings your ratings, reviews, wishlists, and backlog together in one place.
           </p>
-          <div className="cta-row auth-actions">
-            <Link to="/register" className="primary-button">Join now</Link>
-            <Link to="/login" className="secondary-button">Log in</Link>
-          </div>
+          <Link to="/games" className="primary-button">Discover games</Link>
         </div>
 
         <div className="hero-spotlight">
           <div className="mini-panel">
             <span className="status-dot" />
-            Active community
+            Your next adventure
           </div>
           <div className="stat-block">
-            <strong>4.9</strong>
-            <span>Average rating</span>
+            <strong>Discover</strong>
+            <span>Find your next favorite</span>
           </div>
           <div className="stat-block accent">
-            <strong>1.7k</strong>
-            <span>Recent reviews</span>
+            <strong>Keep track</strong>
+            <span>Your gaming journey, together</span>
           </div>
         </div>
       </section>
@@ -81,10 +90,11 @@ function LandingPage({ wishlist, onToggleWishlist }) {
       <section className="content-section">
         <div className="section-header-inline">
           <h2>Top Rated Games</h2>
-          <Link to="/games" className="text-link">See all rankings</Link>
+          <Link to="/rankings" className="text-link">See all rankings</Link>
         </div>
 
         <div className="game-grid compact-grid">
+          {!featured.length && <p role="status">Game rankings are unavailable until the catalog and community APIs are published.</p>}
           {featured.map((game) => (
             <GameCard
               key={game.id}
@@ -99,124 +109,33 @@ function LandingPage({ wishlist, onToggleWishlist }) {
   )
 }
 
-function LoginPage({ isAuthenticated, onLogin }) {
-  if (isAuthenticated) {
-    return <Navigate to="/profile" replace />
+function LoginPage({ isAuthenticated, onLogin, busy, registering = false }) {
+  const [error, setError] = useState('')
+  if (isAuthenticated) return <Navigate to="/profile" replace />
+  async function signIn(credential) {
+    setError('')
+    try { await onLogin(credential) } catch (error) { setError(error.message) }
   }
-
-  const handleSubmit = (event) => {
-    event.preventDefault()
-    const form = new FormData(event.currentTarget)
-    const username = form.get('username')?.toString().trim() || ''
-    const password = form.get('password')?.toString() || ''
-
-    if (username && password) {
-      onLogin()
-    }
-  }
-
-  return (
-    <section className="auth-page">
-      <div className="auth-card">
-        <p className="eyebrow">Welcome back</p>
-        <h1>Sign in to continue</h1>
-        <p className="subtle-text">Demo mode enabled: this frontend is wired for the expected auth flow until the backend is ready.</p>
-
-        <form className="stack-form" onSubmit={handleSubmit}>
-          <label>
-            Username or email
-            <input type="text" name="username" placeholder="alexm" required />
-          </label>
-          <label>
-            Password
-            <input type="password" name="password" placeholder="••••••••" required />
-          </label>
-          <button type="submit" className="primary-button wide">Log in</button>
-        </form>
-
-        <p className="auth-switch">
-          Need an account? <Link to="/register">Sign up now</Link>
-        </p>
-      </div>
-    </section>
-  )
-}
-
-function RegisterPage({ isAuthenticated, onLogin }) {
-  if (isAuthenticated) {
-    return <Navigate to="/profile" replace />
-  }
-
-  const handleSubmit = (event) => {
-    event.preventDefault()
-    const form = new FormData(event.currentTarget)
-    const firstName = form.get('firstName')?.toString().trim() || ''
-    const lastName = form.get('lastName')?.toString().trim() || ''
-    const email = form.get('email')?.toString().trim() || ''
-    const username = form.get('username')?.toString().trim() || ''
-    const password = form.get('password')?.toString() || ''
-    const confirmPassword = form.get('confirmPassword')?.toString() || ''
-
-    if (firstName && lastName && email && username && password && password === confirmPassword) {
-      onLogin()
-    }
-  }
-
-  return (
-    <section className="auth-page">
-      <div className="auth-card">
-        <p className="eyebrow">Create account</p>
-        <h1>Welcome to SideQuest</h1>
-        <p className="subtle-text">Connect, share, and discover your next obsession.</p>
-
-        <form className="stack-form" onSubmit={handleSubmit}>
-          <div className="two-field-row">
-            <label>
-              First name
-              <input type="text" name="firstName" required />
-            </label>
-            <label>
-              Last name
-              <input type="text" name="lastName" required />
-            </label>
-          </div>
-          <label>
-            Email
-            <input type="email" name="email" required />
-          </label>
-          <label>
-            Username
-            <input type="text" name="username" required />
-          </label>
-          <label>
-            Password
-            <input type="password" name="password" required />
-          </label>
-          <label>
-            Confirm password
-            <input type="password" name="confirmPassword" required />
-          </label>
-          <button type="submit" className="primary-button wide">Register</button>
-        </form>
-
-        <p className="auth-switch">
-          Already have an account? <Link to="/login">Log in here</Link>
-        </p>
-      </div>
-    </section>
-  )
+  return <section className="auth-page"><div className="auth-card">
+    <p className="eyebrow">{registering ? 'Create account' : 'Welcome back'}</p>
+    <h1>{registering ? 'Welcome to SideQuest' : 'Sign in to continue'}</h1>
+    <p className="subtle-text">Continue with Google. Your first successful sign-in creates your SideQuest account.</p>
+    <GoogleSignIn onCredential={signIn} busy={busy} />
+    {error && <p role="alert">{error}</p>}
+    <p className="auth-switch">{registering ? <>Already have an account? <Link to="/login">Log in here</Link></> : <>Need an account? <Link to="/register">Sign up now</Link></>}</p>
+  </div></section>
 }
 
 function GameDiscoveryPage({ wishlist, onToggleWishlist }) {
   const [search, setSearch] = useState('')
-  const [sort, setSort] = useState('rating')
+  const [sort, setSort] = useState('title')
   const [genre, setGenre] = useState('All')
 
   const genres = ['All', ...new Set(games.map((game) => game.genre))]
 
   const filteredGames = useMemo(() => {
     const next = games.filter((game) => {
-      const matchesSearch = game.title.toLowerCase().includes(search.toLowerCase())
+      const matchesSearch = game.title.toLowerCase().includes(search.trim().toLowerCase())
       const matchesGenre = genre === 'All' || game.genre === genre
       return matchesSearch && matchesGenre
     })
@@ -260,6 +179,8 @@ function GameDiscoveryPage({ wishlist, onToggleWishlist }) {
         </select>
       </div>
 
+      <p role="status">The game catalog API is not available yet. Search and filters will apply to published catalog data.</p>
+      <button type="button" className="secondary-button" onClick={() => { setSearch(''); setGenre('All'); setSort('title') }}>Reset filters</button>
       <div className="game-grid">
         {filteredGames.length > 0 ? (
           filteredGames.map((game) => (
@@ -272,7 +193,7 @@ function GameDiscoveryPage({ wishlist, onToggleWishlist }) {
           ))
         ) : (
           <div className="empty-state card-panel">
-            <h3>No games match those filters.</h3>
+            <h3>{games.length ? 'No games match those filters.' : 'Catalog unavailable'}</h3>
             <p>Reset your search and try another combination.</p>
           </div>
         )}
@@ -287,7 +208,7 @@ function GameDetailsPage({ wishlist, backlog, onToggleWishlist, onToggleBacklog,
   const game = games.find((entry) => entry.id === gameId)
 
   if (!game) {
-    return <Navigate to="/games" replace />
+    return <Unavailable title="Game unavailable">Game details and reviews cannot be loaded until the catalog API is published.</Unavailable>
   }
 
   const relevantReviews = reviews.filter((review) => review.gameId === gameId)
@@ -317,10 +238,10 @@ function GameDetailsPage({ wishlist, backlog, onToggleWishlist, onToggleBacklog,
           <p className="detail-meta">{game.developer} · {game.reviewCount} reviews</p>
           <p className="lead small">{game.description}</p>
           <div className="inline-actions">
-            <button type="button" className="primary-button" onClick={() => onToggleWishlist(game.id)}>
+            <button type="button" className="primary-button" disabled onClick={() => onToggleWishlist(game.id)}>
               {wishlist.includes(game.id) ? 'Remove from wishlist' : 'Add to wishlist'}
             </button>
-            <button type="button" className="secondary-button" onClick={() => onToggleBacklog(game.id)}>
+            <button type="button" className="secondary-button" disabled onClick={() => onToggleBacklog(game.id)}>
               {backlog.includes(game.id) ? 'Remove from backlog' : 'Add to backlog'}
             </button>
           </div>
@@ -359,7 +280,7 @@ function GameDetailsPage({ wishlist, backlog, onToggleWishlist, onToggleBacklog,
             Your review
             <textarea name="text" rows="5" placeholder="Tell the community what you loved or disliked." required />
           </label>
-          <button type="submit" className="primary-button">Submit review</button>
+          <p role="status">Review publishing is unavailable until the review API is published. Drafts are not saved.</p><button disabled type="submit" className="primary-button">Submit review</button>
         </form>
       </div>
 
@@ -398,6 +319,7 @@ function RankingsPage() {
         <p className="subtle-text">Top-rated games across the community.</p>
       </div>
 
+      <p role="status">Rankings are unavailable until the API provides real community ratings and review counts.</p>
       <div className="rankings-list">
         {rankedGames.map((game, index) => (
           <div className="ranking-row card-panel" key={game.id}>
@@ -419,154 +341,28 @@ function RankingsPage() {
   )
 }
 
-function ProfilePage({ user, wishlist, backlog, reviews }) {
-  const wishlistGames = games.filter((game) => wishlist.includes(game.id))
-  const backlogGames = games.filter((game) => backlog.includes(game.id))
-  const recentReviews = reviews.filter((review) => review.userId === user.id).slice(0, 3)
-
-  return (
-    <section className="content-section">
-      <div className="profile-header card-panel">
-        <div>
-          <p className="eyebrow">Profile</p>
-          <h1>{user.name}</h1>
-          <p className="profile-handle">@{user.username}</p>
-        </div>
-        <Link to="/profile/edit" className="secondary-button">Edit profile</Link>
-      </div>
-
-      <div className="profile-meta card-panel">
-        <p>{user.bio}</p>
-        <div className="tag-list">
-          {user.favoriteGenres.map((genre) => (
-            <span className="tag" key={genre}>{genre}</span>
-          ))}
-        </div>
-      </div>
-
-      <div className="stats-grid">
-        <div className="stat-box card-panel">
-          <strong>{wishlistGames.length}</strong>
-          <span>Wishlist</span>
-        </div>
-        <div className="stat-box card-panel">
-          <strong>{backlogGames.length}</strong>
-          <span>Backlog</span>
-        </div>
-        <div className="stat-box card-panel">
-          <strong>{recentReviews.length}</strong>
-          <span>Reviews</span>
-        </div>
-      </div>
-
-      <div className="list-grid">
-        <div className="card-panel">
-          <div className="section-header-inline small-header">
-            <h2>Wishlist</h2>
-            <Link to="/wishlist" className="text-link">See all</Link>
-          </div>
-          {wishlistGames.length > 0 ? (
-            <ul className="mini-list">
-              {wishlistGames.map((game) => (
-                <li key={game.id}><Link to={`/games/${game.id}`}>{game.title}</Link></li>
-              ))}
-            </ul>
-          ) : (
-            <p className="subtle-text">No games saved yet.</p>
-          )}
-        </div>
-
-        <div className="card-panel">
-          <div className="section-header-inline small-header">
-            <h2>Backlog</h2>
-            <Link to="/backlog" className="text-link">See all</Link>
-          </div>
-          {backlogGames.length > 0 ? (
-            <ul className="mini-list">
-              {backlogGames.map((game) => (
-                <li key={game.id}><Link to={`/games/${game.id}`}>{game.title}</Link></li>
-              ))}
-            </ul>
-          ) : (
-            <p className="subtle-text">No games in the backlog.</p>
-          )}
-        </div>
-      </div>
-
-      <div className="card-panel">
-        <div className="section-header-inline small-header">
-          <h2>Recent reviews</h2>
-        </div>
-        {recentReviews.length > 0 ? (
-          recentReviews.map((review) => (
-            <article key={review.id} className="review-item compact-review">
-              <strong>{review.title}</strong>
-              <p>{review.text}</p>
-            </article>
-          ))
-        ) : (
-          <p className="subtle-text">No published reviews yet.</p>
-        )}
-      </div>
-    </section>
-  )
+function ProfilePage({ user }) {
+  return <section className="content-section">
+    <div className="profile-header card-panel"><div><p className="eyebrow">Profile</p>
+      <h1>{user.displayName}</h1><p>{user.email}</p></div>
+      <Link to="/profile/edit" className="secondary-button">Edit profile</Link>
+    </div>
+    <div className="list-grid">
+      <Unavailable title="Played games and rating history">Your history is unavailable until the profile and review APIs are published.</Unavailable>
+      <Unavailable title="Your library"><Link to="/wishlist">Wishlist</Link> and <Link to="/backlog">Backlog</Link> are awaiting persistence APIs.</Unavailable>
+    </div>
+  </section>
 }
 
-function EditProfilePage({ user, onSave }) {
-  const navigate = useNavigate()
-  const [draft, setDraft] = useState(user)
-
-  const handleSubmit = (event) => {
-    event.preventDefault()
-    onSave(draft)
-    navigate('/profile')
-  }
-
-  return (
-    <section className="content-section">
-      <div className="card-panel form-panel">
-        <h1>Edit profile</h1>
-        <form className="stack-form" onSubmit={handleSubmit}>
-          <label>
-            Display name
-            <input
-              type="text"
-              value={draft.name}
-              onChange={(event) => setDraft({ ...draft, name: event.target.value })}
-            />
-          </label>
-          <label>
-            Username
-            <input
-              type="text"
-              value={draft.username}
-              onChange={(event) => setDraft({ ...draft, username: event.target.value })}
-            />
-          </label>
-          <label>
-            Bio
-            <textarea
-              rows="4"
-              value={draft.bio}
-              onChange={(event) => setDraft({ ...draft, bio: event.target.value })}
-            />
-          </label>
-          <label className="check-row">
-            <input
-              type="checkbox"
-              checked={draft.wishlistPublic}
-              onChange={(event) => setDraft({ ...draft, wishlistPublic: event.target.checked })}
-            />
-            Make my wishlist public
-          </label>
-          <div className="inline-actions">
-            <button type="submit" className="primary-button">Save changes</button>
-            <Link to="/profile" className="secondary-button">Cancel</Link>
-          </div>
-        </form>
-      </div>
-    </section>
-  )
+function EditProfilePage() {
+  return <section className="content-section card-panel form-panel"><h1>Edit profile</h1>
+    <p role="status">Profile editing and wishlist privacy updates are unavailable until the server supports saving and enforcing them.</p>
+    <form className="stack-form" onSubmit={event => event.preventDefault()}><fieldset disabled>
+      <label>Bio<textarea maxLength={300} rows={4} /></label>
+      <label>Wishlist visibility<select defaultValue="private"><option value="private">Private</option><option value="public">Public</option></select></label>
+      <button className="primary-button" type="submit">Save changes</button>
+    </fieldset></form><Link to="/profile">Back to profile</Link>
+  </section>
 }
 
 function WishlistPage({ wishlist, onToggleWishlist }) {
@@ -579,6 +375,7 @@ function WishlistPage({ wishlist, onToggleWishlist }) {
         <p className="subtle-text">Saved for later.</p>
       </div>
 
+      <p role="status">This list is unavailable until the server provides persistence. No saved items have been loaded.</p>
       {items.length > 0 ? (
         <div className="game-grid">
           {items.map((game) => (
@@ -592,7 +389,7 @@ function WishlistPage({ wishlist, onToggleWishlist }) {
         </div>
       ) : (
         <div className="empty-state card-panel">
-          <h3>Your wishlist is empty.</h3>
+          <h3>Wishlist unavailable</h3>
           <p>Browse the catalog and save a few games you want to revisit.</p>
         </div>
       )}
@@ -610,6 +407,7 @@ function BacklogPage({ backlog, onToggleBacklog }) {
         <p className="subtle-text">Games planned for future play.</p>
       </div>
 
+      <p role="status">This list is unavailable until the server provides persistence. No saved items have been loaded.</p>
       {items.length > 0 ? (
         <div className="game-grid">
           {items.map((game) => (
@@ -618,7 +416,7 @@ function BacklogPage({ backlog, onToggleBacklog }) {
               <div className="game-card-body">
                 <h3>{game.title}</h3>
                 <p>{game.genre}</p>
-                <button type="button" className="secondary-button" onClick={() => onToggleBacklog(game.id)}>
+                <button type="button" className="secondary-button" disabled onClick={() => onToggleBacklog(game.id)}>
                   Remove from backlog
                 </button>
               </div>
@@ -627,7 +425,7 @@ function BacklogPage({ backlog, onToggleBacklog }) {
         </div>
       ) : (
         <div className="empty-state card-panel">
-          <h3>Your backlog is empty.</h3>
+          <h3>Backlog unavailable</h3>
           <p>Add games you plan to revisit later and keep track of your next sessions.</p>
         </div>
       )}
@@ -635,59 +433,8 @@ function BacklogPage({ backlog, onToggleBacklog }) {
   )
 }
 
-function UserProfilePage({ userId }) {
-  const targetUser = users[userId] ?? currentUser
-  const publicWishlistGames = games.filter((game) => targetUser.publicWishlist?.includes(game.id))
-  const publicBacklogGames = games.filter((game) => targetUser.backlog?.includes(game.id))
-
-  return (
-    <section className="content-section">
-      <div className="profile-header card-panel">
-        <div>
-          <p className="eyebrow">Public profile</p>
-          <h1>{targetUser.name}</h1>
-          <p className="profile-handle">@{targetUser.username}</p>
-        </div>
-      </div>
-
-      <div className="profile-meta card-panel">
-        <p>{targetUser.bio}</p>
-        <div className="tag-list">
-          {targetUser.favoriteGenres.map((genre) => (
-            <span className="tag" key={genre}>{genre}</span>
-          ))}
-        </div>
-      </div>
-
-      <div className="list-grid">
-        <div className="card-panel">
-          <h2>Wishlist</h2>
-          {targetUser.wishlistPublic && publicWishlistGames.length > 0 ? (
-            <ul className="mini-list">
-              {publicWishlistGames.map((game) => (
-                <li key={game.id}><Link to={`/games/${game.id}`}>{game.title}</Link></li>
-              ))}
-            </ul>
-          ) : (
-            <p className="subtle-text">This wishlist is private.</p>
-          )}
-        </div>
-
-        <div className="card-panel">
-          <h2>Backlog</h2>
-          {publicBacklogGames.length > 0 ? (
-            <ul className="mini-list">
-              {publicBacklogGames.map((game) => (
-                <li key={game.id}><Link to={`/games/${game.id}`}>{game.title}</Link></li>
-              ))}
-            </ul>
-          ) : (
-            <p className="subtle-text">No public backlog items.</p>
-          )}
-        </div>
-      </div>
-    </section>
-  )
+function UserProfilePage() {
+  return <Unavailable title="Public profile unavailable">Public profiles and shared wishlists cannot be loaded. Server authorization and privacy enforcement are required before any list can be displayed.</Unavailable>
 }
 
 function NotFoundPage() {
@@ -703,44 +450,56 @@ function NotFoundPage() {
 }
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [userProfile, setUserProfile] = useState(currentUser)
-  const [wishlist, setWishlist] = useState(['g2', 'g4'])
-  const [backlog, setBacklog] = useState(['g1', 'g6'])
-  const [reviews, setReviews] = useState(reviewEntries)
-
-  const handleToggleWishlist = (gameId) => {
-    setWishlist((current) =>
-      current.includes(gameId) ? current.filter((id) => id !== gameId) : [...current, gameId],
-    )
+  const [userProfile, setUserProfile] = useState(null)
+  const [checking, setChecking] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [attempt, setAttempt] = useState(0)
+  const loginInFlight = useRef(false)
+  const isAuthenticated = Boolean(userProfile)
+  const wishlist = []
+  const backlog = []
+  const reviews = []
+  useEffect(() => {
+    const controller = new AbortController()
+    auth.me(controller.signal).then(user => {
+      if (!controller.signal.aborted) setUserProfile(user)
+    }).catch(error => {
+      if (!controller.signal.aborted && error.status !== 401) setError(error.message)
+    }).finally(() => { if (!controller.signal.aborted) setChecking(false) })
+    return () => controller.abort()
+  }, [attempt])
+  async function login(credential) {
+    if (loginInFlight.current) return
+    loginInFlight.current = true
+    setBusy(true)
+    try { setUserProfile(await auth.login(credential)); setError('') }
+    finally { loginInFlight.current = false; setBusy(false) }
   }
-
-  const handleToggleBacklog = (gameId) => {
-    setBacklog((current) =>
-      current.includes(gameId) ? current.filter((id) => id !== gameId) : [...current, gameId],
-    )
+  async function logout() {
+    if (busy) return
+    setBusy(true)
+    setError('')
+    try {
+      await auth.logout()
+      setUserProfile(null)
+      window.google?.accounts?.id?.disableAutoSelect()
+    } catch (error) { setError(error.message) }
+    finally { setBusy(false) }
   }
-
-  const handleReviewSubmit = (gameId, rating, title, text) => {
-    const newReview = {
-      id: `review-${Date.now()}`,
-      gameId,
-      userId: userProfile.id,
-      userName: userProfile.name,
-      rating,
-      title,
-      text,
-    }
-
-    setReviews((current) => [newReview, ...current])
-  }
+  const unavailable = () => setError('Saving is unavailable until the server publishes this feature.')
+  const handleToggleWishlist = unavailable
+  const handleToggleBacklog = unavailable
+  const handleReviewSubmit = unavailable
 
   return (
-    <Layout isAuthenticated={isAuthenticated} onLogout={() => setIsAuthenticated(false)}>
+    <Layout isAuthenticated={isAuthenticated} onLogout={logout} busy={busy}>
+      {error && <div className="card-panel" role="alert">{error} <button type="button" className="secondary-button" onClick={() => { setError(''); setChecking(true); setAttempt(value => value + 1) }}>Retry connection</button></div>}
+      {checking ? <p role="status">Checking your session…</p> : <>
       <Routes>
         <Route path="/" element={<LandingPage wishlist={wishlist} onToggleWishlist={handleToggleWishlist} />} />
-        <Route path="/login" element={<LoginPage isAuthenticated={isAuthenticated} onLogin={() => setIsAuthenticated(true)} />} />
-        <Route path="/register" element={<RegisterPage isAuthenticated={isAuthenticated} onLogin={() => setIsAuthenticated(true)} />} />
+        <Route path="/login" element={<LoginPage isAuthenticated={isAuthenticated} onLogin={login} busy={busy} />} />
+        <Route path="/register" element={<LoginPage registering isAuthenticated={isAuthenticated} onLogin={login} busy={busy} />} />
         <Route path="/games" element={<GameDiscoveryPage wishlist={wishlist} onToggleWishlist={handleToggleWishlist} />} />
         <Route
           path="/games/:gameId"
@@ -769,7 +528,7 @@ function App() {
           path="/profile/edit"
           element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <EditProfilePage user={userProfile} onSave={setUserProfile} />
+              <EditProfilePage user={userProfile}  />
             </ProtectedRoute>
           }
         />
@@ -791,6 +550,7 @@ function App() {
         />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </>}
     </Layout>
   )
 }

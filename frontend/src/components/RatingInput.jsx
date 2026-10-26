@@ -8,6 +8,7 @@ export default function RatingInput({ value, onChange }) {
           className={rating <= value ? 'star selected' : 'star'}
           onClick={() => onChange(rating)}
           aria-label={`Rate ${rating} stars`}
+          aria-pressed={rating === value}
         >
           ★
         </button>

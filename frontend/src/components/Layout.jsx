@@ -1,8 +1,9 @@
 import { NavLink, Link } from 'react-router-dom'
 
-export default function Layout({ isAuthenticated, onLogout, children }) {
+export default function Layout({ isAuthenticated, onLogout, busy, children }) {
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">Skip to content</a>
       <header className="topbar">
         <div className="brand-wrap">
           <Link to="/" className="brand">
@@ -25,7 +26,7 @@ export default function Layout({ isAuthenticated, onLogout, children }) {
 
         <div className="nav-actions auth-actions">
           {isAuthenticated ? (
-            <button type="button" className="secondary-button" onClick={onLogout}>
+            <button type="button" className="secondary-button" disabled={busy} onClick={onLogout}>
               Log out
             </button>
           ) : (
@@ -41,7 +42,7 @@ export default function Layout({ isAuthenticated, onLogout, children }) {
         </div>
       </header>
 
-      <main className="page-shell">{children}</main>
+      <main id="main-content" className="page-shell">{children}</main>
 
       <footer className="site-footer">
         <div>

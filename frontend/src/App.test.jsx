@@ -1,27 +1,106 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
+import { vi } from 'vitest'
 import App from './App'
+import { auth, ApiError } from './services/auth'
 
-describe('SideQuest app', () => {
-  it('renders the landing page and homepage auth actions', () => {
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <App />
-      </MemoryRouter>,
-    )
+vi.mock('./services/auth', async importOriginal => ({
+  ...await importOriginal(), auth: { me: vi.fn(), login: vi.fn(), logout: vi.fn() },
+}))
+vi.mock('./components/GoogleSignIn', () => ({ default: ({ onCredential, busy }) =>
+  <button disabled={busy} onClick={() => onCredential('google-test-credential')}>Continue with Google</button>,
+}))
+const user = { id: 'user-1', displayName: 'Real Player', email: 'player@example.com', avatarUrl: '' }
+function visit(path = '/') {
+  render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>)
+}
+beforeEach(() => {
+  vi.resetAllMocks()
+  auth.me.mockRejectedValue(new ApiError('Please sign in.', 401))
+})
 
-    expect(screen.getByRole('link', { name: /^SideQuest$/i })).toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: /^Join now$/i }).length).toBeGreaterThan(0)
-    expect(screen.getAllByRole('link', { name: /^Log in$/i }).length).toBeGreaterThan(0)
-  })
-
-  it('shows the login screen on the auth route', () => {
-    render(
-      <MemoryRouter initialEntries={['/login']}>
-        <App />
-      </MemoryRouter>,
-    )
-
-    expect(screen.getByRole('heading', { name: /sign in to continue/i })).toBeInTheDocument()
-  })
+it('has one pair of homepage authentication links and no fixture statistics', async () => {
+  visit()
+  await screen.findByRole('heading', { name: /rate, review, and track/i })
+  expect(screen.getAllByRole('link', { name: /^join now$/i })).toHaveLength(1)
+  expect(screen.getAllByRole('link', { name: /^log in$/i })).toHaveLength(1)
+  expect(screen.queryByText('Elden Ring')).not.toBeInTheDocument()
+  expect(screen.queryByText('1.7k')).not.toBeInTheDocument()
+})
+it('waits for session restoration before redirecting protected routes', async () => {
+  let resolve
+  auth.me.mockReturnValue(new Promise(done => { resolve = done }))
+  visit('/profile')
+  expect(screen.getByRole('status')).toHaveTextContent('Checking your session')
+  resolve(user)
+  expect(await screen.findByRole('heading', { name: user.displayName })).toBeInTheDocument()
+})
+it('redirects signed-out users to the real sign-in flow', async () => {
+  visit('/wishlist')
+  expect(await screen.findByRole('heading', { name: /sign in to continue/i })).toBeInTheDocument()
+  expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument()
+})
+it('creates account through the same Google authentication contract', async () => {
+  auth.login.mockResolvedValue(user)
+  visit('/register')
+  await userEvent.click(await screen.findByRole('button', { name: /continue with google/i }))
+  expect(auth.login).toHaveBeenCalledWith('google-test-credential')
+  expect(await screen.findByRole('heading', { name: user.displayName })).toBeInTheDocument()
+})
+it('retains sign-in errors without pretending authentication succeeded', async () => {
+  auth.login.mockRejectedValue(new ApiError('Google sign-in could not be verified.', 401))
+  visit('/login')
+  await userEvent.click(await screen.findByRole('button', { name: /continue with google/i }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('could not be verified')
+  expect(screen.queryByRole('button', { name: /log out/i })).not.toBeInTheDocument()
+})
+it('keeps the account visible when logout fails and clears it on successful retry', async () => {
+  auth.me.mockResolvedValue(user)
+  auth.logout.mockRejectedValueOnce(new ApiError('Cannot reach SideQuest.', 0)).mockResolvedValueOnce(null)
+  visit('/profile')
+  await screen.findByRole('heading', { name: user.displayName })
+  await userEvent.click(screen.getByRole('button', { name: /log out/i }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('Cannot reach')
+  expect(screen.getByRole('heading', { name: user.displayName })).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: /log out/i }))
+  expect(await screen.findByRole('heading', { name: /sign in to continue/i })).toBeInTheDocument()
+})
+it('allows retry after a session connection failure', async () => {
+  auth.me.mockRejectedValueOnce(new ApiError('Cannot reach SideQuest.', 0)).mockResolvedValueOnce(user)
+  visit('/profile')
+  await userEvent.click(await screen.findByRole('button', { name: /retry connection/i }))
+  expect(await screen.findByRole('heading', { name: user.displayName })).toBeInTheDocument()
+})
+it('resets catalog filters and distinguishes unavailable data from an empty library', async () => {
+  visit('/games')
+  const search = await screen.findByRole('searchbox')
+  await userEvent.type(search, 'a game')
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: /sort games/i }), 'reviews')
+  await userEvent.click(screen.getByRole('button', { name: /reset filters/i }))
+  expect(search).toHaveValue('')
+  expect(screen.getByRole('combobox', { name: /sort games/i })).toHaveValue('title')
+  expect(screen.getByRole('heading', { name: /catalog unavailable/i })).toBeInTheDocument()
+})
+it.each(['/users/unknown', '/users/u1', '/users/u2'])('never shows fixture or private profile data at %s', async path => {
+  visit(path)
+  expect(await screen.findByRole('heading', { name: /public profile unavailable/i })).toBeInTheDocument()
+  expect(screen.queryByText('Alex Morgan')).not.toBeInTheDocument()
+  expect(screen.queryByText('Sam Rivera')).not.toBeInTheDocument()
+})
+it.each([['/wishlist', 'Wishlist unavailable'], ['/backlog', 'Backlog unavailable'], ['/games/unknown', 'Game unavailable']])('shows unavailable state at %s', async (path, heading) => {
+  auth.me.mockResolvedValue(user)
+  visit(path)
+  expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument()
+})
+it('disables profile changes and privacy controls without persistence', async () => {
+  auth.me.mockResolvedValue(user)
+  visit('/profile/edit')
+  expect(await screen.findByRole('button', { name: /save changes/i })).toBeDisabled()
+  expect(screen.getByRole('combobox', { name: /wishlist visibility/i })).toBeDisabled()
+})
+it('handles unmatched routes', async () => {
+  visit('/missing')
+  expect(await screen.findByRole('heading', { name: /page not found/i })).toBeInTheDocument()
+  await waitFor(() => expect(auth.me).toHaveBeenCalledTimes(1))
 })
