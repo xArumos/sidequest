@@ -2,12 +2,12 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { vi } from 'vitest'
 import GoogleSignIn from './GoogleSignIn'
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals() })
-it('explains unavailable configuration without showing a fake login', () => {
+it('[TC-FE-GOOGLE-01] explains unavailable configuration without showing a fake login', () => {
   vi.stubEnv('VITE_GOOGLE_CLIENT_ID', '')
   render(<GoogleSignIn onCredential={vi.fn()} />)
   expect(screen.getByRole('status')).toHaveTextContent('unavailable')
 })
-it('initializes the official SDK and forwards credentials only while mounted', async () => {
+it('[TC-FE-GOOGLE-02] initializes the official SDK and forwards credentials only while mounted', async () => {
   vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'public-client-id')
   const id = { initialize: vi.fn(), renderButton: vi.fn() }
   vi.stubGlobal('google', { accounts: { id } })
@@ -22,7 +22,7 @@ it('initializes the official SDK and forwards credentials only while mounted', a
   options.callback({ credential: 'late-token' })
   expect(callback).toHaveBeenCalledTimes(1)
 })
-it('announces in-progress authentication', () => {
+it('[TC-FE-GOOGLE-03] announces in-progress authentication', () => {
   vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'public-client-id')
   vi.stubGlobal('google', { accounts: { id: { initialize: vi.fn(), renderButton: vi.fn() } } })
   render(<GoogleSignIn busy onCredential={vi.fn()} />)
