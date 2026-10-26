@@ -1,11 +1,11 @@
 import {useState} from "react";
 
 function RatingForm() {
-    const [rating, setRating] = useState(0);
+    const [rating, setRating] = useState('1');
 
     function handleSubmit(e){
         e.preventDefault();
-        console.log("Submitted rating:", rating);
+        console.log("Submitted rating:", Number(rating));
     }
 
     return (
@@ -14,10 +14,11 @@ function RatingForm() {
                 Your Rating (1-5):
                 <input
                     type="number"
+                    required
                     min="1"
                     max="5"
                     value={rating}
-                    onChange={(e) => setRating(parseInt(e.target.value))}
+                    onChange={(e) => setRating(e.target.value)}
                 />
             </label>
             <button type="submit">Submit</button>
