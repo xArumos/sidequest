@@ -106,7 +106,10 @@ test('password accounts persist, enforce unique identifiers, and remain separate
   }
   const another = await post(first, '/register', { username: `other_${suffix}`, email: `other-${email}`, password });
   assert.equal(another.status, 201);
-  ids.push((await another.json()).user.id);
+  const anotherId = (await another.json()).user.id;
+  ids.push(anotherId);
+  assert.notEqual((await User.findById(user.id).select('+passwordHash')).passwordHash,
+    (await User.findById(anotherId).select('+passwordHash')).passwordHash);
   for (const identifier of [username.toUpperCase(), email.toUpperCase()]) {
     const login = await post(second, '/login', { identifier, password }, cookie);
     assert.equal(login.status, 200);
