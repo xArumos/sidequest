@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 
-const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 let scriptPromise
 function loadGoogle() {
   if (window.google?.accounts?.id) return Promise.resolve(window.google.accounts.id)
@@ -19,6 +18,7 @@ function loadGoogle() {
 }
 
 export default function GoogleSignIn({ onCredential, busy }) {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
   const container = useRef(null)
   const callback = useRef(onCredential)
   const [error, setError] = useState('')
@@ -34,7 +34,7 @@ export default function GoogleSignIn({ onCredential, busy }) {
       id.renderButton(container.current, { theme: 'outline', size: 'large', width: 240 })
     }).catch(error => { if (active) setError(error.message) })
     return () => { active = false }
-  }, [])
+  }, [clientId])
   if (!clientId) return <p role="status">Google sign-in is unavailable until the application is configured.</p>
   return <div aria-busy={busy}>
     <div ref={container} hidden={busy} />

@@ -3,7 +3,7 @@ import { Link, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import './App.css'
 import Layout from './components/Layout'
 import GameCard from './components/GameCard'
-import RatingInput from './components/RatingInput'
+import ReviewForm from './components/ReviewForm'
 import GoogleSignIn from './components/GoogleSignIn'
 import { auth } from './services/auth'
 
@@ -194,7 +194,7 @@ function GameDiscoveryPage({ wishlist, onToggleWishlist }) {
         ) : (
           <div className="empty-state card-panel">
             <h3>{games.length ? 'No games match those filters.' : 'Catalog unavailable'}</h3>
-            <p>Reset your search and try another combination.</p>
+            <p>Search and filtering will be available when catalog data can be loaded.</p>
           </div>
         )}
       </div>
@@ -202,9 +202,8 @@ function GameDiscoveryPage({ wishlist, onToggleWishlist }) {
   )
 }
 
-function GameDetailsPage({ wishlist, backlog, onToggleWishlist, onToggleBacklog, reviews, onReviewSubmit }) {
+function GameDetailsPage({ wishlist, backlog, onToggleWishlist, onToggleBacklog, reviews }) {
   const { gameId } = useParams()
-  const [selectedRating, setSelectedRating] = useState(0)
   const game = games.find((entry) => entry.id === gameId)
 
   if (!game) {
@@ -212,21 +211,6 @@ function GameDetailsPage({ wishlist, backlog, onToggleWishlist, onToggleBacklog,
   }
 
   const relevantReviews = reviews.filter((review) => review.gameId === gameId)
-
-  const submitReview = (event) => {
-    event.preventDefault()
-    const form = new FormData(event.currentTarget)
-    const title = form.get('title')?.toString().trim() || ''
-    const text = form.get('text')?.toString().trim() || ''
-
-    if (!title || !text || selectedRating === 0) {
-      return
-    }
-
-    onReviewSubmit(game.id, selectedRating, title, text)
-    event.currentTarget.reset()
-    setSelectedRating(0)
-  }
 
   return (
     <section className="content-section">
@@ -262,26 +246,10 @@ function GameDetailsPage({ wishlist, backlog, onToggleWishlist, onToggleBacklog,
           </div>
         </div>
 
-        <div className="card-panel">
-          <h2>Your rating</h2>
-          <RatingInput value={selectedRating} onChange={setSelectedRating} />
-          <p className="subtle-text">Rate this title before submitting your review.</p>
-        </div>
       </div>
-
       <div className="card-panel review-panel">
-        <h2>Write a review</h2>
-        <form className="stack-form" onSubmit={submitReview}>
-          <label>
-            Review title
-            <input type="text" name="title" placeholder="What stood out?" required />
-          </label>
-          <label>
-            Your review
-            <textarea name="text" rows="5" placeholder="Tell the community what you loved or disliked." required />
-          </label>
-          <p role="status">Review publishing is unavailable until the review API is published. Drafts are not saved.</p><button disabled type="submit" className="primary-button">Submit review</button>
-        </form>
+        <h2>Rate and review</h2>
+        <ReviewForm />
       </div>
 
       <div className="card-panel">
@@ -310,7 +278,8 @@ function GameDetailsPage({ wishlist, backlog, onToggleWishlist, onToggleBacklog,
 }
 
 function RankingsPage() {
-  const rankedGames = [...games].sort((a, b) => b.rating - a.rating)
+  const [sort, setSort] = useState('rating')
+  const rankedGames = [...games].sort((a, b) => sort === 'reviews' ? b.reviewCount - a.reviewCount : b.rating - a.rating)
 
   return (
     <section className="content-section">
@@ -319,6 +288,7 @@ function RankingsPage() {
         <p className="subtle-text">Top-rated games across the community.</p>
       </div>
 
+      <label>Rank games by <select aria-label="Rank games by" value={sort} onChange={event => setSort(event.target.value)}><option value="rating">Top rated</option><option value="reviews">Most reviewed</option></select></label>
       <p role="status">Rankings are unavailable until the API provides real community ratings and review counts.</p>
       <div className="rankings-list">
         {rankedGames.map((game, index) => (
@@ -390,7 +360,7 @@ function WishlistPage({ wishlist, onToggleWishlist }) {
       ) : (
         <div className="empty-state card-panel">
           <h3>Wishlist unavailable</h3>
-          <p>Browse the catalog and save a few games you want to revisit.</p>
+          <p>Adding and removing wishlist games is currently unavailable.</p>
         </div>
       )}
     </section>
@@ -426,7 +396,7 @@ function BacklogPage({ backlog, onToggleBacklog }) {
       ) : (
         <div className="empty-state card-panel">
           <h3>Backlog unavailable</h3>
-          <p>Add games you plan to revisit later and keep track of your next sessions.</p>
+          <p>Adding, removing, and updating backlog games is currently unavailable.</p>
         </div>
       )}
     </section>
@@ -465,7 +435,10 @@ function App() {
     auth.me(controller.signal).then(user => {
       if (!controller.signal.aborted) setUserProfile(user)
     }).catch(error => {
-      if (!controller.signal.aborted && error.status !== 401) setError(error.message)
+      if (!controller.signal.aborted) {
+        if (error.status === 401) setUserProfile(null)
+        else setError(error.message)
+      }
     }).finally(() => { if (!controller.signal.aborted) setChecking(false) })
     return () => controller.abort()
   }, [attempt])
@@ -490,7 +463,6 @@ function App() {
   const unavailable = () => setError('Saving is unavailable until the server publishes this feature.')
   const handleToggleWishlist = unavailable
   const handleToggleBacklog = unavailable
-  const handleReviewSubmit = unavailable
 
   return (
     <Layout isAuthenticated={isAuthenticated} onLogout={logout} busy={busy}>
@@ -510,7 +482,6 @@ function App() {
               onToggleWishlist={handleToggleWishlist}
               onToggleBacklog={handleToggleBacklog}
               reviews={reviews}
-              onReviewSubmit={handleReviewSubmit}
             />
           }
         />
@@ -520,7 +491,7 @@ function App() {
           path="/profile"
           element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <ProfilePage user={userProfile} wishlist={wishlist} backlog={backlog} reviews={reviews} />
+              <ProfilePage user={userProfile} />
             </ProtectedRoute>
           }
         />
@@ -528,7 +499,7 @@ function App() {
           path="/profile/edit"
           element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <EditProfilePage user={userProfile}  />
+              <EditProfilePage />
             </ProtectedRoute>
           }
         />
