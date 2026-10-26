@@ -1,0 +1,18 @@
+
+> client@0.0.0 build
+> vite build
+
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 33 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                 0.45 kB │ gzip:  0.29 kB
+dist/assets/Montserrat-Medium-DZarjTSE.ttf    330.87 kB
+dist/assets/Montserrat-Regular-BdMzRefO.ttf   330.94 kB
+dist/assets/Montserrat-SemiBold-C0-6BeuA.ttf  333.98 kB
+dist/assets/Montserrat-Bold-D4JCkd3k.ttf      335.78 kB
+dist/assets/index-sNUTvMdu.css                 11.12 kB │ gzip:  3.26 kB
+dist/assets/index-CI0C4frR.js                 282.42 kB │ gzip: 88.15 kB
+
+✓ built in 137ms
