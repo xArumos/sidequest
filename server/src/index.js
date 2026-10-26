@@ -4,7 +4,7 @@ const { readConfig } = require('./config');
 const { createAuthRouter } = require('./auth');
 const { createGoogleVerifier } = require('./google');
 const { MongoStore } = require('connect-mongo');
-const User = require('sidequest-database/models/user');
+const User = require('sidequest-database/models/User');
 
 async function main() {
   const config = readConfig();

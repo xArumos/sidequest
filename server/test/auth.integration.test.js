@@ -4,7 +4,7 @@ const { once } = require('node:events');
 const { randomUUID } = require('node:crypto');
 const { MongoStore } = require('connect-mongo');
 const { connectDatabase, disconnectDatabase } = require('sidequest-database');
-const User = require('sidequest-database/models/user');
+const User = require('sidequest-database/models/User');
 const { createApp } = require('../src/app');
 const { createAuthRouter } = require('../src/auth');
 
