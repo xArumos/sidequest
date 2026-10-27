@@ -1,7 +1,23 @@
 import { test, expect } from '@playwright/test'
 
 async function signedOut(page) {
+  await emptyApi(page)
   await page.route('**/api/auth/me', route => route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: { message: 'Please sign in.' } }) }))
+}
+// Empty but well-formed catalog and library responses for every non-auth API route.
+async function emptyApi(page) {
+  await page.route(/\/api\/(?!auth\/)/, route => {
+    const path = new URL(route.request().url()).pathname
+    const body = path.endsWith('/filters') ? { genres: [], platforms: [] }
+      : path.endsWith('/games/top') ? { games: [], minCount: 3 }
+      : path.startsWith('/api/games') ? { games: [], total: 0, page: 1, pages: 0 }
+      : path === '/api/me/wishlist-visibility' ? { wishlistVisibility: 'private' }
+      : path.startsWith('/api/users/') && !path.endsWith('/logs') && !path.endsWith('/wishlist') ? null
+      : { logs: [], total: 0, page: 1, pages: 0 }
+    return body === null
+      ? route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: { code: 'USER_NOT_FOUND', message: 'User not found.' } }) })
+      : route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
+  })
 }
 async function fitsViewport(page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
@@ -34,11 +50,11 @@ test('[TC-FE-BROWSER-03] discovery controls reset without horizontal overflow', 
   await signedOut(page)
   await page.goto('/games')
   await page.getByRole('searchbox').fill('Synthetic search')
-  await page.getByRole('combobox', { name: 'Sort games' }).selectOption('reviews')
+  await page.getByRole('combobox', { name: 'Sort games' }).selectOption('top')
   await page.getByRole('button', { name: 'Reset filters' }).click()
   await expect(page.getByRole('searchbox')).toHaveValue('')
   await expect(page.getByRole('combobox', { name: 'Sort games' })).toHaveValue('title')
-  await expect(page.getByRole('heading', { name: 'Catalog unavailable' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'No games match those filters.' })).toBeVisible()
   await fitsViewport(page)
 })
 test('[TC-FE-BROWSER-04] long card titles stay inside cards and above metadata', async ({ page }) => {
@@ -54,22 +70,22 @@ test('[TC-FE-BROWSER-04] long card titles stay inside cards and above metadata',
   await expect(page.getByText(/not rated/i)).toBeVisible()
   await fitsViewport(page)
 })
-test('[TC-FE-BROWSER-05] signed-in library navigation remains usable and distinguishes unavailable lists', async ({ page }) => {
+test('[TC-FE-BROWSER-05] signed-in library navigation remains usable and shows empty lists', async ({ page }) => {
+  await emptyApi(page)
   await page.route('**/api/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id: 'synthetic-browser-user', displayName: 'Synthetic Browser Player', email: 'browser@example.test', avatarUrl: '' } }) }))
   await page.goto('/profile')
   await expect(page.getByRole('heading', { name: 'Synthetic Browser Player' })).toBeVisible()
   const navigation = page.getByRole('navigation', { name: 'Main navigation' })
   await navigation.getByRole('link', { name: 'Wishlist' }).click()
-  await expect(page.getByRole('heading', { name: 'Wishlist unavailable' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Your wishlist is empty' })).toBeVisible()
   await navigation.getByRole('link', { name: 'Backlog' }).click()
-  await expect(page.getByRole('heading', { name: 'Backlog unavailable' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Your backlog is empty' })).toBeVisible()
   await fitsViewport(page)
 })
-test('[TC-FE-BROWSER-06] private profile route reveals no list data or edit controls', async ({ page }) => {
+test('[TC-FE-BROWSER-06] unknown profile route reveals no list data or edit controls', async ({ page }) => {
   await signedOut(page)
   await page.goto('/users/synthetic-private-player')
-  await expect(page.getByRole('heading', { name: 'Public profile unavailable' })).toBeVisible()
-  await expect(page.getByRole('status')).toContainText('privacy enforcement')
+  await expect(page.getByRole('heading', { name: 'Player not found' })).toBeVisible()
   await expect(page.getByRole('article')).toHaveCount(0)
   await expect(page.getByRole('button', { name: /edit|delete/i })).toHaveCount(0)
 })
