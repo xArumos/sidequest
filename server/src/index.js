@@ -1,9 +1,10 @@
 const { connectDatabase, disconnectDatabase } = require('sidequest-database');
 const { createApp } = require('./app');
 const { readConfig } = require('./config');
-const { createAuthRouter } = require('./auth');
-const { createSessionMiddleware } = require('./session');
+const { createAuthRouter, requireAuth } = require('./auth');
+const { createSessionMiddleware, authNotConfigured } = require('./session');
 const { createGamesRouter } = require('./games');
+const { createLogsRouter } = require('./logs');
 const { createGoogleVerifier } = require('./google');
 const { MongoStore } = require('connect-mongo');
 const { assertUserIndexes } = require('./user-indexes');
@@ -35,6 +36,8 @@ async function main() {
     sessionMiddleware,
     routers: {
       '/games': createGamesRouter({ rankingMinCount: config.rankingMinCount }),
+      // Routes under both /games/:id/... and /logs/:id, so it mounts at /api itself.
+      '': createLogsRouter({ requireAuth: config.auth ? requireAuth : authNotConfigured }),
     },
     isDatabaseReady: async () => {
       if (connection.readyState !== 1) return false;
