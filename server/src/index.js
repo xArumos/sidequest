@@ -5,6 +5,7 @@ const { createAuthRouter, requireAuth } = require('./auth');
 const { createSessionMiddleware, authNotConfigured } = require('./session');
 const { createGamesRouter } = require('./games');
 const { createLogsRouter } = require('./logs');
+const { createUsersRouter } = require('./users');
 const { createGoogleVerifier } = require('./google');
 const { MongoStore } = require('connect-mongo');
 const { assertUserIndexes } = require('./user-indexes');
@@ -30,14 +31,15 @@ async function main() {
   } else {
     console.log('Authentication is disabled. Set SESSION_SECRET to enable password login; GOOGLE_CLIENT_ID additionally enables Google sign-in.');
   }
+  const requireUser = config.auth ? requireAuth : authNotConfigured;
   const app = createApp({
     frontendOrigin: config.frontendOrigin,
     authRouter,
     sessionMiddleware,
     routers: {
       '/games': createGamesRouter({ rankingMinCount: config.rankingMinCount }),
-      // Routes under both /games/:id/... and /logs/:id, so it mounts at /api itself.
-      '': createLogsRouter({ requireAuth: config.auth ? requireAuth : authNotConfigured }),
+      // These span /games/:id/log, /logs, /me, and /users, so they mount at /api itself.
+      '': [createLogsRouter({ requireAuth: requireUser }), createUsersRouter({ requireAuth: requireUser })],
     },
     isDatabaseReady: async () => {
       if (connection.readyState !== 1) return false;
