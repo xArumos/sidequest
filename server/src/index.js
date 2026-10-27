@@ -2,6 +2,7 @@ const { connectDatabase, disconnectDatabase } = require('sidequest-database');
 const { createApp } = require('./app');
 const { readConfig } = require('./config');
 const { createAuthRouter } = require('./auth');
+const { createSessionMiddleware } = require('./session');
 const { createGoogleVerifier } = require('./google');
 const { MongoStore } = require('connect-mongo');
 const User = require('sidequest-database/models/User');
@@ -10,13 +11,16 @@ async function main() {
   const config = readConfig();
   const connection = await connectDatabase();
   let authRouter;
+  let sessionMiddleware;
   if (config.auth) {
     await User.init();
+    const store = MongoStore.create({ client: connection.getClient(), dbName: connection.name });
+    sessionMiddleware = createSessionMiddleware({ ...config.auth, store });
     authRouter = createAuthRouter({
       ...config.auth,
       frontendOrigin: config.frontendOrigin,
       users: User,
-      store: MongoStore.create({ client: connection.getClient(), dbName: connection.name }),
+      store,
       verifyGoogleToken: createGoogleVerifier(config.auth.googleClientId),
     });
   } else {
@@ -25,6 +29,7 @@ async function main() {
   const app = createApp({
     frontendOrigin: config.frontendOrigin,
     authRouter,
+    sessionMiddleware,
     isDatabaseReady: async () => {
       if (connection.readyState !== 1) return false;
       await connection.db.command({ ping: 1 }, { timeoutMS: 1500 });
