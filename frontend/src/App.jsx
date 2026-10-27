@@ -6,6 +6,7 @@ import GameCard from './components/GameCard'
 import ReviewForm from './components/ReviewForm'
 import GoogleSignIn from './components/GoogleSignIn'
 import { auth } from './services/auth'
+import { filterAndSortGames } from './utils/games'
 
 // No catalog HTTP contract exists yet. Never substitute fixture rankings.
 const games = []
@@ -133,20 +134,7 @@ function GameDiscoveryPage({ wishlist, onToggleWishlist }) {
 
   const genres = ['All', ...new Set(games.map((game) => game.genre))]
 
-  const filteredGames = useMemo(() => {
-    const next = games.filter((game) => {
-      const matchesSearch = game.title.toLowerCase().includes(search.trim().toLowerCase())
-      const matchesGenre = genre === 'All' || game.genre === genre
-      return matchesSearch && matchesGenre
-    })
-
-    return next.sort((a, b) => {
-      if (sort === 'rating') return b.rating - a.rating
-      if (sort === 'reviews') return b.reviewCount - a.reviewCount
-      if (sort === 'title') return a.title.localeCompare(b.title)
-      return 0
-    })
-  }, [genre, search, sort])
+  const filteredGames = useMemo(() => filterAndSortGames(games, { search, genre, sort }), [genre, search, sort])
 
   return (
     <section className="content-section">
@@ -279,7 +267,7 @@ function GameDetailsPage({ wishlist, backlog, onToggleWishlist, onToggleBacklog,
 
 function RankingsPage() {
   const [sort, setSort] = useState('rating')
-  const rankedGames = [...games].sort((a, b) => sort === 'reviews' ? b.reviewCount - a.reviewCount : b.rating - a.rating)
+  const rankedGames = filterAndSortGames(games, { sort })
 
   return (
     <section className="content-section">

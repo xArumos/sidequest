@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import RatingInput from './RatingInput'
+import { validateReview } from '../utils/reviews'
 
 // Enable only when a real persistence callback and supported API contract exist.
 export default function ReviewForm({ onSubmit, available = false }) {
@@ -14,14 +15,8 @@ export default function ReviewForm({ onSubmit, available = false }) {
     setError('')
     setSaved(false)
     if (!canSave || busy) return
-    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-      setError('Choose a rating from 1 to 5 before submitting.')
-      return
-    }
-    if (text.trim().length > 2000) {
-      setError('Reviews must be 2,000 characters or fewer.')
-      return
-    }
+    const validation = validateReview({ rating, text })
+    if (validation) { setError(validation); return }
     setBusy(true)
     try {
       await onSubmit({ rating, text: text.trim() })
@@ -34,9 +29,9 @@ export default function ReviewForm({ onSubmit, available = false }) {
   }
   return <form className="stack-form" onSubmit={submit} aria-busy={busy}>
     <p>Your rating (1–5)</p>
-    <RatingInput value={rating} onChange={value => { setRating(value); setSaved(false) }} />
+    <RatingInput disabled={busy} value={rating} onChange={value => { setRating(value); setSaved(false) }} />
     <label>Your review (optional)
-      <textarea name="text" rows={5} maxLength={2000} value={text} onChange={event => { setText(event.target.value); setSaved(false) }} />
+      <textarea disabled={busy} name="text" rows={5} maxLength={2000} value={text} onChange={event => { setText(event.target.value); setSaved(false) }} />
     </label>
     <span className="subtle-text">{text.length}/2000 characters</span>
     {!canSave && <p role="status">Review publishing is unavailable until the review API is published. Drafts are not saved.</p>}

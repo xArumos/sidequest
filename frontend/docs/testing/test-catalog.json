@@ -1,0 +1,1471 @@
+[
+  {
+    "id": "TC-FE-APP-01",
+    "name": "has one pair of homepage authentication links and no fixture statistics",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Navigation & accessibility",
+    "pbi": "1–2",
+    "steps": [
+      "Render signed-out homepage",
+      "Count Join now and Log in links",
+      "Check fixture title and fabricated statistic are absent"
+    ],
+    "data": "Anonymous session; /",
+    "expected": "Exactly one of each auth link; no fixture community data.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-LOGIN-01",
+    "name": "waits for session restoration before redirecting protected routes",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Profiles",
+    "pbi": "1–4",
+    "steps": [
+      "Hold session response pending at /profile",
+      "Verify loading status",
+      "Resolve synthetic account"
+    ],
+    "data": "Deferred auth.me; user-1, Synthetic Player, player@example.test",
+    "expected": "No premature redirect; account heading appears after resolution.",
+    "spreadsheetIds": [
+      "TC-LOGIN-01"
+    ]
+  },
+  {
+    "id": "TC-FE-APP-04",
+    "name": "redirects signed-out users to the real sign-in flow",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Authentication",
+    "pbi": "1–2",
+    "steps": [
+      "Open /wishlist with a 401 session",
+      "Wait for sign-in",
+      "Check absence of password field"
+    ],
+    "data": "Anonymous session",
+    "expected": "Protected route redirects to Google sign-in.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
+  },
+  {
+    "id": "TC-FE-APP-06",
+    "name": "creates account through the same Google authentication contract",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Authentication",
+    "pbi": "1–2",
+    "steps": [
+      "Open /register",
+      "Trigger synthetic Google callback",
+      "Resolve login"
+    ],
+    "data": "Synthetic callback credential; synthetic account",
+    "expected": "Callback reaches auth service; returned account is displayed.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
+  },
+  {
+    "id": "TC-FE-APP-08",
+    "name": "retains sign-in errors without pretending authentication succeeded",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Authentication",
+    "pbi": "1–2",
+    "steps": [
+      "Open /login",
+      "Trigger callback",
+      "Reject login with 401"
+    ],
+    "data": "Google sign-in could not be verified.",
+    "expected": "Accessible error appears; logout is absent.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
+  },
+  {
+    "id": "TC-LOGIN-02",
+    "name": "keeps the account visible when logout fails and clears it on successful retry",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Authentication",
+    "pbi": "1–2",
+    "steps": [
+      "Restore account",
+      "Reject first logout",
+      "Verify account remains",
+      "Resolve retry"
+    ],
+    "data": "Synthetic account; network error then successful logout",
+    "expected": "Failure preserves profile; successful logout returns to sign-in.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
+  },
+  {
+    "id": "TC-FE-APP-12",
+    "name": "allows retry after a session connection failure",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Reject initial session request",
+      "Click Retry connection",
+      "Resolve account"
+    ],
+    "data": "Connection error followed by synthetic account",
+    "expected": "Profile becomes available after retry.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-APP-14",
+    "name": "resets catalog filters and distinguishes unavailable data from an empty library",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Discovery & rankings",
+    "pbi": "14–16",
+    "steps": [
+      "Type search and select most-reviewed sort",
+      "Reset filters",
+      "Inspect controls and unavailable message"
+    ],
+    "data": "a game; reviews sort; no published catalog",
+    "expected": "Search clears, title sort is restored; no false empty-library claim.",
+    "spreadsheetIds": [
+      "TC-SORT-01"
+    ]
+  },
+  {
+    "id": "TC-FE-PRIVACY-01-1",
+    "name": "never shows fixture or private profile data",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Privacy",
+    "pbi": "28–29",
+    "steps": [
+      "Open /users/unknown anonymously",
+      "Inspect public-profile message",
+      "Check no fixture names appear"
+    ],
+    "data": "/users/unknown",
+    "expected": "Only unavailable state is displayed; no fixture profile or list data.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-PRIVACY-01-2",
+    "name": "never shows fixture or private profile data",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Privacy",
+    "pbi": "28–29",
+    "steps": [
+      "Open /users/u1 anonymously",
+      "Inspect public-profile message",
+      "Check no fixture names appear"
+    ],
+    "data": "/users/u1",
+    "expected": "Only unavailable state is displayed; no fixture profile or list data.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-PRIVACY-01-3",
+    "name": "never shows fixture or private profile data",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Privacy",
+    "pbi": "28–29",
+    "steps": [
+      "Open /users/u2 anonymously",
+      "Inspect public-profile message",
+      "Check no fixture names appear"
+    ],
+    "data": "/users/u2",
+    "expected": "Only unavailable state is displayed; no fixture profile or list data.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-UNAVAILABLE-WISHLIST",
+    "name": "shows the unavailable state",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Wishlists",
+    "pbi": "17–19",
+    "steps": [
+      "Restore synthetic account",
+      "Open /wishlist",
+      "Inspect unavailable heading"
+    ],
+    "data": "/wishlist",
+    "expected": "Unavailable state is explicit; no fabricated saved data.",
+    "spreadsheetIds": [
+      "TC-USRDATA-01"
+    ]
+  },
+  {
+    "id": "TC-FE-UNAVAILABLE-BACKLOG",
+    "name": "shows the unavailable state",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Backlog",
+    "pbi": "20–22",
+    "steps": [
+      "Restore synthetic account",
+      "Open /backlog",
+      "Inspect unavailable heading"
+    ],
+    "data": "/backlog",
+    "expected": "Unavailable state is explicit; no fabricated saved data.",
+    "spreadsheetIds": [
+      "TC-USRDATA-02"
+    ]
+  },
+  {
+    "id": "TC-FE-UNAVAILABLE-DETAIL",
+    "name": "shows the unavailable state",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Discovery & rankings",
+    "pbi": "5–16",
+    "steps": [
+      "Restore synthetic account",
+      "Open /games/unknown",
+      "Inspect unavailable heading"
+    ],
+    "data": "/games/unknown",
+    "expected": "Unavailable state is explicit; no fabricated saved data.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-APP-16",
+    "name": "disables profile changes and privacy controls without persistence",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Privacy",
+    "pbi": "3–4, 28–29",
+    "steps": [
+      "Open /profile/edit with a restored session",
+      "Inspect save and visibility controls"
+    ],
+    "data": "Synthetic account; no profile persistence API",
+    "expected": "Save and visibility controls remain disabled; no claimed privacy update.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-APP-18",
+    "name": "handles unmatched routes",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Navigation & accessibility",
+    "pbi": "Cross-cutting",
+    "steps": [
+      "Open /missing",
+      "Inspect heading",
+      "Check session request count"
+    ],
+    "data": "Unmatched route",
+    "expected": "Page not found is displayed; session is requested once.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-APP-20",
+    "name": "lets users select most-reviewed rankings without showing invented results",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Discovery & rankings",
+    "pbi": "11–13",
+    "steps": [
+      "Open /rankings",
+      "Select reviews",
+      "Check unavailable message and absence of fixture count"
+    ],
+    "data": "reviews; no dataset",
+    "expected": "Selection changes while no fake ranking is shown.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-APP-22",
+    "name": "clears a stale account when session retry reports expiration",
+    "file": "frontend/src/App.test.jsx",
+    "type": "Component",
+    "dependencies": "Mocked auth service and Google widget",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Restore account",
+      "Reject logout",
+      "Retry session request returning 401"
+    ],
+    "data": "Synthetic account; expired session",
+    "expected": "Account data clears and protected route shows sign-in.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-CARD-01",
+    "name": "displays title genre description artwork and community metadata",
+    "file": "frontend/src/components/GameCard.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Game cards",
+    "pbi": "11–16",
+    "steps": [
+      "Render card",
+      "Inspect heading genre description image and score"
+    ],
+    "data": "Synthetic Adventure; Puzzle; 4.5; 12 reviews",
+    "expected": "All supplied metadata and artwork accessible name render.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-CARD-02",
+    "name": "retains a complete long title as text rather than HTML",
+    "file": "frontend/src/components/GameCard.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Game cards",
+    "pbi": "11–16",
+    "steps": [
+      "Render long title containing HTML-like text",
+      "Inspect heading and image count"
+    ],
+    "data": "Synthetic <img onerror=alert(1)> plus repeated title",
+    "expected": "Title remains text; no injected image is created.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-CARD-03",
+    "name": "handles missing rating and review-count data without crashing",
+    "file": "frontend/src/components/GameCard.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Game cards",
+    "pbi": "11–16",
+    "steps": [
+      "Render card without rating or count",
+      "Inspect fallback text"
+    ],
+    "data": "undefined rating/reviewCount",
+    "expected": "No crash, undefined or NaN; Not rated appears.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-CARD-04",
+    "name": "replaces a failed image with an accessible fallback",
+    "file": "frontend/src/components/GameCard.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Game cards",
+    "pbi": "11–16",
+    "steps": [
+      "Render artwork",
+      "Dispatch image error",
+      "Inspect fallback"
+    ],
+    "data": "/synthetic-cover.svg error event",
+    "expected": "Accessible Artwork unavailable fallback replaces broken image.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-CARD-05",
+    "name": "handles an absent cover with a named fallback",
+    "file": "frontend/src/components/GameCard.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Game cards",
+    "pbi": "11–16",
+    "steps": [
+      "Render empty cover",
+      "Inspect artwork fallback"
+    ],
+    "data": "Empty cover URL",
+    "expected": "Named fallback renders immediately.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-WISHLIST-01",
+    "name": "never invokes unavailable wishlist persistence on repeated clicks",
+    "file": "frontend/src/components/GameCard.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Wishlists",
+    "pbi": "17–19",
+    "steps": [
+      "Render wishlist button",
+      "Double-click it",
+      "Inspect disabled state and callback count"
+    ],
+    "data": "Synthetic card; spy callback",
+    "expected": "Unavailable action stays disabled and never calls persistence.",
+    "spreadsheetIds": [
+      "TC-USRDATA-01"
+    ]
+  },
+  {
+    "id": "TC-FE-WISHLIST-02",
+    "name": "displays supplied wishlist membership without claiming it was saved",
+    "file": "frontend/src/components/GameCard.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Wishlists",
+    "pbi": "17–19",
+    "steps": [
+      "Supply wishlist membership",
+      "Inspect button and confirmation text"
+    ],
+    "data": "isWishlisted=true",
+    "expected": "Wishlisted indicator is disabled; no save confirmation is invented.",
+    "spreadsheetIds": [
+      "TC-USRDATA-01"
+    ]
+  },
+  {
+    "id": "TC-FE-CARD-06",
+    "name": "follows the game detail link using its actual identifier",
+    "file": "frontend/src/components/GameCard.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Game cards",
+    "pbi": "11–16",
+    "steps": [
+      "Render card inside router",
+      "Click View details",
+      "Inspect destination"
+    ],
+    "data": "synthetic-game-1",
+    "expected": "Link navigates using the actual game id.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-GOOGLE-04",
+    "name": "reports SDK network failure and allows a fresh load on remount",
+    "file": "frontend/src/components/GoogleSignIn.loading.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic SDK/script events; no Google network",
+    "feature": "Authentication",
+    "pbi": "1–2",
+    "steps": [
+      "Fail script loading",
+      "Inspect alert",
+      "Remount",
+      "Dispatch successful retry load"
+    ],
+    "data": "Synthetic SDK and script events",
+    "expected": "Failed script is removed; retry initializes a fresh button.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-GOOGLE-05",
+    "name": "handles a script that loads without the expected SDK",
+    "file": "frontend/src/components/GoogleSignIn.loading.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic SDK/script events; no Google network",
+    "feature": "Authentication",
+    "pbi": "1–2",
+    "steps": [
+      "Dispatch script load without defining SDK"
+    ],
+    "data": "Missing window.google",
+    "expected": "Accessible load error appears.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-GOOGLE-06",
+    "name": "avoids initializing the SDK after its component unmounts",
+    "file": "frontend/src/components/GoogleSignIn.loading.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic SDK/script events; no Google network",
+    "feature": "Authentication",
+    "pbi": "1–2",
+    "steps": [
+      "Start SDK load",
+      "Unmount",
+      "Complete loading"
+    ],
+    "data": "Deferred synthetic script",
+    "expected": "SDK is not initialized after unmount.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-GOOGLE-07",
+    "name": "calls the latest credential callback after a parent rerender",
+    "file": "frontend/src/components/GoogleSignIn.loading.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic SDK/script events; no Google network",
+    "feature": "Authentication",
+    "pbi": "1–2",
+    "steps": [
+      "Initialize SDK",
+      "Replace parent callback",
+      "Invoke credential callback"
+    ],
+    "data": "Two callback spies; synthetic-token",
+    "expected": "Only the latest parent callback runs.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-GOOGLE-01",
+    "name": "explains unavailable configuration without showing a fake login",
+    "file": "frontend/src/components/GoogleSignIn.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic SDK/script events; no Google network",
+    "feature": "Authentication",
+    "pbi": "1–2",
+    "steps": [
+      "Clear public client configuration",
+      "Render sign-in"
+    ],
+    "data": "Empty VITE_GOOGLE_CLIENT_ID",
+    "expected": "Configuration-unavailable status replaces fake login.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-GOOGLE-02",
+    "name": "initializes the official SDK and forwards credentials only while mounted",
+    "file": "frontend/src/components/GoogleSignIn.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic SDK/script events; no Google network",
+    "feature": "Authentication",
+    "pbi": "1–2",
+    "steps": [
+      "Provide SDK spy",
+      "Render button",
+      "Invoke callback",
+      "Unmount",
+      "Invoke late callback"
+    ],
+    "data": "Synthetic public client id and tokens",
+    "expected": "SDK initializes/renders; credential is forwarded once only while mounted.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-GOOGLE-03",
+    "name": "announces in-progress authentication",
+    "file": "frontend/src/components/GoogleSignIn.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic SDK/script events; no Google network",
+    "feature": "Authentication",
+    "pbi": "1–2",
+    "steps": [
+      "Render sign-in while busy"
+    ],
+    "data": "Synthetic SDK; busy=true",
+    "expected": "Signing in status is announced.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-NAV-01",
+    "name": "gives keyboard users a skip link targeting the main landmark",
+    "file": "frontend/src/components/Layout.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Navigation & accessibility",
+    "pbi": "Cross-cutting",
+    "steps": [
+      "Render layout",
+      "Tab once",
+      "Inspect link and target landmark"
+    ],
+    "data": "Synthetic page",
+    "expected": "Skip link has focus and points to main-content.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-NAV-02",
+    "name": "exposes private navigation only for a signed-in account",
+    "file": "frontend/src/components/Layout.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Navigation & accessibility",
+    "pbi": "Cross-cutting",
+    "steps": [
+      "Render signed out",
+      "Inspect navigation",
+      "Rerender signed in"
+    ],
+    "data": "Authentication flag false then true",
+    "expected": "Private links appear only signed in; Join now disappears.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-NAV-03",
+    "name": "marks the current discovery route for assistive technology",
+    "file": "frontend/src/components/Layout.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Navigation & accessibility",
+    "pbi": "Cross-cutting",
+    "steps": [
+      "Render /games",
+      "Inspect aria-current"
+    ],
+    "data": "/games",
+    "expected": "Games is current; Home is not current.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-NAV-04",
+    "name": "disables repeated logout while a request is pending",
+    "file": "frontend/src/components/Layout.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Navigation & accessibility",
+    "pbi": "Cross-cutting",
+    "steps": [
+      "Render pending logout",
+      "Click",
+      "Clear busy",
+      "Click again"
+    ],
+    "data": "Logout spy; busy true then false",
+    "expected": "Pending click does nothing; enabled click calls logout once.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-LEGACY-01",
+    "name": "keeps legacy rating form imports safe without an API connection",
+    "file": "frontend/src/components/RatingForm.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Ratings & reviews",
+    "pbi": "5–10",
+    "steps": [
+      "Render legacy RatingForm import",
+      "Inspect publish control and status"
+    ],
+    "data": "No persistence callback",
+    "expected": "Legacy boundary uses the safe disabled review form.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-RATE-02",
+    "name": "offers only integer ratings 1 through 5 with selected feedback",
+    "file": "frontend/src/components/RatingInput.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Ratings & reviews",
+    "pbi": "5–10",
+    "steps": [
+      "Inspect five star buttons",
+      "Click each valid rating",
+      "Rerender controlled value",
+      "Inspect pressed feedback"
+    ],
+    "data": "Integer stars 1,2,3,4,5",
+    "expected": "Only five integer choices exist; callback and selected state match each star.",
+    "spreadsheetIds": [
+      "TC-RATE-02"
+    ]
+  },
+  {
+    "id": "TC-FE-RATE-01",
+    "name": "selects a star with keyboard focus and Enter",
+    "file": "frontend/src/components/RatingInput.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Ratings & reviews",
+    "pbi": "5–10",
+    "steps": [
+      "Tab to first star",
+      "Press Enter",
+      "Inspect callback"
+    ],
+    "data": "1-star keyboard selection",
+    "expected": "Accessible first star receives focus and returns rating 1.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-RATE-02",
+    "name": "blocks rating changes while disabled",
+    "file": "frontend/src/components/RatingInput.test.jsx",
+    "type": "Component",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Ratings & reviews",
+    "pbi": "5–10",
+    "steps": [
+      "Render disabled stars",
+      "Attempt click",
+      "Inspect callbacks"
+    ],
+    "data": "disabled=true; current rating 2",
+    "expected": "All stars are disabled and no change callback fires.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-REVIEW-01",
+    "name": "allows local drafting but disables publishing without a real integration",
+    "file": "frontend/src/components/ReviewForm.test.jsx",
+    "type": "Component",
+    "dependencies": "Spy/deferred persistence callback; no review API",
+    "feature": "Ratings & reviews",
+    "pbi": "5–10",
+    "steps": [
+      "Render default unavailable form",
+      "Choose star and type draft",
+      "Inspect publish state"
+    ],
+    "data": "Rating 4; Draft",
+    "expected": "Draft is local, publish disabled, persistence never called.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-REVIEW-02",
+    "name": "validates a rating and keeps a failed draft for retry",
+    "file": "frontend/src/components/ReviewForm.test.jsx",
+    "type": "Component",
+    "dependencies": "Spy/deferred persistence callback; no review API",
+    "feature": "Ratings & reviews",
+    "pbi": "5–10",
+    "steps": [
+      "Submit without rating",
+      "Select 5 and enter padded text",
+      "Reject submission"
+    ],
+    "data": "Rating 0 then 5; padded Loved it; Service unavailable",
+    "expected": "Validation prevents empty rating; failed draft is retained and no success appears.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-RATE-01",
+    "name": "shows confirmation only after persistence resolves",
+    "file": "frontend/src/components/ReviewForm.test.jsx",
+    "type": "Component",
+    "dependencies": "Spy/deferred persistence callback; no review API",
+    "feature": "Ratings & reviews",
+    "pbi": "5–10",
+    "steps": [
+      "Select 3 stars",
+      "Submit to deferred callback",
+      "Inspect pending state",
+      "Resolve callback"
+    ],
+    "data": "Synthetic deferred persistence callback",
+    "expected": "Confirmation appears only after resolution, not while pending.",
+    "spreadsheetIds": [
+      "TC-RATE-01"
+    ]
+  },
+  {
+    "id": "TC-FE-RATE-03",
+    "name": "allows rating-only submission with optional text",
+    "file": "frontend/src/components/ReviewForm.test.jsx",
+    "type": "Component",
+    "dependencies": "Spy/deferred persistence callback; no review API",
+    "feature": "Ratings & reviews",
+    "pbi": "5–10",
+    "steps": [
+      "Choose 1 star",
+      "Submit with empty optional review"
+    ],
+    "data": "rating 1; empty text",
+    "expected": "Callback receives rating-only payload and confirms after resolution.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-RATE-04",
+    "name": "never enables publishing from an availability flag without a persistence callback",
+    "file": "frontend/src/components/ReviewForm.test.jsx",
+    "type": "Component",
+    "dependencies": "Spy/deferred persistence callback; no review API",
+    "feature": "Ratings & reviews",
+    "pbi": "5–10",
+    "steps": [
+      "Render available flag without callback",
+      "Inspect publishing"
+    ],
+    "data": "available=true; no callback",
+    "expected": "Publish remains disabled and unavailable status is shown.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-RATE-05",
+    "name": "retains the character limit and counter at the 2000-character boundary",
+    "file": "frontend/src/components/ReviewForm.test.jsx",
+    "type": "Component",
+    "dependencies": "Spy/deferred persistence callback; no review API",
+    "feature": "Ratings & reviews",
+    "pbi": "5–10",
+    "steps": [
+      "Paste exact text limit",
+      "Attempt extra character",
+      "Select 2 stars",
+      "Submit"
+    ],
+    "data": "2000 x characters plus attempted z",
+    "expected": "Counter/maxlength enforce 2000; valid payload contains exact-limit text.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-RATE-06",
+    "name": "does not discard a new draft while an earlier submission is pending",
+    "file": "frontend/src/components/ReviewForm.test.jsx",
+    "type": "Component",
+    "dependencies": "Spy/deferred persistence callback; no review API",
+    "feature": "Ratings & reviews",
+    "pbi": "5–10",
+    "steps": [
+      "Enter draft and rating",
+      "Submit pending request",
+      "Inspect disabled inputs",
+      "Attempt repeat submit",
+      "Resolve"
+    ],
+    "data": "Rating 4; Pending draft; deferred callback",
+    "expected": "Draft controls lock, callback runs once, and confirmed save resets inputs.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-RATE-07",
+    "name": "removes stale success feedback when a new draft begins",
+    "file": "frontend/src/components/ReviewForm.test.jsx",
+    "type": "Component",
+    "dependencies": "Spy/deferred persistence callback; no review API",
+    "feature": "Ratings & reviews",
+    "pbi": "5–10",
+    "steps": [
+      "Save review",
+      "Begin a new draft",
+      "Inspect old confirmation"
+    ],
+    "data": "Rating 5 then New draft",
+    "expected": "Success feedback clears when new editing begins.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-RATE-08",
+    "name": "uses an accessible fallback error and supports retry without losing text",
+    "file": "frontend/src/components/ReviewForm.test.jsx",
+    "type": "Component",
+    "dependencies": "Spy/deferred persistence callback; no review API",
+    "feature": "Ratings & reviews",
+    "pbi": "5–10",
+    "steps": [
+      "Submit draft to failing callback",
+      "Inspect fallback error and retained text",
+      "Retry successfully"
+    ],
+    "data": "Rating 3; Retry draft; empty error object then success",
+    "expected": "Accessible fallback error, retained draft, successful retry and cleared error.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-INTEGRATION-01",
+    "name": "renders account data returned through the actual frontend fetch service",
+    "file": "frontend/src/services/auth-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; synthetic Google widget",
+    "feature": "Profiles",
+    "pbi": "1–4",
+    "steps": [
+      "Restore /profile via real auth service and mocked fetch",
+      "Inspect returned heading/email",
+      "Check cookie request"
+    ],
+    "data": "200 user envelope",
+    "expected": "Returned account renders and credentials: include is used.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-INTEGRATION-02",
+    "name": "exchanges a widget credential and clears state after bodyless logout",
+    "file": "frontend/src/services/auth-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; synthetic Google widget",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Return 401 session",
+      "Trigger widget callback",
+      "Return account",
+      "Return 204 logout",
+      "Inspect signed-out state"
+    ],
+    "data": "Synthetic credential; 401/200/204",
+    "expected": "Real frontend service posts the credential and clears account only on logout success.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-INTEGRATION-03",
+    "name": "surfaces structured rate-limit errors without authenticating",
+    "file": "frontend/src/services/auth-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; synthetic Google widget",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Return 401 session",
+      "Trigger callback",
+      "Return structured 429 error"
+    ],
+    "data": "RATE_LIMITED synthetic message",
+    "expected": "Error is announced; no signed-in navigation appears.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-INTEGRATION-04",
+    "name": "rejects malformed profile data with a visible retry path",
+    "file": "frontend/src/services/auth-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; synthetic Google widget",
+    "feature": "Profiles",
+    "pbi": "1–4",
+    "steps": [
+      "Return incomplete user envelope at /profile",
+      "Inspect alert and retry control"
+    ],
+    "data": "User with id only",
+    "expected": "Malformed account is rejected and retry is available.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-INTEGRATION-05",
+    "name": "aborts the session request when the application unmounts",
+    "file": "frontend/src/services/auth-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; synthetic Google widget",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Hold fetch pending",
+      "Capture AbortSignal",
+      "Unmount application"
+    ],
+    "data": "Pending session request",
+    "expected": "Signal changes to aborted.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-INTEGRATION-06",
+    "name": "recovers from a network failure through the real request service",
+    "file": "frontend/src/services/auth-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; synthetic Google widget",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Reject fetch",
+      "Inspect network alert",
+      "Retry with valid account"
+    ],
+    "data": "TypeError then synthetic account",
+    "expected": "Real service error is visible and retry restores profile.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-AUTH-01",
+    "name": "restores cookie sessions",
+    "file": "frontend/src/services/auth.test.js",
+    "type": "Unit",
+    "dependencies": "Mocked fetch; no HTTP server",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Restore session",
+      "Inspect request URL/options"
+    ],
+    "data": "200 synthetic user",
+    "expected": "Returned account matches response and cookie credentials are included.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-AUTH-02",
+    "name": "posts the Google credential without storing a token",
+    "file": "frontend/src/services/auth.test.js",
+    "type": "Unit",
+    "dependencies": "Mocked fetch; no HTTP server",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Submit credential",
+      "Inspect JSON body and request options"
+    ],
+    "data": "Synthetic credential",
+    "expected": "POST /api/auth/google sends only credential with cookies.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-AUTH-03",
+    "name": "handles logout with no JSON body",
+    "file": "frontend/src/services/auth.test.js",
+    "type": "Unit",
+    "dependencies": "Mocked fetch; no HTTP server",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Return bodyless logout response",
+      "Inspect request and return value"
+    ],
+    "data": "204 with no body",
+    "expected": "Logout returns null without JSON parsing failure.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-AUTH-STATUS-401",
+    "name": "preserves server errors",
+    "file": "frontend/src/services/auth.test.js",
+    "type": "Unit",
+    "dependencies": "Mocked fetch; no HTTP server",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Return structured error response",
+      "Await rejection and compare message/status"
+    ],
+    "data": "HTTP 401; Server message",
+    "expected": "Original server message and HTTP status are preserved.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-AUTH-STATUS-403",
+    "name": "preserves server errors",
+    "file": "frontend/src/services/auth.test.js",
+    "type": "Unit",
+    "dependencies": "Mocked fetch; no HTTP server",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Return structured error response",
+      "Await rejection and compare message/status"
+    ],
+    "data": "HTTP 403; Server message",
+    "expected": "Original server message and HTTP status are preserved.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-AUTH-STATUS-429",
+    "name": "preserves server errors",
+    "file": "frontend/src/services/auth.test.js",
+    "type": "Unit",
+    "dependencies": "Mocked fetch; no HTTP server",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Return structured error response",
+      "Await rejection and compare message/status"
+    ],
+    "data": "HTTP 429; Server message",
+    "expected": "Original server message and HTTP status are preserved.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-AUTH-STATUS-503",
+    "name": "preserves server errors",
+    "file": "frontend/src/services/auth.test.js",
+    "type": "Unit",
+    "dependencies": "Mocked fetch; no HTTP server",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Return structured error response",
+      "Await rejection and compare message/status"
+    ],
+    "data": "HTTP 503; Server message",
+    "expected": "Original server message and HTTP status are preserved.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-AUTH-04",
+    "name": "rejects invalid success responses",
+    "file": "frontend/src/services/auth.test.js",
+    "type": "Unit",
+    "dependencies": "Mocked fetch; no HTTP server",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Return malformed success envelope",
+      "Await rejection"
+    ],
+    "data": "200 {}",
+    "expected": "Invalid account response error is raised.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-AUTH-05",
+    "name": "handles network failure",
+    "file": "frontend/src/services/auth.test.js",
+    "type": "Unit",
+    "dependencies": "Mocked fetch; no HTTP server",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Reject fetch",
+      "Await service rejection"
+    ],
+    "data": "Synthetic TypeError",
+    "expected": "Friendly network error with status 0 is raised.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-AUTH-06",
+    "name": "preserves abort cancellation",
+    "file": "frontend/src/services/auth.test.js",
+    "type": "Unit",
+    "dependencies": "Mocked fetch; no HTTP server",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Reject fetch with AbortError",
+      "Await rejection"
+    ],
+    "data": "Synthetic DOMException",
+    "expected": "Cancellation retains AbortError identity.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-AUTH-11",
+    "name": "rejects non-JSON error responses with a safe fallback message",
+    "file": "frontend/src/services/auth.test.js",
+    "type": "Unit",
+    "dependencies": "Mocked fetch; no HTTP server",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Return HTML gateway error",
+      "Await rejection"
+    ],
+    "data": "502 HTML response",
+    "expected": "Safe fallback message is used; HTML is not rendered.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-AUTH-12",
+    "name": "rejects malformed user fields rather than creating a partial account",
+    "file": "frontend/src/services/auth.test.js",
+    "type": "Unit",
+    "dependencies": "Mocked fetch; no HTTP server",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Return three malformed user shapes",
+      "Await rejection for each"
+    ],
+    "data": "Object id; numeric displayName; missing email",
+    "expected": "Every malformed user is rejected.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-AUTH-13",
+    "name": "rejects an empty success body for session restoration",
+    "file": "frontend/src/services/auth.test.js",
+    "type": "Unit",
+    "dependencies": "Mocked fetch; no HTTP server",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Return bodyless session response",
+      "Await rejection"
+    ],
+    "data": "204 /api/auth/me",
+    "expected": "Empty success is rejected instead of treated as a restored session.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-AUTH-14",
+    "name": "normalizes a configured API base without changing cookie handling",
+    "file": "frontend/src/services/auth.test.js",
+    "type": "Unit",
+    "dependencies": "Mocked fetch; no HTTP server",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Set synthetic API base",
+      "Reload service module",
+      "Restore session",
+      "Inspect URL"
+    ],
+    "data": "https://api.example.test/",
+    "expected": "Trailing slash is normalized and cookie credentials remain included.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-SORT-01",
+    "name": "combines title search genre filtering and highest-rating sorting",
+    "file": "frontend/src/utils/games.test.js",
+    "type": "Unit",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Discovery & rankings",
+    "pbi": "11–16",
+    "steps": [
+      "Filter quest titles in RPG genre",
+      "Sort by rating",
+      "Repeat for Puzzle"
+    ],
+    "data": "Quest/RPG => a,d,c; Puzzle => b",
+    "expected": "Combined filtering and descending rating order match the known dataset.",
+    "spreadsheetIds": [
+      "TC-SORT-01"
+    ]
+  },
+  {
+    "id": "TC-FE-SORT-01",
+    "name": "orders top rated games without mutating the source dataset",
+    "file": "frontend/src/utils/games.test.js",
+    "type": "Unit",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Discovery & rankings",
+    "pbi": "11–16",
+    "steps": [
+      "Freeze source and records",
+      "Sort by rating",
+      "Compare input order"
+    ],
+    "data": "c:3/40, a:5/2, b:4/20, d:4/12 (rating/reviews)",
+    "expected": "Order a,b,d,c; original c,a,b,d remains unchanged.",
+    "spreadsheetIds": [
+      "TC-SORT-01"
+    ]
+  },
+  {
+    "id": "TC-FE-SORT-02",
+    "name": "orders most-reviewed games by counts rather than ratings",
+    "file": "frontend/src/utils/games.test.js",
+    "type": "Unit",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Discovery & rankings",
+    "pbi": "11–16",
+    "steps": [
+      "Sort the known dataset by review count"
+    ],
+    "data": "Same synthetic dataset",
+    "expected": "Order c,b,d,a, independent of rating order.",
+    "spreadsheetIds": [
+      "TC-SORT-01"
+    ]
+  },
+  {
+    "id": "TC-FE-SORT-03",
+    "name": "defaults to alphabetical titles and returns all genres",
+    "file": "frontend/src/utils/games.test.js",
+    "type": "Unit",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Discovery & rankings",
+    "pbi": "11–16",
+    "steps": [
+      "Call discovery helper with defaults"
+    ],
+    "data": "Same synthetic dataset",
+    "expected": "Alphabetical order a,b,c,d across all genres.",
+    "spreadsheetIds": [
+      "TC-SORT-01"
+    ]
+  },
+  {
+    "id": "TC-FE-SORT-04",
+    "name": "trims search whitespace and ignores title case",
+    "file": "frontend/src/utils/games.test.js",
+    "type": "Unit",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Discovery & rankings",
+    "pbi": "11–16",
+    "steps": [
+      "Search uppercase text with surrounding spaces"
+    ],
+    "data": "  AMBER  ",
+    "expected": "Only Amber Quest is returned.",
+    "spreadsheetIds": [
+      "TC-SORT-01"
+    ]
+  },
+  {
+    "id": "TC-FE-SORT-05",
+    "name": "returns empty results for unmatched filters and empty datasets",
+    "file": "frontend/src/utils/games.test.js",
+    "type": "Unit",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Discovery & rankings",
+    "pbi": "11–16",
+    "steps": [
+      "Search absent title",
+      "Filter absent genre",
+      "Supply empty array"
+    ],
+    "data": "missing; Strategy; []",
+    "expected": "All return empty arrays.",
+    "spreadsheetIds": [
+      "TC-SORT-01"
+    ]
+  },
+  {
+    "id": "TC-FE-SORT-06",
+    "name": "places missing scores last and ignores records without usable titles",
+    "file": "frontend/src/utils/games.test.js",
+    "type": "Unit",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Discovery & rankings",
+    "pbi": "11–16",
+    "steps": [
+      "Include null/untitled records and missing scores",
+      "Sort by rating and reviews"
+    ],
+    "data": "Missing metadata record plus four known games",
+    "expected": "Malformed titles are ignored and missing scores sort last.",
+    "spreadsheetIds": [
+      "TC-SORT-01"
+    ]
+  },
+  {
+    "id": "TC-FE-RATE-09",
+    "name": "rejects out-of-range fractional and nonnumeric ratings before persistence",
+    "file": "frontend/src/utils/reviews.test.js",
+    "type": "Unit",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Ratings & reviews",
+    "pbi": "5–10",
+    "steps": [
+      "Validate each invalid boundary",
+      "Validate each valid whole-number star"
+    ],
+    "data": "Invalid -1,0,6,5.4,NaN,Infinity,string 3,undefined; valid 1–5",
+    "expected": "Invalid values return validation errors; valid integers pass.",
+    "spreadsheetIds": [
+      "TC-RATE-02"
+    ]
+  },
+  {
+    "id": "TC-FE-RATE-10",
+    "name": "checks text boundaries after trimming without requiring review text",
+    "file": "frontend/src/utils/reviews.test.js",
+    "type": "Unit",
+    "dependencies": "Synthetic inputs; no backend services",
+    "feature": "Ratings & reviews",
+    "pbi": "5–10",
+    "steps": [
+      "Validate exact limit",
+      "Validate excess text",
+      "Validate whitespace and non-text"
+    ],
+    "data": "2000/2001 characters; whitespace; undefined",
+    "expected": "Exact limit and trimmed empty text pass; excess and non-text fail.",
+    "spreadsheetIds": [
+      "TC-RATE-01"
+    ]
+  },
+  {
+    "id": "TC-FE-BROWSER-01",
+    "name": "homepage auth navigation and viewport fit",
+    "file": "frontend/e2e/frontend.spec.js",
+    "type": "Integration",
+    "dependencies": "Real Chrome and Vite; mocked auth HTTP responses; synthetic card harness",
+    "feature": "Navigation & accessibility",
+    "pbi": "Cross-cutting",
+    "steps": [
+      "Mock signed-out session",
+      "Open homepage",
+      "Check horizontal fit and auth count",
+      "Follow Join now and Log in links",
+      "Capture page errors"
+    ],
+    "data": "401 session; three viewport sizes",
+    "expected": "Auth navigation works, layout fits, and no uncaught page errors occur.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-BROWSER-02",
+    "name": "keyboard skip navigation",
+    "file": "frontend/e2e/frontend.spec.js",
+    "type": "Integration",
+    "dependencies": "Real Chrome and Vite; mocked auth HTTP responses; synthetic card harness",
+    "feature": "Navigation & accessibility",
+    "pbi": "Cross-cutting",
+    "steps": [
+      "Open homepage",
+      "Tab to skip link",
+      "Verify viewport visibility",
+      "Press Enter"
+    ],
+    "data": "Keyboard navigation at three sizes",
+    "expected": "Skip link is focused/visible and URL targets main-content.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-BROWSER-03",
+    "name": "discovery controls and responsive fit",
+    "file": "frontend/e2e/frontend.spec.js",
+    "type": "Integration",
+    "dependencies": "Real Chrome and Vite; mocked auth HTTP responses; synthetic card harness",
+    "feature": "Discovery & rankings",
+    "pbi": "14–16",
+    "steps": [
+      "Open /games",
+      "Enter search and reviews sort",
+      "Reset",
+      "Inspect controls and viewport"
+    ],
+    "data": "Synthetic search; reviews",
+    "expected": "Filters reset and catalog-unavailable message fits the viewport.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-BROWSER-04",
+    "name": "card overflow and fallback layout",
+    "file": "frontend/e2e/frontend.spec.js",
+    "type": "Integration",
+    "dependencies": "Real Chrome and Vite; mocked auth HTTP responses; synthetic card harness",
+    "feature": "Game cards",
+    "pbi": "11–16",
+    "steps": [
+      "Open real-card harness",
+      "Fail artwork",
+      "Measure title/metadata/card bounds",
+      "Inspect unrated fallback and page width"
+    ],
+    "data": "Long unbroken synthetic title; broken/empty artwork; missing rating",
+    "expected": "No overlap or horizontal overflow; accessible artwork and rating fallbacks render.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-BROWSER-05",
+    "name": "signed-in library navigation",
+    "file": "frontend/e2e/frontend.spec.js",
+    "type": "Integration",
+    "dependencies": "Real Chrome and Vite; mocked auth HTTP responses; synthetic card harness",
+    "feature": "Backlog",
+    "pbi": "17–22",
+    "steps": [
+      "Mock account",
+      "Open profile",
+      "Navigate to Wishlist then Backlog",
+      "Check page width"
+    ],
+    "data": "Synthetic Browser Player, browser@example.test",
+    "expected": "Both distinct unavailable pages are reachable and fit the viewport.",
+    "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-BROWSER-06",
+    "name": "privacy-safe public profile state",
+    "file": "frontend/e2e/frontend.spec.js",
+    "type": "Integration",
+    "dependencies": "Real Chrome and Vite; mocked auth HTTP responses; synthetic card harness",
+    "feature": "Privacy",
+    "pbi": "28–29",
+    "steps": [
+      "Open synthetic public-profile path",
+      "Inspect status",
+      "Check no articles or edit/delete controls"
+    ],
+    "data": "/users/synthetic-private-player; signed out",
+    "expected": "Only unavailable information renders; no list records leak.",
+    "spreadsheetIds": []
+  }
+]

@@ -19,10 +19,10 @@ async function request(path, options = {}) {
     if (error.name === 'AbortError') throw error
     throw new ApiError('Cannot reach SideQuest. Check your connection and try again.', 0)
   }
-  if (response.status === 204) return null
+  if (response.status === 204 && path === 'logout') return null
   const result = await response.json().catch(() => null)
   if (!response.ok) throw new ApiError(result?.error?.message || 'SideQuest could not complete this request.', response.status)
-  if (!result?.user?.id || typeof result.user.displayName !== 'string' || typeof result.user.email !== 'string') {
+  if (typeof result?.user?.id !== 'string' || !result.user.id.trim() || typeof result.user.displayName !== 'string' || typeof result.user.email !== 'string') {
     throw new ApiError('SideQuest returned an invalid account response. Please try again.', response.status)
   }
   return result.user

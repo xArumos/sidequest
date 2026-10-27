@@ -40,3 +40,7 @@ PR #10 proposes whole-number ratings 1–5, review text up to 2,000 characters, 
 Frontend tests cover session loading/restoration, Google callback integration, auth errors, logout failure/success, expiration, protected routes, navigation, filter reset, rankings selection, privacy-safe unavailable states, and review validation/draft retention. Mocked frontend requests do not establish browser cookie or Google production configuration correctness.
 
 See [Sprint 1 status](../docs/sprint1-frontend-status.md) and [copy-ready team reports](../docs/sprint1-team-issues.md).
+
+## Sprint 1 automated testing
+
+See [the testing guide](docs/testing/FRONTEND_TESTING_GUIDE.md) for Docker-free component tests, measured coverage, responsive Chrome checks, and the spreadsheet traceability/results documentation.

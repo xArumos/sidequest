@@ -717,3 +717,4 @@ button:disabled { cursor: not-allowed; opacity: .65; transform: none; }
 .community-panel { display: flex; flex-direction: column; gap: .35rem; }
 .topbar { flex-wrap: wrap; }
 .rating-summary { flex-wrap: wrap; }
+.cover-fallback { display: grid; place-items: center; padding: 1rem; color: #b7bed6; background: #12182a; }
