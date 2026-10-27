@@ -4,6 +4,7 @@ const { readConfig } = require('./config');
 const { createAuthRouter } = require('./auth');
 const { createGoogleVerifier } = require('./google');
 const { MongoStore } = require('connect-mongo');
+const { assertUserIndexes } = require('./user-indexes');
 const User = require('sidequest-database/models/User');
 
 async function main() {
@@ -11,16 +12,17 @@ async function main() {
   const connection = await connectDatabase();
   let authRouter;
   if (config.auth) {
-    await User.init();
+    await assertUserIndexes(User.collection);
+    await User.createIndexes();
     authRouter = createAuthRouter({
       ...config.auth,
       frontendOrigin: config.frontendOrigin,
       users: User,
       store: MongoStore.create({ client: connection.getClient(), dbName: connection.name }),
-      verifyGoogleToken: createGoogleVerifier(config.auth.googleClientId),
+      verifyGoogleToken: config.auth.googleClientId ? createGoogleVerifier(config.auth.googleClientId) : undefined,
     });
   } else {
-    console.log('Google sign-in is disabled. Set GOOGLE_CLIENT_ID and SESSION_SECRET to enable it.');
+    console.log('Authentication is disabled. Set SESSION_SECRET to enable password login; GOOGLE_CLIENT_ID additionally enables Google sign-in.');
   }
   const app = createApp({
     frontendOrigin: config.frontendOrigin,
