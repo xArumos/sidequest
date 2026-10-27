@@ -1,7 +1,7 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { createRequire } from 'node:module';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { connectDatabase, disconnectDatabase } from '../connection.js';
 
 // ratings.js requires the models itself. Load everything through Node's require so
@@ -23,6 +23,10 @@ beforeAll(async () => {
 afterAll(async () => {
   await disconnectDatabase();
   await mongod?.stop();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 beforeEach(async () => {
@@ -82,5 +86,70 @@ describe('recalculateGameRating', () => {
     await rate(2);
     await recalculateGameRating(game._id);
     expect((await Game.findById(other._id).lean()).ratingCount).toBe(0);
+  });
+
+  it('ignores games stored before ratingVersion existed', async () => {
+    const { insertedId } = await Game.collection.insertOne({ title: 'Old import' });
+    await Review.create({ user: new mongoose.Types.ObjectId(), game: insertedId, rating: 4 });
+    expect(await recalculateGameRating(insertedId)).toEqual({ ratingAvg: 4, ratingCount: 1 });
+    expect(await Game.findById(insertedId).lean()).toMatchObject({ ratingAvg: 4, ratingCount: 1 });
+  });
+});
+
+describe('recalculateGameRating with overlapping calls', () => {
+  // Pause the first Game.updateOne (recalculation A) after its aggregate has run,
+  // so a second recalculation (B) can finish in between.
+  function pauseFirstUpdate() {
+    const original = Game.updateOne.bind(Game);
+    let reached;
+    let release;
+    const atUpdate = new Promise((resolve) => { reached = resolve; });
+    const released = new Promise((resolve) => { release = resolve; });
+    let calls = 0;
+    vi.spyOn(Game, 'updateOne').mockImplementation(async (...args) => {
+      calls += 1;
+      if (calls === 1) {
+        reached();
+        await released;
+      }
+      return original(...args);
+    });
+    return { atUpdate, release };
+  }
+
+  it('keeps a newer rating when an older recalculation finishes last', async () => {
+    await rate(5);
+    const { atUpdate, release } = pauseFirstUpdate();
+    const first = recalculateGameRating(game._id);
+    await atUpdate;
+
+    await rate(1);
+    expect(await recalculateGameRating(game._id)).toEqual({ ratingAvg: 3, ratingCount: 2 });
+    release();
+    expect(await first).toEqual({ ratingAvg: 3, ratingCount: 2 });
+    expect(await stored()).toEqual({ ratingAvg: 3, ratingCount: 2 });
+  });
+
+  it('keeps a deletion when an older recalculation finishes last', async () => {
+    const [low] = await rate(1, 5);
+    await recalculateGameRating(game._id);
+    const { atUpdate, release } = pauseFirstUpdate();
+    const first = recalculateGameRating(game._id);
+    await atUpdate;
+
+    await low.deleteOne();
+    await recalculateGameRating(game._id);
+    release();
+    await first;
+    expect(await stored()).toEqual({ ratingAvg: 5, ratingCount: 1 });
+  });
+
+  it('settles on the right totals when many run at once', async () => {
+    const reviews = await rate(1, 2, 3, 4, 5);
+    await Promise.all([
+      ...reviews.map(() => recalculateGameRating(game._id)),
+      reviews[0].deleteOne().then(() => recalculateGameRating(game._id)),
+    ]);
+    expect(await stored()).toEqual({ ratingAvg: 3.5, ratingCount: 4 });
   });
 });
