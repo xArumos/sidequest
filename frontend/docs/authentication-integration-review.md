@@ -45,3 +45,15 @@ These six new automated tests use controlled fetch responses and the real fronte
 - Search PR owner update needed: https://github.com/xArumos/sidequest/pull/14#issuecomment-6431389387
 
 PR #13 was synchronized with main and all CI checks passed. Its protected merge was rejected because independent review is still required. Repository auto-merge is disabled, and no protection bypass was attempted. Only user-authored frontend PRs were changed.
+
+## Google UI follow-up
+
+Google is now the first authentication option on both routes, above the password form. The existing Google API contract works on main as well as PR #18; only the password endpoints depend on merging PR #18. This checkout currently has no local Google client configuration and no reachable API, so live Google account login was not claimed. The teammate's reported successful Google login is evidence from their environment, not a live login repeated here.
+
+Vite reuses only the public root `GOOGLE_CLIENT_ID` when `VITE_GOOGLE_CLIENT_ID` is absent. Explicit frontend configuration takes precedence. No session/database/Twitch secret is exposed. A production build using synthetic private markers confirmed the public ID is present and private markers are absent. Unit tests isolate themselves from local OAuth settings.
+
+The official SDK button has loading, pending and error states; failed/stalled loads time out and can be retried in place. Empty/duplicate callbacks cannot manufacture login or duplicate pending requests. Credentials are exchanged with `/api/auth/google` using cookie credentials and are not written to browser storage. The API-confirmed account appears on the existing profile, reload restores the session, and logout clears it only after server success.
+
+New tests run the real App, GoogleSignIn and frontend service with controlled SDK/HTTP fixtures. Google-specific browser tests run at desktop/tablet/mobile sizes; they are frontend integration tests, not verification of real Google tokens. All current per-test results and coverage are regenerated under docs/testing.
+
+Git conflicts in PR #18 still require its owner to retain the established frontend instead of choosing the temporary AuthPanel/App wholesale. This frontend now supports its contract; no backend behavior change is needed to use it. Only the user's frontend PR is updated by this work.

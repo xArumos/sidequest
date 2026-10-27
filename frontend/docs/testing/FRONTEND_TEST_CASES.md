@@ -1,6 +1,6 @@
 # Frontend automated test cases
 
-Executed Monday, October 26, 2026 at 4:32 PM (America/New_York). 85 distinct automated scenarios; 97 executions including three browser viewports. Existing tests are preserved with traceable IDs.
+Executed Monday, October 26, 2026 at 9:40 PM (America/New_York). 105 distinct automated scenarios; 123 executions including three browser viewports. Existing tests are preserved with traceable IDs.
 
 ## Spreadsheet traceability and unimplemented scope
 
@@ -15,7 +15,7 @@ Source: `Mod9_SoftwareTests-2.xlsx`, found in Downloads. All 13 populated cases 
 | TC-USRDATA-02 | Supplemental component/browser tests distinguish backlog from wishlist | NOT IMPLEMENTED: add/remove/update, duplicates, populated backlog and mutation failure flows are absent |
 | TC-RATE-02 | Integer-only star choices and production validator boundaries (-1,0,6,5.4,NaN,Infinity,string/undefined) | PARTIAL: deleting/recalculating community totals is outside available frontend behavior |
 | TC-RATE-03 | No manufactured edit/delete test | NOT IMPLEMENTED: own-review edit/delete, upsert/duplicate handling and other-author controls do not exist; workbook's API path is a test-plan reference, not an implemented endpoint |
-| TC-LOGIN-02 | Mocked login errors, Google account creation UI, logout and protected navigation | PARTIAL: Google-only implementation has no email/password form, password rules, duplicate-email registration or password-validation UI |
+| TC-LOGIN-02 | Mocked login errors, Google account creation UI, logout and protected navigation | PARTIAL: password forms and validation use the API contract from unmerged backend PR #18; duplicate-email handling and live deployment remain separate verification |
 | TC-STEAM-01, TC-STEAM-02 | Excluded | OUT OF SCOPE: Sprint 2 |
 | TC-FRIEND-01 | Excluded | OUT OF SCOPE: friendship |
 | TC-DEV-01, TC-DEV-02 | Excluded | OUT OF SCOPE: developer accounts/moderation |
@@ -27,6 +27,112 @@ Three complete in-scope scenarios are NOT IMPLEMENTED (TC-USRDATA-01/02 and TC-R
 ## Executed automated cases
 
 Browser base IDs expand to DESKTOP, TABLET and MOBILE execution IDs. These are browser integration tests using mocked API responses, not full-stack E2E.
+
+### TC-FE-GOOGLE-CONFIG-01
+
+**Test Case ID:** TC-FE-GOOGLE-CONFIG-01
+
+**Test Name:** reuses only the backend public client ID when the frontend override is absent
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Unit
+
+**Purpose:** Verify that the frontend reuses only the backend public client ID when the frontend override is absent.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Write a temporary backend environment with synthetic client and secret values.
+2. Resolve the frontend Google client ID.
+
+**Test Data:** Synthetic backend OAuth client ID and private markers
+
+**Expected Result:** Only the public client ID is returned.
+
+**Actual Result:** All assertions passed in the recorded execution. Only the public client ID is returned.
+
+**Status:** PASS
+
+**Test File:** [frontend/config/google-client.test.js](../../config/google-client.test.js)
+
+**Dependencies:** Temporary synthetic environment files; no credentials.
+
+**Notes:** Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-CONFIG-02
+
+**Test Case ID:** TC-FE-GOOGLE-CONFIG-02
+
+**Test Name:** gives the explicit frontend environment precedence over the backend default
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Unit
+
+**Purpose:** Verify that the frontend gives the explicit frontend environment precedence over the backend default.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Write distinct synthetic root and frontend public IDs.
+2. Resolve production configuration.
+
+**Test Data:** Two synthetic public client IDs
+
+**Expected Result:** The frontend override takes precedence.
+
+**Actual Result:** All assertions passed in the recorded execution. The frontend override takes precedence.
+
+**Status:** PASS
+
+**Test File:** [frontend/config/google-client.test.js](../../config/google-client.test.js)
+
+**Dependencies:** Temporary synthetic environment files; no credentials.
+
+**Notes:** Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-CONFIG-03
+
+**Test Case ID:** TC-FE-GOOGLE-CONFIG-03
+
+**Test Name:** isolates unit tests from local Google settings and handles unconfigured environments
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Unit
+
+**Purpose:** Verify that the frontend isolates unit tests from local Google settings and handles unconfigured environments.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Resolve an unconfigured checkout.
+2. Write a synthetic root public ID.
+3. Resolve in test mode.
+
+**Test Data:** Empty configuration; synthetic root client ID
+
+**Expected Result:** Missing configuration and test isolation both return an empty fallback.
+
+**Actual Result:** All assertions passed in the recorded execution. Missing configuration and test isolation both return an empty fallback.
+
+**Status:** PASS
+
+**Test File:** [frontend/config/google-client.test.js](../../config/google-client.test.js)
+
+**Dependencies:** Temporary synthetic environment files; no credentials.
+
+**Notes:** Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
 
 ### TC-FE-APP-01
 
@@ -124,9 +230,9 @@ Browser base IDs expand to DESKTOP, TABLET and MOBILE execution IDs. These are b
 
 **Test Data:** Anonymous session
 
-**Expected Result:** Protected route redirects to Google sign-in.
+**Expected Result:** Protected route redirects to sign-in and exposes the supported password field alongside Google.
 
-**Actual Result:** All assertions passed in the recorded execution. Protected route redirects to Google sign-in.
+**Actual Result:** All assertions passed in the recorded execution. Protected route redirects to sign-in and exposes the supported password field alongside Google.
 
 **Status:** PASS
 
@@ -1102,6 +1208,150 @@ Browser base IDs expand to DESKTOP, TABLET and MOBILE execution IDs. These are b
 
 **Notes:** Additional regression/behavior coverage beyond the initial plan. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
 
+### TC-FE-GOOGLE-08
+
+**Test Case ID:** TC-FE-GOOGLE-08
+
+**Test Name:** retries SDK loading in place without leaving the login page
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Component
+
+**Purpose:** Verify that the frontend retries SDK loading in place without leaving the login page.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Fail script loading.
+2. Click Retry Google sign-in.
+3. Complete the next synthetic SDK load.
+
+**Test Data:** Synthetic SDK load/error events
+
+**Expected Result:** A fresh SDK load renders the button and clears the error.
+
+**Actual Result:** All assertions passed in the recorded execution. A fresh SDK load renders the button and clears the error.
+
+**Status:** PASS
+
+**Test File:** [frontend/src/components/GoogleSignIn.loading.test.jsx](../../src/components/GoogleSignIn.loading.test.jsx)
+
+**Dependencies:** Synthetic Google SDK and event/timer spies.
+
+**Notes:** Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-09
+
+**Test Case ID:** TC-FE-GOOGLE-09
+
+**Test Name:** prevents callbacks while another authentication request is pending
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Component
+
+**Purpose:** Verify that the frontend prevents callbacks while another authentication request is pending.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Render busy Google sign-in.
+2. Invoke SDK callback.
+3. Clear busy and invoke again.
+
+**Test Data:** Synthetic token; busy flag
+
+**Expected Result:** Pending callback is ignored; the enabled callback runs once.
+
+**Actual Result:** All assertions passed in the recorded execution. Pending callback is ignored; the enabled callback runs once.
+
+**Status:** PASS
+
+**Test File:** [frontend/src/components/GoogleSignIn.loading.test.jsx](../../src/components/GoogleSignIn.loading.test.jsx)
+
+**Dependencies:** Synthetic Google SDK and event/timer spies.
+
+**Notes:** Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-10
+
+**Test Case ID:** TC-FE-GOOGLE-10
+
+**Test Name:** rejects an empty SDK credential without attempting authentication
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Component
+
+**Purpose:** Verify that the frontend rejects an empty SDK credential without attempting authentication.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Initialize synthetic SDK.
+2. Invoke callback with an empty credential.
+3. Inspect accessible error.
+
+**Test Data:** Empty synthetic credential
+
+**Expected Result:** No authentication callback occurs; an error appears.
+
+**Actual Result:** All assertions passed in the recorded execution. No authentication callback occurs; an error appears.
+
+**Status:** PASS
+
+**Test File:** [frontend/src/components/GoogleSignIn.loading.test.jsx](../../src/components/GoogleSignIn.loading.test.jsx)
+
+**Dependencies:** Synthetic Google SDK and event/timer spies.
+
+**Notes:** Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-11
+
+**Test Case ID:** TC-FE-GOOGLE-11
+
+**Test Name:** times out a stalled SDK request and offers retry
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Component
+
+**Purpose:** Verify that the frontend times out a stalled SDK request and offers retry.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Start an unresolved SDK request.
+2. Advance fake clock 15 seconds.
+3. Inspect error and retry control.
+
+**Test Data:** Fake timers; no SDK response
+
+**Expected Result:** Loading terminates with a retryable error.
+
+**Actual Result:** All assertions passed in the recorded execution. Loading terminates with a retryable error.
+
+**Status:** PASS
+
+**Test File:** [frontend/src/components/GoogleSignIn.loading.test.jsx](../../src/components/GoogleSignIn.loading.test.jsx)
+
+**Dependencies:** Synthetic Google SDK and event/timer spies.
+
+**Notes:** Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
 ### TC-FE-GOOGLE-01
 
 **Test Case ID:** TC-FE-GOOGLE-01
@@ -1208,6 +1458,42 @@ Browser base IDs expand to DESKTOP, TABLET and MOBILE execution IDs. These are b
 **Dependencies:** Synthetic SDK/script events; no Google network.
 
 **Notes:** Additional regression/behavior coverage beyond the initial plan. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-12
+
+**Test Case ID:** TC-FE-GOOGLE-12
+
+**Test Name:** initializes Google with the shared public backend client ID
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Component
+
+**Purpose:** Verify that the frontend initializes Google with the shared public backend client ID.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Clear frontend ID override.
+2. Provide synthetic shared public ID.
+3. Initialize SDK and inspect options.
+
+**Test Data:** synthetic-shared.apps.googleusercontent.com
+
+**Expected Result:** Shared ID is used and automatic account selection is disabled.
+
+**Actual Result:** All assertions passed in the recorded execution. Shared ID is used and automatic account selection is disabled.
+
+**Status:** PASS
+
+**Test File:** [frontend/src/components/GoogleSignIn.test.jsx](../../src/components/GoogleSignIn.test.jsx)
+
+**Dependencies:** Synthetic Google SDK and event/timer spies.
+
+**Notes:** Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
 
 ### TC-FE-NAV-01
 
@@ -2532,6 +2818,339 @@ Browser base IDs expand to DESKTOP, TABLET and MOBILE execution IDs. These are b
 
 **Notes:** Additional regression/behavior coverage beyond the initial plan. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
 
+### TC-FE-GOOGLE-FLOW-01
+
+**Test Case ID:** TC-FE-GOOGLE-FLOW-01
+
+**Test Name:** signs in through the actual Google component and restores and logs out the cookie session
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration
+
+**Purpose:** Verify that the frontend signs in through the actual Google component and restores and logs out the cookie session.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Render real App and GoogleSignIn with synthetic SDK.
+2. Return signed-out response.
+3. Click Google button and return account.
+4. Remount and restore session.
+5. Log out and inspect state.
+
+**Test Data:** Synthetic Google credential/account; controlled 401/200/204 fetch responses
+
+**Expected Result:** Correct Google POST is sent, account/restored session render, logout clears state, no credential is stored.
+
+**Actual Result:** All assertions passed in the recorded execution. Correct Google POST is sent, account/restored session render, logout clears state, no credential is stored.
+
+**Status:** PASS
+
+**Test File:** [frontend/src/services/google-ui.test.jsx](../../src/services/google-ui.test.jsx)
+
+**Dependencies:** Synthetic Google SDK and controlled HTTP responses; no live Google account.
+
+**Notes:** Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-FLOW-02
+
+**Test Case ID:** TC-FE-GOOGLE-FLOW-02
+
+**Test Name:** exposes Google rejection and preserves the password login alternative
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration
+
+**Purpose:** Verify that the frontend exposes Google rejection and preserves the password login alternative.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Open registration with real Google component.
+2. Click synthetic SDK button.
+3. Return invalid-token response.
+4. Inspect error and password form.
+
+**Test Data:** Synthetic 401 INVALID_GOOGLE_TOKEN
+
+**Expected Result:** Error appears; no false login; password registration remains enabled.
+
+**Actual Result:** All assertions passed in the recorded execution. Error appears; no false login; password registration remains enabled.
+
+**Status:** PASS
+
+**Test File:** [frontend/src/services/google-ui.test.jsx](../../src/services/google-ui.test.jsx)
+
+**Dependencies:** Synthetic Google SDK and controlled HTTP responses; no live Google account.
+
+**Notes:** Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-FLOW-03
+
+**Test Case ID:** TC-FE-GOOGLE-FLOW-03
+
+**Test Name:** ignores duplicate SDK callbacks while the session request is pending
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration
+
+**Purpose:** Verify that the frontend ignores duplicate SDK callbacks while the session request is pending.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Hold Google authentication response pending.
+2. Invoke SDK callback twice.
+3. Inspect request count and disabled password field.
+4. Resolve account.
+
+**Test Data:** Deferred synthetic Google authentication
+
+**Expected Result:** Only one login request runs; UI updates after confirmation.
+
+**Actual Result:** All assertions passed in the recorded execution. Only one login request runs; UI updates after confirmation.
+
+**Status:** PASS
+
+**Test File:** [frontend/src/services/google-ui.test.jsx](../../src/services/google-ui.test.jsx)
+
+**Dependencies:** Synthetic Google SDK and controlled HTTP responses; no live Google account.
+
+**Notes:** Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-PASSWORD-01
+
+**Test Case ID:** TC-FE-PASSWORD-01
+
+**Test Name:** validates required registration fields and email without sending a request
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration
+
+**Purpose:** Verify that the frontend validates required registration fields and email without sending a request.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Open /register signed out.
+2. Submit empty form.
+3. Enter username and malformed email.
+4. Submit and check alert/request count.
+
+**Test Data:** synthetic_player; not-an-email
+
+**Expected Result:** Required username and invalid email errors appear without a registration request.
+
+**Actual Result:** All assertions passed in the recorded execution. Required username and invalid email errors appear without a registration request.
+
+**Status:** PASS
+
+**Test File:** [frontend/src/services/password-ui.test.jsx](../../src/services/password-ui.test.jsx)
+
+**Dependencies:** Mocked fetch; real App and frontend auth service; no live backend.
+
+**Notes:** Adapts TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-PASSWORD-02
+
+**Test Case ID:** TC-FE-PASSWORD-02
+
+**Test Name:** rejects short passwords and mismatched confirmation while retaining input
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration
+
+**Purpose:** Verify that the frontend rejects short passwords and mismatched confirmation while retaining input.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Enter valid username/email and short password.
+2. Submit and inspect length error.
+3. Replace password with a valid long phrase but keep old confirmation.
+4. Submit and inspect mismatch and retained email.
+
+**Test Data:** too short; synthetic password phrase; player@example.test
+
+**Expected Result:** Both validation errors prevent requests and retain account input.
+
+**Actual Result:** All assertions passed in the recorded execution. Both validation errors prevent requests and retain account input.
+
+**Status:** PASS
+
+**Test File:** [frontend/src/services/password-ui.test.jsx](../../src/services/password-ui.test.jsx)
+
+**Dependencies:** Mocked fetch; real App and frontend auth service; no live backend.
+
+**Notes:** Adapts TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-PASSWORD-03
+
+**Test Case ID:** TC-FE-PASSWORD-03
+
+**Test Name:** registers through the real frontend service without sending confirmation
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration
+
+**Purpose:** Verify that the frontend registers through the real frontend service without sending confirmation.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Complete valid registration.
+2. Return a synthetic 201 user response.
+3. Submit.
+4. Inspect profile and request payload.
+
+**Test Data:** synthetic_player; player@example.test; synthetic password phrase
+
+**Expected Result:** Profile renders after success; POST contains username/email/password only with cookie credentials.
+
+**Actual Result:** All assertions passed in the recorded execution. Profile renders after success; POST contains username/email/password only with cookie credentials.
+
+**Status:** PASS
+
+**Test File:** [frontend/src/services/password-ui.test.jsx](../../src/services/password-ui.test.jsx)
+
+**Dependencies:** Mocked fetch; real App and frontend auth service; no live backend.
+
+**Notes:** Adapts TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-PASSWORD-04
+
+**Test Case ID:** TC-FE-PASSWORD-04
+
+**Test Name:** signs in using a username or email and displays server rejection safely
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration
+
+**Purpose:** Verify that the frontend signs in using a username or email and displays server rejection safely.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Submit empty login.
+2. Enter identifier/password.
+3. Return 401 and inspect error.
+4. Retry with 200 account response.
+
+**Test Data:** Synthetic email and rejected password; 401 then 200
+
+**Expected Result:** Validation and server error appear; retry signs in without false early success.
+
+**Actual Result:** All assertions passed in the recorded execution. Validation and server error appear; retry signs in without false early success.
+
+**Status:** PASS
+
+**Test File:** [frontend/src/services/password-ui.test.jsx](../../src/services/password-ui.test.jsx)
+
+**Dependencies:** Mocked fetch; real App and frontend auth service; no live backend.
+
+**Notes:** Adapts TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-PASSWORD-05
+
+**Test Case ID:** TC-FE-PASSWORD-05
+
+**Test Name:** prevents duplicate submissions until the server confirms the session
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration
+
+**Purpose:** Verify that the frontend prevents duplicate submissions until the server confirms the session.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Enter credentials.
+2. Hold login response pending.
+3. Attempt repeated submit.
+4. Resolve user response.
+
+**Test Data:** Deferred synthetic login
+
+**Expected Result:** Form controls disable, one login request runs, and profile appears only after response.
+
+**Actual Result:** All assertions passed in the recorded execution. Form controls disable, one login request runs, and profile appears only after response.
+
+**Status:** PASS
+
+**Test File:** [frontend/src/services/password-ui.test.jsx](../../src/services/password-ui.test.jsx)
+
+**Dependencies:** Mocked fetch; real App and frontend auth service; no live backend.
+
+**Notes:** Adapts TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-PASSWORD-06
+
+**Test Case ID:** TC-FE-PASSWORD-06
+
+**Test Name:** counts Unicode code points for the minimum password length
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration
+
+**Purpose:** Verify that the frontend counts Unicode code points for the minimum password length.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Complete registration with fifteen game-controller emoji.
+2. Return 201 user envelope.
+3. Submit and inspect payload.
+
+**Test Data:** 15 synthetic emoji code points
+
+**Expected Result:** Minimum-length Unicode password is accepted and transmitted unchanged.
+
+**Actual Result:** All assertions passed in the recorded execution. Minimum-length Unicode password is accepted and transmitted unchanged.
+
+**Status:** PASS
+
+**Test File:** [frontend/src/services/password-ui.test.jsx](../../src/services/password-ui.test.jsx)
+
+**Dependencies:** Mocked fetch; real App and frontend auth service; no live backend.
+
+**Notes:** Adapts TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
 ### TC-SORT-01
 
 **Test Case ID:** TC-SORT-01
@@ -3513,4 +4132,334 @@ Browser base IDs expand to DESKTOP, TABLET and MOBILE execution IDs. These are b
 **Dependencies:** Real Chrome and Vite; mocked auth HTTP responses; synthetic card harness.
 
 **Notes:** Browser project mobile; viewport 390×844. Additional regression/behavior coverage beyond the initial plan. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-BROWSER-01-DESKTOP
+
+**Test Case ID:** TC-FE-GOOGLE-BROWSER-01-DESKTOP
+
+**Test Name:** completes the Google callback session flow and refresh/logout at each viewport
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration (browser)
+
+**Purpose:** Verify that the frontend completes the Google callback session flow and refresh/logout at each viewport.
+
+**Preconditions:** Frontend dependencies installed; Chrome available and Playwright starts isolated Vite on port 4174; synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Intercept external SDK and auth responses.
+2. Click the real component button above the password form.
+3. Inspect profile and refresh.
+4. Check browser storage and log out.
+
+**Test Data:** Synthetic browser SDK and account; three viewports
+
+**Expected Result:** Google flow, restored profile and logout work without credential storage or horizontal overflow.
+
+**Actual Result:** All assertions passed in the recorded execution. Google flow, restored profile and logout work without credential storage or horizontal overflow.
+
+**Status:** PASS
+
+**Test File:** [frontend/e2e/google-auth.spec.js](../../e2e/google-auth.spec.js)
+
+**Dependencies:** Synthetic Google SDK and controlled HTTP responses; no live Google account.
+
+**Notes:** Browser project desktop; viewport 1280×900. Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-BROWSER-02-DESKTOP
+
+**Test Case ID:** TC-FE-GOOGLE-BROWSER-02-DESKTOP
+
+**Test Name:** renders rejected Google authentication without losing registration inputs
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration (browser)
+
+**Purpose:** Verify that the frontend renders rejected Google authentication without losing registration inputs.
+
+**Preconditions:** Frontend dependencies installed; Chrome available and Playwright starts isolated Vite on port 4174; synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Enter a registration username.
+2. Click Google sign-in.
+3. Return a synthetic token rejection.
+4. Inspect error and retained form.
+
+**Test Data:** Synthetic username and INVALID_GOOGLE_TOKEN response
+
+**Expected Result:** Accessible error appears; registration input and alternative remain available.
+
+**Actual Result:** All assertions passed in the recorded execution. Accessible error appears; registration input and alternative remain available.
+
+**Status:** PASS
+
+**Test File:** [frontend/e2e/google-auth.spec.js](../../e2e/google-auth.spec.js)
+
+**Dependencies:** Synthetic Google SDK and controlled HTTP responses; no live Google account.
+
+**Notes:** Browser project desktop; viewport 1280×900. Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-BROWSER-03-DESKTOP
+
+**Test Case ID:** TC-FE-GOOGLE-BROWSER-03-DESKTOP
+
+**Test Name:** recovers from a failed Google SDK load using the in-page retry
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration (browser)
+
+**Purpose:** Verify that the frontend recovers from a failed Google SDK load using the in-page retry.
+
+**Preconditions:** Frontend dependencies installed; Chrome available and Playwright starts isolated Vite on port 4174; synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Abort the first SDK script request.
+2. Click Retry Google sign-in.
+3. Load synthetic SDK and authenticate.
+
+**Test Data:** One aborted SDK request then a synthetic successful load
+
+**Expected Result:** Second attempt succeeds without navigating away.
+
+**Actual Result:** All assertions passed in the recorded execution. Second attempt succeeds without navigating away.
+
+**Status:** PASS
+
+**Test File:** [frontend/e2e/google-auth.spec.js](../../e2e/google-auth.spec.js)
+
+**Dependencies:** Synthetic Google SDK and controlled HTTP responses; no live Google account.
+
+**Notes:** Browser project desktop; viewport 1280×900. Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-BROWSER-01-TABLET
+
+**Test Case ID:** TC-FE-GOOGLE-BROWSER-01-TABLET
+
+**Test Name:** completes the Google callback session flow and refresh/logout at each viewport
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration (browser)
+
+**Purpose:** Verify that the frontend completes the Google callback session flow and refresh/logout at each viewport.
+
+**Preconditions:** Frontend dependencies installed; Chrome available and Playwright starts isolated Vite on port 4174; synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Intercept external SDK and auth responses.
+2. Click the real component button above the password form.
+3. Inspect profile and refresh.
+4. Check browser storage and log out.
+
+**Test Data:** Synthetic browser SDK and account; three viewports
+
+**Expected Result:** Google flow, restored profile and logout work without credential storage or horizontal overflow.
+
+**Actual Result:** All assertions passed in the recorded execution. Google flow, restored profile and logout work without credential storage or horizontal overflow.
+
+**Status:** PASS
+
+**Test File:** [frontend/e2e/google-auth.spec.js](../../e2e/google-auth.spec.js)
+
+**Dependencies:** Synthetic Google SDK and controlled HTTP responses; no live Google account.
+
+**Notes:** Browser project tablet; viewport 768×1024. Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-BROWSER-02-TABLET
+
+**Test Case ID:** TC-FE-GOOGLE-BROWSER-02-TABLET
+
+**Test Name:** renders rejected Google authentication without losing registration inputs
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration (browser)
+
+**Purpose:** Verify that the frontend renders rejected Google authentication without losing registration inputs.
+
+**Preconditions:** Frontend dependencies installed; Chrome available and Playwright starts isolated Vite on port 4174; synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Enter a registration username.
+2. Click Google sign-in.
+3. Return a synthetic token rejection.
+4. Inspect error and retained form.
+
+**Test Data:** Synthetic username and INVALID_GOOGLE_TOKEN response
+
+**Expected Result:** Accessible error appears; registration input and alternative remain available.
+
+**Actual Result:** All assertions passed in the recorded execution. Accessible error appears; registration input and alternative remain available.
+
+**Status:** PASS
+
+**Test File:** [frontend/e2e/google-auth.spec.js](../../e2e/google-auth.spec.js)
+
+**Dependencies:** Synthetic Google SDK and controlled HTTP responses; no live Google account.
+
+**Notes:** Browser project tablet; viewport 768×1024. Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-BROWSER-03-TABLET
+
+**Test Case ID:** TC-FE-GOOGLE-BROWSER-03-TABLET
+
+**Test Name:** recovers from a failed Google SDK load using the in-page retry
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration (browser)
+
+**Purpose:** Verify that the frontend recovers from a failed Google SDK load using the in-page retry.
+
+**Preconditions:** Frontend dependencies installed; Chrome available and Playwright starts isolated Vite on port 4174; synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Abort the first SDK script request.
+2. Click Retry Google sign-in.
+3. Load synthetic SDK and authenticate.
+
+**Test Data:** One aborted SDK request then a synthetic successful load
+
+**Expected Result:** Second attempt succeeds without navigating away.
+
+**Actual Result:** All assertions passed in the recorded execution. Second attempt succeeds without navigating away.
+
+**Status:** PASS
+
+**Test File:** [frontend/e2e/google-auth.spec.js](../../e2e/google-auth.spec.js)
+
+**Dependencies:** Synthetic Google SDK and controlled HTTP responses; no live Google account.
+
+**Notes:** Browser project tablet; viewport 768×1024. Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-BROWSER-01-MOBILE
+
+**Test Case ID:** TC-FE-GOOGLE-BROWSER-01-MOBILE
+
+**Test Name:** completes the Google callback session flow and refresh/logout at each viewport
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration (browser)
+
+**Purpose:** Verify that the frontend completes the Google callback session flow and refresh/logout at each viewport.
+
+**Preconditions:** Frontend dependencies installed; Chrome available and Playwright starts isolated Vite on port 4174; synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Intercept external SDK and auth responses.
+2. Click the real component button above the password form.
+3. Inspect profile and refresh.
+4. Check browser storage and log out.
+
+**Test Data:** Synthetic browser SDK and account; three viewports
+
+**Expected Result:** Google flow, restored profile and logout work without credential storage or horizontal overflow.
+
+**Actual Result:** All assertions passed in the recorded execution. Google flow, restored profile and logout work without credential storage or horizontal overflow.
+
+**Status:** PASS
+
+**Test File:** [frontend/e2e/google-auth.spec.js](../../e2e/google-auth.spec.js)
+
+**Dependencies:** Synthetic Google SDK and controlled HTTP responses; no live Google account.
+
+**Notes:** Browser project mobile; viewport 390×844. Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-BROWSER-02-MOBILE
+
+**Test Case ID:** TC-FE-GOOGLE-BROWSER-02-MOBILE
+
+**Test Name:** renders rejected Google authentication without losing registration inputs
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration (browser)
+
+**Purpose:** Verify that the frontend renders rejected Google authentication without losing registration inputs.
+
+**Preconditions:** Frontend dependencies installed; Chrome available and Playwright starts isolated Vite on port 4174; synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Enter a registration username.
+2. Click Google sign-in.
+3. Return a synthetic token rejection.
+4. Inspect error and retained form.
+
+**Test Data:** Synthetic username and INVALID_GOOGLE_TOKEN response
+
+**Expected Result:** Accessible error appears; registration input and alternative remain available.
+
+**Actual Result:** All assertions passed in the recorded execution. Accessible error appears; registration input and alternative remain available.
+
+**Status:** PASS
+
+**Test File:** [frontend/e2e/google-auth.spec.js](../../e2e/google-auth.spec.js)
+
+**Dependencies:** Synthetic Google SDK and controlled HTTP responses; no live Google account.
+
+**Notes:** Browser project mobile; viewport 390×844. Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-GOOGLE-BROWSER-03-MOBILE
+
+**Test Case ID:** TC-FE-GOOGLE-BROWSER-03-MOBILE
+
+**Test Name:** recovers from a failed Google SDK load using the in-page retry
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration (browser)
+
+**Purpose:** Verify that the frontend recovers from a failed Google SDK load using the in-page retry.
+
+**Preconditions:** Frontend dependencies installed; Chrome available and Playwright starts isolated Vite on port 4174; synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Abort the first SDK script request.
+2. Click Retry Google sign-in.
+3. Load synthetic SDK and authenticate.
+
+**Test Data:** One aborted SDK request then a synthetic successful load
+
+**Expected Result:** Second attempt succeeds without navigating away.
+
+**Actual Result:** All assertions passed in the recorded execution. Second attempt succeeds without navigating away.
+
+**Status:** PASS
+
+**Test File:** [frontend/e2e/google-auth.spec.js](../../e2e/google-auth.spec.js)
+
+**Dependencies:** Synthetic Google SDK and controlled HTTP responses; no live Google account.
+
+**Notes:** Browser project mobile; viewport 390×844. Adapts TC-LOGIN-01, TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
 

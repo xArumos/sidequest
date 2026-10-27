@@ -8,6 +8,8 @@ const read = name => JSON.parse(readFileSync(directory + name, 'utf8'))
 const catalog = read('test-catalog.json')
 const unit = read('artifacts/unit-results.json')
 const browser = read('artifacts/browser-results.json')
+let googleBrowser
+try { googleBrowser = read('artifacts/google-browser-results.json') } catch { /* Earlier reports predate the Google browser suite. */ }
 const coverage = read('artifacts/coverage-summary.json')
 const baseline = read('artifacts/baseline-summary.json')
 const lookup = new Map(catalog.map(test => [test.id, test]))
@@ -35,6 +37,7 @@ function collect(suite) {
   for (const child of suite.suites || []) collect(child)
 }
 for (const suite of browser.suites) collect(suite)
+if (googleBrowser) for (const suite of googleBrowser.suites) collect(suite)
 const used = new Set(records.map(record => record.baseId))
 for (const test of catalog) if (!used.has(test.id)) throw new Error(`Catalog case did not execute: ${test.id}`)
 const infoPath = 'artifacts/execution-info.json'
@@ -50,11 +53,11 @@ try { info = read(infoPath) } catch {
   writeFileSync(directory + infoPath, JSON.stringify(info, null, 2) + '\n')
 }
 const date = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', dateStyle: 'full', timeStyle: 'short' }).format(new Date(unit.startTime))
-const browserDate = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', dateStyle: 'full', timeStyle: 'short' }).format(new Date(browser.stats.startTime))
+const browserDate = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', dateStyle: 'full', timeStyle: 'short' }).format(new Date(googleBrowser?.stats.startTime || browser.stats.startTime))
 const passed = records.filter(test => test.status === 'PASS').length
 const failed = records.filter(test => test.status === 'FAIL').length
 const notRun = records.filter(test => test.status === 'NOT RUN').length
-const browserDefinitions = catalog.filter(test => test.id.startsWith('TC-FE-BROWSER')).length
+const browserDefinitions = catalog.filter(test => test.file.startsWith('frontend/e2e/')).length
 const newUnit = unit.numTotalTests - info.baselineTests
 const table = rows => rows.map(row => `| ${row.map(value => String(value).replaceAll('|', '\\|').replaceAll('\n', ' ')).join(' | ')} |`).join('\n')
 const featureRows = [...new Set(records.map(test => test.feature))].sort().map(feature => {
@@ -112,6 +115,7 @@ From repository root:
 npm test --prefix frontend -- --reporter=json --outputFile=/tmp/sidequest-frontend-baseline.json
 npm run test:coverage --prefix frontend -- --reporter=default --reporter=json --outputFile=docs/testing/artifacts/unit-results.json
 PLAYWRIGHT_CHANNEL=chrome npm run test:browser --prefix frontend
+PLAYWRIGHT_CHANNEL=chrome npm run test:google-browser --prefix frontend
 npm run lint --prefix frontend
 npm run build --prefix frontend
 git diff --check
@@ -177,6 +181,8 @@ ${table(coverageRows)}
 ## Scope and limitations
 
 Includes production files under src/**/*.js and src/**/*.jsx, even files not imported by a test. Explicitly excludes test files/setup, unused mockData fixtures, and main.jsx's DOM bootstrap. Main is exercised by browser tests but is not in the V8 unit report. Browser CSS/layout execution is separate; no combined browser/unit coverage is claimed. V8 counts transformed React functions and source mappings, so percentages are not percentages of rendered UI states.
+
+Build-time public-client configuration is tested separately by config/google-client.test.js but is outside the src-only coverage denominator.
 
 App.jsx has the largest gap (especially functions/branches): populated catalog/detail/review/list sections and mutation closures are unreachable with the currently empty catalog and missing APIs. We did not expose test-only production data or pretend these branches work. GameCard's disabled wishlist callback remains unexecuted intentionally because no persistence endpoint exists. GoogleSignIn still has SDK/script sharing and guarded error branches needing additional concurrency scenarios. ReviewForm's defensive pending guard has limited separate coverage because actual controls are locked while saving.
 

@@ -1586,5 +1586,289 @@
     "spreadsheetIds": [
       "TC-LOGIN-02"
     ]
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-CONFIG-01",
+    "name": "reuses only the backend public client ID when the frontend override is absent",
+    "file": "frontend/config/google-client.test.js",
+    "type": "Unit",
+    "steps": [
+      "Write a temporary backend environment with synthetic client and secret values",
+      "Resolve the frontend Google client ID"
+    ],
+    "data": "Synthetic backend OAuth client ID and private markers",
+    "expected": "Only the public client ID is returned.",
+    "dependencies": "Temporary synthetic environment files; no credentials"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-CONFIG-02",
+    "name": "gives the explicit frontend environment precedence over the backend default",
+    "file": "frontend/config/google-client.test.js",
+    "type": "Unit",
+    "steps": [
+      "Write distinct synthetic root and frontend public IDs",
+      "Resolve production configuration"
+    ],
+    "data": "Two synthetic public client IDs",
+    "expected": "The frontend override takes precedence.",
+    "dependencies": "Temporary synthetic environment files; no credentials"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-CONFIG-03",
+    "name": "isolates unit tests from local Google settings and handles unconfigured environments",
+    "file": "frontend/config/google-client.test.js",
+    "type": "Unit",
+    "steps": [
+      "Resolve an unconfigured checkout",
+      "Write a synthetic root public ID",
+      "Resolve in test mode"
+    ],
+    "data": "Empty configuration; synthetic root client ID",
+    "expected": "Missing configuration and test isolation both return an empty fallback.",
+    "dependencies": "Temporary synthetic environment files; no credentials"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-08",
+    "name": "retries SDK loading in place without leaving the login page",
+    "file": "frontend/src/components/GoogleSignIn.loading.test.jsx",
+    "type": "Component",
+    "steps": [
+      "Fail script loading",
+      "Click Retry Google sign-in",
+      "Complete the next synthetic SDK load"
+    ],
+    "data": "Synthetic SDK load/error events",
+    "expected": "A fresh SDK load renders the button and clears the error.",
+    "dependencies": "Synthetic Google SDK and event/timer spies"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-09",
+    "name": "prevents callbacks while another authentication request is pending",
+    "file": "frontend/src/components/GoogleSignIn.loading.test.jsx",
+    "type": "Component",
+    "steps": [
+      "Render busy Google sign-in",
+      "Invoke SDK callback",
+      "Clear busy and invoke again"
+    ],
+    "data": "Synthetic token; busy flag",
+    "expected": "Pending callback is ignored; the enabled callback runs once.",
+    "dependencies": "Synthetic Google SDK and event/timer spies"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-10",
+    "name": "rejects an empty SDK credential without attempting authentication",
+    "file": "frontend/src/components/GoogleSignIn.loading.test.jsx",
+    "type": "Component",
+    "steps": [
+      "Initialize synthetic SDK",
+      "Invoke callback with an empty credential",
+      "Inspect accessible error"
+    ],
+    "data": "Empty synthetic credential",
+    "expected": "No authentication callback occurs; an error appears.",
+    "dependencies": "Synthetic Google SDK and event/timer spies"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-11",
+    "name": "times out a stalled SDK request and offers retry",
+    "file": "frontend/src/components/GoogleSignIn.loading.test.jsx",
+    "type": "Component",
+    "steps": [
+      "Start an unresolved SDK request",
+      "Advance fake clock 15 seconds",
+      "Inspect error and retry control"
+    ],
+    "data": "Fake timers; no SDK response",
+    "expected": "Loading terminates with a retryable error.",
+    "dependencies": "Synthetic Google SDK and event/timer spies"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-12",
+    "name": "initializes Google with the shared public backend client ID",
+    "file": "frontend/src/components/GoogleSignIn.test.jsx",
+    "type": "Component",
+    "steps": [
+      "Clear frontend ID override",
+      "Provide synthetic shared public ID",
+      "Initialize SDK and inspect options"
+    ],
+    "data": "synthetic-shared.apps.googleusercontent.com",
+    "expected": "Shared ID is used and automatic account selection is disabled.",
+    "dependencies": "Synthetic Google SDK and event/timer spies"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-FLOW-01",
+    "name": "signs in through the actual Google component and restores and logs out the cookie session",
+    "file": "frontend/src/services/google-ui.test.jsx",
+    "type": "Integration",
+    "steps": [
+      "Render real App and GoogleSignIn with synthetic SDK",
+      "Return signed-out response",
+      "Click Google button and return account",
+      "Remount and restore session",
+      "Log out and inspect state"
+    ],
+    "data": "Synthetic Google credential/account; controlled 401/200/204 fetch responses",
+    "expected": "Correct Google POST is sent, account/restored session render, logout clears state, no credential is stored.",
+    "dependencies": "Synthetic Google SDK and controlled HTTP responses; no live Google account"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-FLOW-02",
+    "name": "exposes Google rejection and preserves the password login alternative",
+    "file": "frontend/src/services/google-ui.test.jsx",
+    "type": "Integration",
+    "steps": [
+      "Open registration with real Google component",
+      "Click synthetic SDK button",
+      "Return invalid-token response",
+      "Inspect error and password form"
+    ],
+    "data": "Synthetic 401 INVALID_GOOGLE_TOKEN",
+    "expected": "Error appears; no false login; password registration remains enabled.",
+    "dependencies": "Synthetic Google SDK and controlled HTTP responses; no live Google account"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-FLOW-03",
+    "name": "ignores duplicate SDK callbacks while the session request is pending",
+    "file": "frontend/src/services/google-ui.test.jsx",
+    "type": "Integration",
+    "steps": [
+      "Hold Google authentication response pending",
+      "Invoke SDK callback twice",
+      "Inspect request count and disabled password field",
+      "Resolve account"
+    ],
+    "data": "Deferred synthetic Google authentication",
+    "expected": "Only one login request runs; UI updates after confirmation.",
+    "dependencies": "Synthetic Google SDK and controlled HTTP responses; no live Google account"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-BROWSER-01",
+    "name": "completes the Google callback session flow and refresh/logout at each viewport",
+    "file": "frontend/e2e/google-auth.spec.js",
+    "type": "Integration",
+    "steps": [
+      "Intercept external SDK and auth responses",
+      "Click the real component button above the password form",
+      "Inspect profile and refresh",
+      "Check browser storage and log out"
+    ],
+    "data": "Synthetic browser SDK and account; three viewports",
+    "expected": "Google flow, restored profile and logout work without credential storage or horizontal overflow.",
+    "dependencies": "Synthetic Google SDK and controlled HTTP responses; no live Google account"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-BROWSER-02",
+    "name": "renders rejected Google authentication without losing registration inputs",
+    "file": "frontend/e2e/google-auth.spec.js",
+    "type": "Integration",
+    "steps": [
+      "Enter a registration username",
+      "Click Google sign-in",
+      "Return a synthetic token rejection",
+      "Inspect error and retained form"
+    ],
+    "data": "Synthetic username and INVALID_GOOGLE_TOKEN response",
+    "expected": "Accessible error appears; registration input and alternative remain available.",
+    "dependencies": "Synthetic Google SDK and controlled HTTP responses; no live Google account"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-BROWSER-03",
+    "name": "recovers from a failed Google SDK load using the in-page retry",
+    "file": "frontend/e2e/google-auth.spec.js",
+    "type": "Integration",
+    "steps": [
+      "Abort the first SDK script request",
+      "Click Retry Google sign-in",
+      "Load synthetic SDK and authenticate"
+    ],
+    "data": "One aborted SDK request then a synthetic successful load",
+    "expected": "Second attempt succeeds without navigating away.",
+    "dependencies": "Synthetic Google SDK and controlled HTTP responses; no live Google account"
   }
 ]
