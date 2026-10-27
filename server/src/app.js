@@ -1,7 +1,10 @@
 const express = require('express');
 const cors = require('cors');
+const { requireSameOrigin } = require('./session');
 
-function createApp({ frontendOrigin, isDatabaseReady, authRouter, logger = console }) {
+// `sessionMiddleware` is mounted on all of /api so feature routers can use
+// req.session. `routers` maps a path under /api to a router, e.g. { '/games': gamesRouter }.
+function createApp({ frontendOrigin, isDatabaseReady, authRouter, sessionMiddleware, routers = {}, logger = console }) {
   const app = express();
   app.disable('x-powered-by');
   app.use(cors({ origin: frontendOrigin, credentials: true }));
@@ -20,6 +23,10 @@ function createApp({ frontendOrigin, isDatabaseReady, authRouter, logger = conso
     }
     return res.status(503).json({ status: 'unavailable' });
   });
+
+  app.use('/api', requireSameOrigin(frontendOrigin));
+  if (sessionMiddleware) app.use('/api', sessionMiddleware);
+  for (const [path, router] of Object.entries(routers)) app.use(`/api${path}`, router);
 
   app.use('/api/auth', authRouter || ((_req, res) => {
     res.status(503).json({ error: { code: 'AUTH_NOT_CONFIGURED', message: 'Authentication is not configured.' } });
