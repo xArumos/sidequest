@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Generated testing reports
+coverage/
+test-results/
+playwright-report/
