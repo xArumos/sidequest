@@ -1,6 +1,6 @@
 {
   "branch": "feature/frontend-password-auth-integration",
-  "validatedCodeCommit": "60d802820da8c0eca87237eae70504922b515fda",
+  "validatedCodeCommit": "033a92531be395e525ca219211d2085399b5e10c",
   "baselineTests": 35,
   "node": "v24.16.0",
   "browserCommand": "PLAYWRIGHT_CHANNEL=chrome npm run test:browser --prefix frontend",

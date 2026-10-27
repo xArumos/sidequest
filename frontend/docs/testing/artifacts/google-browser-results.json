@@ -2,13 +2,13 @@
   "config": {
     "argv": [
       "/Users/liliannag/.nvm/versions/node/v24.16.0/bin/node",
-      "/private/tmp/sidequest-frontend-auth/frontend/node_modules/.bin/playwright",
+      "/Users/liliannag/sidequest/frontend/node_modules/.bin/playwright",
       "test",
       "--config",
       "playwright.google.config.js"
     ],
-    "configFile": "/private/tmp/sidequest-frontend-auth/frontend/playwright.google.config.js",
-    "rootDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
+    "configFile": "/Users/liliannag/sidequest/frontend/playwright.google.config.js",
+    "rootDir": "/Users/liliannag/sidequest/frontend/e2e",
     "failOnFlakyTests": false,
     "forbidOnly": false,
     "fullyParallel": true,
@@ -24,7 +24,7 @@
     "preserveOutput": "always",
     "projects": [
       {
-        "outputDir": "/private/tmp/sidequest-frontend-auth/frontend/test-results",
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
@@ -32,7 +32,7 @@
         },
         "id": "desktop",
         "name": "desktop",
-        "testDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
         "testIgnore": [],
         "testMatch": [
           "google-auth.spec.js"
@@ -40,7 +40,7 @@
         "timeout": 30000
       },
       {
-        "outputDir": "/private/tmp/sidequest-frontend-auth/frontend/test-results",
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
@@ -48,7 +48,7 @@
         },
         "id": "tablet",
         "name": "tablet",
-        "testDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
         "testIgnore": [],
         "testMatch": [
           "google-auth.spec.js"
@@ -56,7 +56,7 @@
         "timeout": 30000
       },
       {
-        "outputDir": "/private/tmp/sidequest-frontend-auth/frontend/test-results",
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
@@ -64,7 +64,7 @@
         },
         "id": "mobile",
         "name": "mobile",
-        "testDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
         "testIgnore": [],
         "testMatch": [
           "google-auth.spec.js"
@@ -76,15 +76,15 @@
       {
         "grep": {},
         "grepInvert": null,
-        "outputDir": "/private/tmp/sidequest-frontend-auth/frontend/test-results",
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
           "actualWorkers": 2
         },
         "name": "desktop",
-        "testDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
-        "snapshotDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
+        "snapshotDir": "/Users/liliannag/sidequest/frontend/e2e",
         "testIgnore": [],
         "testMatch": "google-auth.spec.js",
         "timeout": 30000,
@@ -106,15 +106,15 @@
       {
         "grep": {},
         "grepInvert": null,
-        "outputDir": "/private/tmp/sidequest-frontend-auth/frontend/test-results",
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
           "actualWorkers": 2
         },
         "name": "tablet",
-        "testDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
-        "snapshotDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
+        "snapshotDir": "/Users/liliannag/sidequest/frontend/e2e",
         "testIgnore": [],
         "testMatch": "google-auth.spec.js",
         "timeout": 30000,
@@ -136,15 +136,15 @@
       {
         "grep": {},
         "grepInvert": null,
-        "outputDir": "/private/tmp/sidequest-frontend-auth/frontend/test-results",
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
           "actualWorkers": 2
         },
         "name": "mobile",
-        "testDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
-        "snapshotDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
+        "snapshotDir": "/Users/liliannag/sidequest/frontend/e2e",
         "testIgnore": [],
         "testMatch": "google-auth.spec.js",
         "timeout": 30000,
@@ -222,12 +222,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2477,
+                  "duration": 3733,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:43.800Z",
+                  "startTime": "2026-10-27T02:01:25.330Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -256,12 +256,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1548,
+                  "duration": 2859,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:43.796Z",
+                  "startTime": "2026-10-27T02:01:25.346Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -290,12 +290,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 999,
+                  "duration": 1191,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:45.868Z",
+                  "startTime": "2026-10-27T02:01:29.163Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -324,12 +324,12 @@
                   "workerIndex": 2,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2004,
+                  "duration": 2439,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:47.263Z",
+                  "startTime": "2026-10-27T02:01:32.804Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -358,12 +358,12 @@
                   "workerIndex": 3,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1418,
+                  "duration": 1553,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:47.310Z",
+                  "startTime": "2026-10-27T02:01:32.804Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -392,12 +392,12 @@
                   "workerIndex": 3,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1048,
+                  "duration": 1314,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:49.365Z",
+                  "startTime": "2026-10-27T02:01:34.921Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -426,12 +426,12 @@
                   "workerIndex": 4,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1919,
+                  "duration": 2813,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:50.330Z",
+                  "startTime": "2026-10-27T02:01:42.332Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -460,12 +460,12 @@
                   "workerIndex": 5,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1488,
+                  "duration": 2018,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:51.176Z",
+                  "startTime": "2026-10-27T02:01:42.333Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -491,15 +491,15 @@
               "projectName": "mobile",
               "results": [
                 {
-                  "workerIndex": 4,
-                  "parallelIndex": 0,
+                  "workerIndex": 5,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1036,
+                  "duration": 1354,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:52.713Z",
+                  "startTime": "2026-10-27T02:01:45.092Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -517,8 +517,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-27T01:40:43.071Z",
-    "duration": 10779.198,
+    "startTime": "2026-10-27T02:01:24.328Z",
+    "duration": 28065.873,
     "expected": 9,
     "skipped": 0,
     "unexpected": 0,

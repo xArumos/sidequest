@@ -1,6 +1,6 @@
 # Frontend automated test cases
 
-Executed Monday, October 26, 2026 at 9:40 PM (America/New_York). 105 distinct automated scenarios; 123 executions including three browser viewports. Existing tests are preserved with traceable IDs.
+Executed Monday, October 26, 2026 at 10:08 PM (America/New_York). 108 distinct automated scenarios; 128 executions including three browser viewports. Existing tests are preserved with traceable IDs.
 
 ## Spreadsheet traceability and unimplemented scope
 
@@ -1356,7 +1356,7 @@ Browser base IDs expand to DESKTOP, TABLET and MOBILE execution IDs. These are b
 
 **Test Case ID:** TC-FE-GOOGLE-01
 
-**Test Name:** explains unavailable configuration without showing a fake login
+**Test Name:** hides Google configuration notices when sign-in is unconfigured
 
 **Feature Area:** Authentication
 
@@ -1364,20 +1364,21 @@ Browser base IDs expand to DESKTOP, TABLET and MOBILE execution IDs. These are b
 
 **Test Type:** Component
 
-**Purpose:** Verify that the frontend explains unavailable configuration without showing a fake login.
+**Purpose:** Verify that the frontend hides Google configuration notices when sign-in is unconfigured.
 
 **Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
 
 **Test Steps:**
 
-1. Clear public client configuration.
-2. Render sign-in.
+1. Clear both public Google client settings.
+2. Render GoogleSignIn.
+3. Inspect the visible disabled button and absence of status/error banners.
 
-**Test Data:** Empty VITE_GOOGLE_CLIENT_ID
+**Test Data:** No Google public client ID
 
-**Expected Result:** Configuration-unavailable status replaces fake login.
+**Expected Result:** Continue with Google remains visible and disabled; no configuration banner is rendered.
 
-**Actual Result:** All assertions passed in the recorded execution. Configuration-unavailable status replaces fake login.
+**Actual Result:** All assertions passed in the recorded execution. Continue with Google remains visible and disabled; no configuration banner is rendered.
 
 **Status:** PASS
 
@@ -2325,6 +2326,79 @@ Browser base IDs expand to DESKTOP, TABLET and MOBILE execution IDs. These are b
 **Dependencies:** Mocked fetch; real App and frontend auth service; synthetic Google widget.
 
 **Notes:** Additional regression/behavior coverage beyond the initial plan. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-INTEGRATION-07
+
+**Test Case ID:** TC-FE-INTEGRATION-07
+
+**Test Name:** keeps startup authentication configuration notices off the homepage
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration
+
+**Purpose:** Verify that the frontend keeps startup authentication configuration notices off the homepage.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Return a structured AUTH_NOT_CONFIGURED startup response.
+2. Open the homepage.
+3. Inspect heading and absence of alerts.
+
+**Test Data:** Synthetic 503 AUTH_NOT_CONFIGURED
+
+**Expected Result:** Homepage renders without a Google configuration banner.
+
+**Actual Result:** All assertions passed in the recorded execution. Homepage renders without a Google configuration banner.
+
+**Status:** PASS
+
+**Test File:** [frontend/src/services/auth-ui.test.jsx](../../src/services/auth-ui.test.jsx)
+
+**Dependencies:** Controlled fetch responses; real App and frontend API service; synthetic Google widget.
+
+**Notes:** Adapts TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-INTEGRATION-08
+
+**Test Case ID:** TC-FE-INTEGRATION-08
+
+**Test Name:** reports an attempted unavailable sign-in without showing configuration details
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–4
+
+**Test Type:** Integration
+
+**Purpose:** Verify that the frontend reports an attempted unavailable sign-in without showing configuration details.
+
+**Preconditions:** Frontend dependencies installed; Vitest jsdom environment (pure helpers execute within the configured frontend runner); synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Return a signed-out session.
+2. Trigger Google callback.
+3. Return GOOGLE_NOT_CONFIGURED.
+4. Inspect user-facing error and signed-out state.
+
+**Test Data:** Synthetic 401 session and 503 GOOGLE_NOT_CONFIGURED
+
+**Expected Result:** An honest temporary-unavailability error replaces configuration details; no login success is shown.
+
+**Actual Result:** All assertions passed in the recorded execution. An honest temporary-unavailability error replaces configuration details; no login success is shown.
+
+**Status:** PASS
+
+**Test File:** [frontend/src/services/auth-ui.test.jsx](../../src/services/auth-ui.test.jsx)
+
+**Dependencies:** Controlled fetch responses; real App and frontend API service; synthetic Google widget.
+
+**Notes:** Adapts TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
 
 ### TC-FE-AUTH-01
 
@@ -3689,6 +3763,42 @@ Browser base IDs expand to DESKTOP, TABLET and MOBILE execution IDs. These are b
 
 **Notes:** Browser project desktop; viewport 1280×900. Additional regression/behavior coverage beyond the initial plan. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
 
+### TC-FE-BROWSER-07-DESKTOP
+
+**Test Case ID:** TC-FE-BROWSER-07-DESKTOP
+
+**Test Name:** displays the local Google option without configuration banners
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–2
+
+**Test Type:** Integration (browser)
+
+**Purpose:** Verify that the frontend displays the local Google option without configuration banners.
+
+**Preconditions:** Frontend dependencies installed; Chrome available and Playwright starts isolated Vite on port 4174; synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Open the login route with a signed-out response.
+2. Inspect the visible disabled Continue with Google button.
+3. Check absence of configuration banners and horizontal overflow.
+
+**Test Data:** Unconfigured Google client; desktop/tablet/mobile viewports
+
+**Expected Result:** The Google option is visible but disabled, with no configuration banner and no horizontal overflow.
+
+**Actual Result:** All assertions passed in the recorded execution. The Google option is visible but disabled, with no configuration banner and no horizontal overflow.
+
+**Status:** PASS
+
+**Test File:** [frontend/e2e/frontend.spec.js](../../e2e/frontend.spec.js)
+
+**Dependencies:** Real Chrome/Vite; synthetic signed-out session; no public Google client configured.
+
+**Notes:** Browser project desktop; viewport 1280×900. Adapts TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
 ### TC-FE-BROWSER-01-TABLET
 
 **Test Case ID:** TC-FE-BROWSER-01-TABLET
@@ -3911,6 +4021,42 @@ Browser base IDs expand to DESKTOP, TABLET and MOBILE execution IDs. These are b
 
 **Notes:** Browser project tablet; viewport 768×1024. Additional regression/behavior coverage beyond the initial plan. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
 
+### TC-FE-BROWSER-07-TABLET
+
+**Test Case ID:** TC-FE-BROWSER-07-TABLET
+
+**Test Name:** displays the local Google option without configuration banners
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–2
+
+**Test Type:** Integration (browser)
+
+**Purpose:** Verify that the frontend displays the local Google option without configuration banners.
+
+**Preconditions:** Frontend dependencies installed; Chrome available and Playwright starts isolated Vite on port 4174; synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Open the login route with a signed-out response.
+2. Inspect the visible disabled Continue with Google button.
+3. Check absence of configuration banners and horizontal overflow.
+
+**Test Data:** Unconfigured Google client; desktop/tablet/mobile viewports
+
+**Expected Result:** The Google option is visible but disabled, with no configuration banner and no horizontal overflow.
+
+**Actual Result:** All assertions passed in the recorded execution. The Google option is visible but disabled, with no configuration banner and no horizontal overflow.
+
+**Status:** PASS
+
+**Test File:** [frontend/e2e/frontend.spec.js](../../e2e/frontend.spec.js)
+
+**Dependencies:** Real Chrome/Vite; synthetic signed-out session; no public Google client configured.
+
+**Notes:** Browser project tablet; viewport 768×1024. Adapts TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
 ### TC-FE-BROWSER-01-MOBILE
 
 **Test Case ID:** TC-FE-BROWSER-01-MOBILE
@@ -4132,6 +4278,42 @@ Browser base IDs expand to DESKTOP, TABLET and MOBILE execution IDs. These are b
 **Dependencies:** Real Chrome and Vite; mocked auth HTTP responses; synthetic card harness.
 
 **Notes:** Browser project mobile; viewport 390×844. Additional regression/behavior coverage beyond the initial plan. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
+
+### TC-FE-BROWSER-07-MOBILE
+
+**Test Case ID:** TC-FE-BROWSER-07-MOBILE
+
+**Test Name:** displays the local Google option without configuration banners
+
+**Feature Area:** Authentication
+
+**Related Sprint 1 PBI:** 1–2
+
+**Test Type:** Integration (browser)
+
+**Purpose:** Verify that the frontend displays the local Google option without configuration banners.
+
+**Preconditions:** Frontend dependencies installed; Chrome available and Playwright starts isolated Vite on port 4174; synthetic dependencies configured as below.
+
+**Test Steps:**
+
+1. Open the login route with a signed-out response.
+2. Inspect the visible disabled Continue with Google button.
+3. Check absence of configuration banners and horizontal overflow.
+
+**Test Data:** Unconfigured Google client; desktop/tablet/mobile viewports
+
+**Expected Result:** The Google option is visible but disabled, with no configuration banner and no horizontal overflow.
+
+**Actual Result:** All assertions passed in the recorded execution. The Google option is visible but disabled, with no configuration banner and no horizontal overflow.
+
+**Status:** PASS
+
+**Test File:** [frontend/e2e/frontend.spec.js](../../e2e/frontend.spec.js)
+
+**Dependencies:** Real Chrome/Vite; synthetic signed-out session; no public Google client configured.
+
+**Notes:** Browser project mobile; viewport 390×844. Adapts TC-LOGIN-02 in the limited scope documented above. No real backend endpoint, MongoDB persistence, Google credentials or backend authorization is proven by this test.
 
 ### TC-FE-GOOGLE-BROWSER-01-DESKTOP
 

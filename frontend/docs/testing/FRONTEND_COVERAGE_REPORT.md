@@ -1,18 +1,18 @@
 # Frontend coverage report
 
-Measured by @vitest/coverage-v8 5.0.5 from the 96-test Vitest run on Monday, October 26, 2026 at 9:40 PM. This is executable JavaScript/JSX coverage, not a feature-completion score.
+Measured by @vitest/coverage-v8 5.0.5 from the 98-test Vitest run on Monday, October 26, 2026 at 10:08 PM. This is executable JavaScript/JSX coverage, not a feature-completion score.
 
 | Source | Statements | Branches | Functions | Lines |
 |---|---|---|---|---|
-| **TOTAL** | 92.04% (266/289) | 91.24% (198/217) | 80.41% (78/97) | 93.36% (211/226) |
-| src/App.jsx | 86.09% (130/151) | 81.92% (68/83) | 68.42% (39/57) | 87.82% (101/115) |
+| **TOTAL** | 92.15% (270/293) | 91.7% (210/229) | 80.41% (78/97) | 93.5% (216/231) |
+| src/App.jsx | 86.18% (131/152) | 83.87% (78/93) | 68.42% (39/57) | 87.93% (102/116) |
 | src/components/GameCard.jsx | 85.71% (6/7) | 94.73% (18/19) | 66.66% (2/3) | 85.71% (6/7) |
 | src/components/GoogleSignIn.jsx | 100% (61/61) | 94.59% (35/37) | 100% (15/15) | 100% (44/44) |
 | src/components/Layout.jsx | 100% (1/1) | 100% (4/4) | 100% (1/1) | 100% (1/1) |
 | src/components/RatingForm.jsx | 100% (1/1) | 100% (0/0) | 100% (1/1) | 100% (1/1) |
 | src/components/RatingInput.jsx | 100% (3/3) | 100% (3/3) | 100% (3/3) | 100% (3/3) |
 | src/components/ReviewForm.jsx | 96.42% (27/28) | 95.23% (20/21) | 100% (4/4) | 100% (23/23) |
-| src/services/auth.js | 100% (23/23) | 100% (19/19) | 100% (8/8) | 100% (19/19) |
+| src/services/auth.js | 100% (26/26) | 100% (21/21) | 100% (8/8) | 100% (23/23) |
 | src/utils/games.js | 100% (9/9) | 100% (22/22) | 100% (4/4) | 100% (8/8) |
 | src/utils/reviews.js | 100% (5/5) | 100% (9/9) | 100% (1/1) | 100% (5/5) |
 

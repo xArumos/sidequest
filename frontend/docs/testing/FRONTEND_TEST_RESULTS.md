@@ -1,15 +1,15 @@
 # Frontend test execution results
 
-- Vitest execution: Monday, October 26, 2026 at 9:40 PM (America/New_York).
-- Browser execution: Monday, October 26, 2026 at 9:40 PM (America/New_York).
+- Vitest execution: Monday, October 26, 2026 at 10:08 PM (America/New_York).
+- Browser execution: Monday, October 26, 2026 at 10:01 PM (America/New_York).
 - Branch: `feature/frontend-password-auth-integration`.
-- Validated application/test code commit: `60d802820da8c0eca87237eae70504922b515fda`. Documentation commits follow this code revision; see git history for delivery HEAD.
+- Validated application/test code commit: `033a92531be395e525ca219211d2085399b5e10c`. Documentation commits follow this code revision; see git history for delivery HEAD.
 - Frameworks: Vitest 5.0.5, React Testing Library, user-event, jsdom; V8 coverage provider 5.0.5; Playwright 1.64.1 with installed Google Chrome.
 - Runtime: v24.16.0.
 - Baseline: **35 passing tests**, confirmed before changes.
-- Created: **61 new Vitest tests + 9 browser scenarios = 70 new scenarios**. Three browser viewports do not inflate the scenario count.
-- Final suite: **96 Vitest tests + 27 browser executions = 123 executions**, covering 105 distinct scenarios.
-- Passed: **123**. Failed: **0**. Skipped/not run: **0**. Blocked executable tests: **0**. Full-stack E2E tests run: **0**.
+- Created: **63 new Vitest tests + 10 browser scenarios = 73 new scenarios**. Three browser viewports do not inflate the scenario count.
+- Final suite: **98 Vitest tests + 30 browser executions = 128 executions**, covering 108 distinct scenarios.
+- Passed: **128**. Failed: **0**. Skipped/not run: **0**. Blocked executable tests: **0**. Full-stack E2E tests run: **0**.
 - Missing planned scenarios: **3 NOT IMPLEMENTED**, separately listed below; they are not counted as passing or skipped automated tests.
 
 ## Commands executed
@@ -32,7 +32,7 @@ Dependency changes: only the matching V8 coverage provider and Playwright were a
 
 | Area | Vitest executions | Browser executions | Passed | Failed |
 |---|---|---|---|---|
-| Authentication | 48 | 9 | 57 | 0 |
+| Authentication | 50 | 12 | 62 | 0 |
 | Backlog | 1 | 3 | 4 | 0 |
 | Discovery & rankings | 10 | 3 | 13 | 0 |
 | Game cards | 6 | 3 | 9 | 0 |
@@ -127,7 +127,7 @@ Three complete in-scope scenarios are NOT IMPLEMENTED (TC-USRDATA-01/02 and TC-R
 | TC-FE-GOOGLE-09 | prevents callbacks while another authentication request is pending | Component | PASS | frontend/src/components/GoogleSignIn.loading.test.jsx |
 | TC-FE-GOOGLE-10 | rejects an empty SDK credential without attempting authentication | Component | PASS | frontend/src/components/GoogleSignIn.loading.test.jsx |
 | TC-FE-GOOGLE-11 | times out a stalled SDK request and offers retry | Component | PASS | frontend/src/components/GoogleSignIn.loading.test.jsx |
-| TC-FE-GOOGLE-01 | explains unavailable configuration without showing a fake login | Component | PASS | frontend/src/components/GoogleSignIn.test.jsx |
+| TC-FE-GOOGLE-01 | hides Google configuration notices when sign-in is unconfigured | Component | PASS | frontend/src/components/GoogleSignIn.test.jsx |
 | TC-FE-GOOGLE-02 | initializes the official SDK and forwards credentials only while mounted | Component | PASS | frontend/src/components/GoogleSignIn.test.jsx |
 | TC-FE-GOOGLE-03 | announces in-progress authentication | Component | PASS | frontend/src/components/GoogleSignIn.test.jsx |
 | TC-FE-GOOGLE-12 | initializes Google with the shared public backend client ID | Component | PASS | frontend/src/components/GoogleSignIn.test.jsx |
@@ -154,6 +154,8 @@ Three complete in-scope scenarios are NOT IMPLEMENTED (TC-USRDATA-01/02 and TC-R
 | TC-FE-INTEGRATION-04 | rejects malformed profile data with a visible retry path | Integration | PASS | frontend/src/services/auth-ui.test.jsx |
 | TC-FE-INTEGRATION-05 | aborts the session request when the application unmounts | Integration | PASS | frontend/src/services/auth-ui.test.jsx |
 | TC-FE-INTEGRATION-06 | recovers from a network failure through the real request service | Integration | PASS | frontend/src/services/auth-ui.test.jsx |
+| TC-FE-INTEGRATION-07 | keeps startup authentication configuration notices off the homepage | Integration | PASS | frontend/src/services/auth-ui.test.jsx |
+| TC-FE-INTEGRATION-08 | reports an attempted unavailable sign-in without showing configuration details | Integration | PASS | frontend/src/services/auth-ui.test.jsx |
 | TC-FE-AUTH-01 | restores cookie sessions | Unit | PASS | frontend/src/services/auth.test.js |
 | TC-FE-AUTH-02 | posts the Google credential without storing a token | Unit | PASS | frontend/src/services/auth.test.js |
 | TC-FE-AUTH-03 | handles logout with no JSON body | Unit | PASS | frontend/src/services/auth.test.js |
@@ -192,18 +194,21 @@ Three complete in-scope scenarios are NOT IMPLEMENTED (TC-USRDATA-01/02 and TC-R
 | TC-FE-BROWSER-04-DESKTOP | card overflow and fallback layout | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
 | TC-FE-BROWSER-05-DESKTOP | signed-in library navigation | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
 | TC-FE-BROWSER-06-DESKTOP | privacy-safe public profile state | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
+| TC-FE-BROWSER-07-DESKTOP | displays the local Google option without configuration banners | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
 | TC-FE-BROWSER-01-TABLET | homepage auth navigation and viewport fit | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
 | TC-FE-BROWSER-02-TABLET | keyboard skip navigation | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
 | TC-FE-BROWSER-03-TABLET | discovery controls and responsive fit | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
 | TC-FE-BROWSER-04-TABLET | card overflow and fallback layout | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
 | TC-FE-BROWSER-05-TABLET | signed-in library navigation | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
 | TC-FE-BROWSER-06-TABLET | privacy-safe public profile state | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
+| TC-FE-BROWSER-07-TABLET | displays the local Google option without configuration banners | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
 | TC-FE-BROWSER-01-MOBILE | homepage auth navigation and viewport fit | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
 | TC-FE-BROWSER-02-MOBILE | keyboard skip navigation | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
 | TC-FE-BROWSER-03-MOBILE | discovery controls and responsive fit | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
 | TC-FE-BROWSER-04-MOBILE | card overflow and fallback layout | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
 | TC-FE-BROWSER-05-MOBILE | signed-in library navigation | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
 | TC-FE-BROWSER-06-MOBILE | privacy-safe public profile state | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
+| TC-FE-BROWSER-07-MOBILE | displays the local Google option without configuration banners | Integration (browser) | PASS | frontend/e2e/frontend.spec.js |
 | TC-FE-GOOGLE-BROWSER-01-DESKTOP | completes the Google callback session flow and refresh/logout at each viewport | Integration (browser) | PASS | frontend/e2e/google-auth.spec.js |
 | TC-FE-GOOGLE-BROWSER-02-DESKTOP | renders rejected Google authentication without losing registration inputs | Integration (browser) | PASS | frontend/e2e/google-auth.spec.js |
 | TC-FE-GOOGLE-BROWSER-03-DESKTOP | recovers from a failed Google SDK load using the in-page retry | Integration (browser) | PASS | frontend/e2e/google-auth.spec.js |

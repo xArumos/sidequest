@@ -12,7 +12,7 @@ dist/assets/Montserrat-Medium-DZarjTSE.ttf    330.87 kB
 dist/assets/Montserrat-Regular-BdMzRefO.ttf   330.94 kB
 dist/assets/Montserrat-SemiBold-C0-6BeuA.ttf  333.98 kB
 dist/assets/Montserrat-Bold-D4JCkd3k.ttf      335.78 kB
-dist/assets/index-5rB0dxQS.css                 11.25 kB │ gzip:  3.31 kB
-dist/assets/index-B9HCZw2N.js                 285.26 kB │ gzip: 88.84 kB
+dist/assets/index-DmP9vzdz.css                 11.47 kB │ gzip:  3.37 kB
+dist/assets/index-Be7AQZ54.js                 285.34 kB │ gzip: 88.89 kB
 
-✓ built in 272ms
+✓ built in 141ms

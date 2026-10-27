@@ -534,10 +534,10 @@
     "steps": [
       "Clear both public Google client settings",
       "Render GoogleSignIn",
-      "Inspect its empty output"
+      "Inspect the visible disabled button and absence of status/error banners"
     ],
     "data": "No Google public client ID",
-    "expected": "No Google configuration notice or inactive Google UI is rendered.",
+    "expected": "Continue with Google remains visible and disabled; no configuration banner is rendered.",
     "spreadsheetIds": []
   },
   {
@@ -1910,5 +1910,24 @@
       "TC-LOGIN-02"
     ],
     "dependencies": "Controlled fetch responses; real App and frontend API service; synthetic Google widget"
+  },
+  {
+    "id": "TC-FE-BROWSER-07",
+    "name": "displays the local Google option without configuration banners",
+    "feature": "Authentication",
+    "pbi": "1–2",
+    "type": "Integration",
+    "file": "frontend/e2e/frontend.spec.js",
+    "dependencies": "Real Chrome/Vite; synthetic signed-out session; no public Google client configured",
+    "steps": [
+      "Open the login route with a signed-out response",
+      "Inspect the visible disabled Continue with Google button",
+      "Check absence of configuration banners and horizontal overflow"
+    ],
+    "data": "Unconfigured Google client; desktop/tablet/mobile viewports",
+    "expected": "The Google option is visible but disabled, with no configuration banner and no horizontal overflow.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
   }
 ]

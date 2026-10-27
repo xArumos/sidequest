@@ -50,3 +50,5 @@ See [the testing guide](docs/testing/FRONTEND_TESTING_GUIDE.md) for Docker-free 
 The existing coursework testing documents record the earlier validated revision. See [the authentication integration review](docs/authentication-integration-review.md) for the newer frontend changes and their validation.
 
 Google is presented first on login and registration. SDK failures/timeouts have an in-page retry. Run `PLAYWRIGHT_CHANNEL=chrome npm run test:google-browser --prefix frontend` from the repository root for the controlled Google UI/browser flow.
+
+The Google option remains visible on login/registration even when no public client ID is configured. In that case it is disabled without a configuration banner; with a valid ID the official Google SDK button replaces it.

@@ -2,11 +2,11 @@
   "config": {
     "argv": [
       "/Users/liliannag/.nvm/versions/node/v24.16.0/bin/node",
-      "/private/tmp/sidequest-frontend-auth/frontend/node_modules/.bin/playwright",
+      "/Users/liliannag/sidequest/frontend/node_modules/.bin/playwright",
       "test"
     ],
-    "configFile": "/private/tmp/sidequest-frontend-auth/frontend/playwright.config.js",
-    "rootDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
+    "configFile": "/Users/liliannag/sidequest/frontend/playwright.config.js",
+    "rootDir": "/Users/liliannag/sidequest/frontend/e2e",
     "failOnFlakyTests": false,
     "forbidOnly": false,
     "fullyParallel": true,
@@ -22,7 +22,7 @@
     "preserveOutput": "always",
     "projects": [
       {
-        "outputDir": "/private/tmp/sidequest-frontend-auth/frontend/test-results",
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
@@ -30,7 +30,7 @@
         },
         "id": "desktop",
         "name": "desktop",
-        "testDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
         "testIgnore": [],
         "testMatch": [
           "frontend.spec.js"
@@ -38,7 +38,7 @@
         "timeout": 30000
       },
       {
-        "outputDir": "/private/tmp/sidequest-frontend-auth/frontend/test-results",
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
@@ -46,7 +46,7 @@
         },
         "id": "tablet",
         "name": "tablet",
-        "testDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
         "testIgnore": [],
         "testMatch": [
           "frontend.spec.js"
@@ -54,7 +54,7 @@
         "timeout": 30000
       },
       {
-        "outputDir": "/private/tmp/sidequest-frontend-auth/frontend/test-results",
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
@@ -62,7 +62,7 @@
         },
         "id": "mobile",
         "name": "mobile",
-        "testDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
         "testIgnore": [],
         "testMatch": [
           "frontend.spec.js"
@@ -74,15 +74,15 @@
       {
         "grep": {},
         "grepInvert": null,
-        "outputDir": "/private/tmp/sidequest-frontend-auth/frontend/test-results",
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
           "actualWorkers": 2
         },
         "name": "desktop",
-        "testDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
-        "snapshotDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
+        "snapshotDir": "/Users/liliannag/sidequest/frontend/e2e",
         "testIgnore": [],
         "testMatch": "frontend.spec.js",
         "timeout": 30000,
@@ -104,15 +104,15 @@
       {
         "grep": {},
         "grepInvert": null,
-        "outputDir": "/private/tmp/sidequest-frontend-auth/frontend/test-results",
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
           "actualWorkers": 2
         },
         "name": "tablet",
-        "testDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
-        "snapshotDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
+        "snapshotDir": "/Users/liliannag/sidequest/frontend/e2e",
         "testIgnore": [],
         "testMatch": "frontend.spec.js",
         "timeout": 30000,
@@ -134,15 +134,15 @@
       {
         "grep": {},
         "grepInvert": null,
-        "outputDir": "/private/tmp/sidequest-frontend-auth/frontend/test-results",
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
           "actualWorkers": 2
         },
         "name": "mobile",
-        "testDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
-        "snapshotDir": "/private/tmp/sidequest-frontend-auth/frontend/e2e",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
+        "snapshotDir": "/Users/liliannag/sidequest/frontend/e2e",
         "testIgnore": [],
         "testMatch": "frontend.spec.js",
         "timeout": 30000,
@@ -220,12 +220,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 3012,
+                  "duration": 3857,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:23.220Z",
+                  "startTime": "2026-10-27T02:00:55.810Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -254,12 +254,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 3040,
+                  "duration": 3728,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:23.279Z",
+                  "startTime": "2026-10-27T02:00:55.809Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -288,12 +288,12 @@
                   "workerIndex": 1,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 2453,
+                  "duration": 1554,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:28.625Z",
+                  "startTime": "2026-10-27T02:01:01.063Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -322,12 +322,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2307,
+                  "duration": 1472,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:28.630Z",
+                  "startTime": "2026-10-27T02:01:01.153Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -353,15 +353,15 @@
               "projectName": "desktop",
               "results": [
                 {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 2076,
+                  "duration": 1471,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:30.984Z",
+                  "startTime": "2026-10-27T02:01:02.650Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -387,15 +387,15 @@
               "projectName": "desktop",
               "results": [
                 {
-                  "workerIndex": 1,
-                  "parallelIndex": 1,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1911,
+                  "duration": 1157,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:31.114Z",
+                  "startTime": "2026-10-27T02:01:02.675Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -406,6 +406,40 @@
           "id": "b8927c7c7abd922a0b01-ce29f24a2c6ad66b49bc",
           "file": "frontend.spec.js",
           "line": 68,
+          "column": 1
+        },
+        {
+          "title": "[TC-FE-BROWSER-07] displays the local Google option without configuration banners",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 884,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-27T02:01:03.871Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b8927c7c7abd922a0b01-4c650580309fbf247bcb",
+          "file": "frontend.spec.js",
+          "line": 76,
           "column": 1
         },
         {
@@ -421,15 +455,15 @@
               "projectName": "tablet",
               "results": [
                 {
-                  "workerIndex": 2,
+                  "workerIndex": 3,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1691,
+                  "duration": 1749,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:33.633Z",
+                  "startTime": "2026-10-27T02:01:06.115Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -455,15 +489,15 @@
               "projectName": "tablet",
               "results": [
                 {
-                  "workerIndex": 3,
+                  "workerIndex": 2,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1597,
+                  "duration": 1802,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:33.647Z",
+                  "startTime": "2026-10-27T02:01:05.720Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -489,15 +523,15 @@
               "projectName": "tablet",
               "results": [
                 {
-                  "workerIndex": 3,
+                  "workerIndex": 2,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 960,
+                  "duration": 1294,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:35.977Z",
+                  "startTime": "2026-10-27T02:01:08.111Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -523,15 +557,15 @@
               "projectName": "tablet",
               "results": [
                 {
-                  "workerIndex": 2,
+                  "workerIndex": 3,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 863,
+                  "duration": 1189,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:36.047Z",
+                  "startTime": "2026-10-27T02:01:08.756Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -558,14 +592,14 @@
               "results": [
                 {
                   "workerIndex": 2,
-                  "parallelIndex": 1,
+                  "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 981,
+                  "duration": 1508,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:36.931Z",
+                  "startTime": "2026-10-27T02:01:09.427Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -592,14 +626,14 @@
               "results": [
                 {
                   "workerIndex": 3,
-                  "parallelIndex": 0,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 826,
+                  "duration": 1297,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:36.953Z",
+                  "startTime": "2026-10-27T02:01:10.005Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -610,6 +644,40 @@
           "id": "b8927c7c7abd922a0b01-a162ae679e3d618087bd",
           "file": "frontend.spec.js",
           "line": 68,
+          "column": 1
+        },
+        {
+          "title": "[TC-FE-BROWSER-07] displays the local Google option without configuration banners",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1045,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-27T02:01:10.954Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b8927c7c7abd922a0b01-11f31785ee25f0a4a535",
+          "file": "frontend.spec.js",
+          "line": 76,
           "column": 1
         },
         {
@@ -626,14 +694,14 @@
               "results": [
                 {
                   "workerIndex": 4,
-                  "parallelIndex": 0,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1928,
+                  "duration": 2597,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:38.210Z",
+                  "startTime": "2026-10-27T02:01:12.135Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -660,14 +728,14 @@
               "results": [
                 {
                   "workerIndex": 5,
-                  "parallelIndex": 1,
+                  "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1376,
+                  "duration": 1627,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:38.319Z",
+                  "startTime": "2026-10-27T02:01:13.213Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -693,15 +761,15 @@
               "projectName": "mobile",
               "results": [
                 {
-                  "workerIndex": 5,
+                  "workerIndex": 4,
                   "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 1028,
+                  "duration": 1284,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:40.451Z",
+                  "startTime": "2026-10-27T02:01:15.586Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -727,15 +795,15 @@
               "projectName": "mobile",
               "results": [
                 {
-                  "workerIndex": 4,
+                  "workerIndex": 5,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 854,
+                  "duration": 1258,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:40.514Z",
+                  "startTime": "2026-10-27T02:01:16.337Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -762,14 +830,14 @@
               "results": [
                 {
                   "workerIndex": 4,
-                  "parallelIndex": 0,
+                  "parallelIndex": 1,
                   "status": "passed",
-                  "duration": 973,
+                  "duration": 1257,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:41.380Z",
+                  "startTime": "2026-10-27T02:01:16.896Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -796,14 +864,14 @@
               "results": [
                 {
                   "workerIndex": 5,
-                  "parallelIndex": 1,
+                  "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 820,
+                  "duration": 1078,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-27T01:40:41.496Z",
+                  "startTime": "2026-10-27T02:01:17.616Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -815,15 +883,49 @@
           "file": "frontend.spec.js",
           "line": 68,
           "column": 1
+        },
+        {
+          "title": "[TC-FE-BROWSER-07] displays the local Google option without configuration banners",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1058,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-27T02:01:18.177Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b8927c7c7abd922a0b01-b94ed5f54b5efaee1442",
+          "file": "frontend.spec.js",
+          "line": 76,
+          "column": 1
         }
       ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-27T01:40:21.140Z",
-    "duration": 21359.393,
-    "expected": 18,
+    "startTime": "2026-10-27T02:00:54.349Z",
+    "duration": 29203.888000000003,
+    "expected": 21,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0
