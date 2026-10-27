@@ -7,6 +7,7 @@ const { createGamesRouter } = require('./games');
 const { createLogsRouter } = require('./logs');
 const { createGoogleVerifier } = require('./google');
 const { MongoStore } = require('connect-mongo');
+const { assertUserIndexes } = require('./user-indexes');
 const User = require('sidequest-database/models/User');
 
 async function main() {
@@ -15,7 +16,8 @@ async function main() {
   let authRouter;
   let sessionMiddleware;
   if (config.auth) {
-    await User.init();
+    await assertUserIndexes(User.collection);
+    await User.createIndexes();
     const store = MongoStore.create({ client: connection.getClient(), dbName: connection.name });
     sessionMiddleware = createSessionMiddleware({ ...config.auth, store });
     authRouter = createAuthRouter({
@@ -23,10 +25,10 @@ async function main() {
       frontendOrigin: config.frontendOrigin,
       users: User,
       store,
-      verifyGoogleToken: createGoogleVerifier(config.auth.googleClientId),
+      verifyGoogleToken: config.auth.googleClientId ? createGoogleVerifier(config.auth.googleClientId) : undefined,
     });
   } else {
-    console.log('Google sign-in is disabled. Set GOOGLE_CLIENT_ID and SESSION_SECRET to enable it.');
+    console.log('Authentication is disabled. Set SESSION_SECRET to enable password login; GOOGLE_CLIENT_ID additionally enables Google sign-in.');
   }
   const app = createApp({
     frontendOrigin: config.frontendOrigin,
