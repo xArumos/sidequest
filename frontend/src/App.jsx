@@ -1,16 +1,22 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import RatingForm from "./components/RatingForm"
+import AuthPanel from './components/AuthPanel'
+import RatingForm from './components/RatingForm'
+import './App.css'
 
 function App() {
   return (
-    <div>
-      <h1>SideQuest</h1>
-      <RatingForm />
-    </div>
-  );
+    <main className="app-shell">
+      <header className="app-header">
+        <p className="eyebrow">Your games. Your stories.</p>
+        <h1>SideQuest</h1>
+        <p>Keep track of the games that stay with you.</p>
+      </header>
+      <AuthPanel />
+      <section className="rating-section" aria-labelledby="rating-title">
+        <h2 id="rating-title">Rate a game</h2>
+        <RatingForm />
+      </section>
+    </main>
+  )
 }
 
 export default App
