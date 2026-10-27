@@ -73,3 +73,12 @@ test('[TC-FE-BROWSER-06] private profile route reveals no list data or edit cont
   await expect(page.getByRole('article')).toHaveCount(0)
   await expect(page.getByRole('button', { name: /edit|delete/i })).toHaveCount(0)
 })
+test('[TC-FE-BROWSER-07] displays the local Google option without configuration banners', async ({ page }) => {
+  await signedOut(page)
+  await page.goto('/login')
+  const google = page.getByRole('button', { name: 'Continue with Google' })
+  await expect(google).toBeVisible()
+  await expect(google).toBeDisabled()
+  await expect(page.getByText(/not configured|until the application is configured/i)).toHaveCount(0)
+  await fitsViewport(page)
+})

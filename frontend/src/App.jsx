@@ -148,7 +148,7 @@ function LoginPage({ isAuthenticated, onLogin, onPasswordLogin, onRegister, busy
     <h1>{registering ? 'Welcome to SideQuest' : 'Sign in to continue'}</h1>
     <p className="subtle-text">{registering ? (googleConfigured ? 'Create your account with a username, email, and password, or continue with Google.' : 'Create your SideQuest account.') : (googleConfigured ? 'Use your username or email and password, or continue with Google.' : 'Sign in with your SideQuest username or email and password.')}</p>
     <GoogleSignIn onCredential={signIn} busy={busy} />
-    {googleConfigured && <p className="auth-divider">Or use your SideQuest account</p>}
+    <p className="auth-divider">Or use your SideQuest account</p>
     <form key={registering ? 'register' : 'login'} className="stack-form" onSubmit={submit} noValidate>
       <fieldset disabled={busy}>
         {registering ? <>

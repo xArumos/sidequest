@@ -58,7 +58,9 @@ export default function GoogleSignIn({ onCredential, busy }) {
     })
     return () => { active = false }
   }, [clientId, attempt])
-  if (!clientId) return null
+  if (!clientId) return <div className="google-signin">
+    <button type="button" className="google-signin-placeholder" disabled>Continue with Google</button>
+  </div>
   return <div className="google-signin" aria-busy={busy || loading}>
     <div ref={container} hidden={busy || loading || Boolean(error)} />
     {loading && !busy && <p role="status">Loading Google sign-in…</p>}

@@ -5,8 +5,10 @@ afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals() })
 it('[TC-FE-GOOGLE-01] hides Google configuration notices when sign-in is unconfigured', () => {
   vi.stubEnv('VITE_GOOGLE_CLIENT_ID', '')
   vi.stubEnv('SIDEQUEST_GOOGLE_CLIENT_ID', '')
-  const { container } = render(<GoogleSignIn onCredential={vi.fn()} />)
-  expect(container).toBeEmptyDOMElement()
+  render(<GoogleSignIn onCredential={vi.fn()} />)
+  expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeDisabled()
+  expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })
 it('[TC-FE-GOOGLE-02] initializes the official SDK and forwards credentials only while mounted', async () => {
   vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'public-client-id')
