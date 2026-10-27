@@ -104,7 +104,7 @@ npm test --prefix frontend             # Vitest + React Testing Library (jsdom)
 - **server/** uses Node's built-in test runner (`node --test`). Integration tests start child server processes on temporary ports, use the `sidequest_test` database, and delete only the records they create. Set `MONGODB_TEST_URI` to point them at a different MongoDB instance.
 - **database/** and **frontend/** use [Vitest](https://vitest.dev). The database tests use `mongodb-memory-server`, which downloads a `mongod` binary on the first run. Frontend tests sit next to the code as `*.test.jsx`, and database tests are under `database/tests/`.
 
-**CI:** GitHub Actions (`.github/workflows/ci.yml`) runs `npm ci`, lint, tests, and build for every package in its matrix, on every pull request and on pushes to `main`. When you add a package, add it to the matrix. `server` isn't in the matrix yet.
+**CI:** GitHub Actions (`.github/workflows/ci.yml`) runs `npm ci`, lint, tests, and build for every package in its matrix, on every pull request and on pushes to `main`. When you add a package, add it to the matrix.
 
 ## Repository layout
 

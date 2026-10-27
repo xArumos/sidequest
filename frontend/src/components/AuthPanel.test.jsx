@@ -1,11 +1,12 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import AuthPanel from './AuthPanel'
 import { authRequest } from '../auth-api'
 
 vi.mock('../auth-api', () => ({ authRequest: vi.fn() }))
-afterEach(() => { cleanup(); vi.resetAllMocks() })
+beforeEach(() => vi.stubEnv('VITE_GOOGLE_CLIENT_ID', ''))
+afterEach(() => { cleanup(); vi.resetAllMocks(); vi.unstubAllEnvs() })
 const user = { id: '1', username: 'player', displayName: 'player', email: 'player@example.com' }
 async function signedOut() {
   authRequest.mockRejectedValueOnce(Object.assign(new Error('Please sign in.'), { status: 401 }))
