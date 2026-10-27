@@ -112,6 +112,7 @@ function LandingPage({ wishlist, onToggleWishlist }) {
 
 function LoginPage({ isAuthenticated, onLogin, onPasswordLogin, onRegister, busy, registering = false }) {
   const [error, setError] = useState('')
+  const googleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID || import.meta.env.SIDEQUEST_GOOGLE_CLIENT_ID)
   if (isAuthenticated) return <Navigate to="/profile" replace />
   async function signIn(credential) {
     setError('')
@@ -145,9 +146,9 @@ function LoginPage({ isAuthenticated, onLogin, onPasswordLogin, onRegister, busy
   return <section className="auth-page"><div className="auth-card">
     <p className="eyebrow">{registering ? 'Create account' : 'Welcome back'}</p>
     <h1>{registering ? 'Welcome to SideQuest' : 'Sign in to continue'}</h1>
-    <p className="subtle-text">{registering ? 'Create your account with a username, email, and password, or continue with Google.' : 'Use your username or email and password, or continue with Google.'}</p>
+    <p className="subtle-text">{registering ? (googleConfigured ? 'Create your account with a username, email, and password, or continue with Google.' : 'Create your SideQuest account.') : (googleConfigured ? 'Use your username or email and password, or continue with Google.' : 'Sign in with your SideQuest username or email and password.')}</p>
     <GoogleSignIn onCredential={signIn} busy={busy} />
-    <p className="auth-divider">Or use your SideQuest account</p>
+    {googleConfigured && <p className="auth-divider">Or use your SideQuest account</p>}
     <form key={registering ? 'register' : 'login'} className="stack-form" onSubmit={submit} noValidate>
       <fieldset disabled={busy}>
         {registering ? <>
@@ -162,7 +163,7 @@ function LoginPage({ isAuthenticated, onLogin, onPasswordLogin, onRegister, busy
         <button className="primary-button" type="submit">{busy ? 'Please wait…' : registering ? 'Create account' : 'Log in'}</button>
       </fieldset>
     </form>
-    <p className="subtle-text">Your first successful Google sign-in creates a separate SideQuest account.</p>
+    {googleConfigured && <p className="subtle-text">Your first successful Google sign-in creates a separate SideQuest account.</p>}
     {error && <p role="alert">{error}</p>}
     <p className="auth-switch">{registering ? <>Already have an account? <Link to="/login">Log in here</Link></> : <>Need an account? <Link to="/register">Sign up now</Link></>}</p>
   </div></section>
@@ -465,7 +466,7 @@ function App() {
       if (!controller.signal.aborted) setUserProfile(user)
     }).catch(error => {
       if (!controller.signal.aborted) {
-        if (error.status === 401) setUserProfile(null)
+        if (error.status === 401 || ['AUTH_NOT_CONFIGURED', 'GOOGLE_NOT_CONFIGURED'].includes(error.code)) setUserProfile(null)
         else setError(error.message)
       }
     }).finally(() => { if (!controller.signal.aborted) setChecking(false) })

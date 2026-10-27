@@ -525,18 +525,19 @@
   },
   {
     "id": "TC-FE-GOOGLE-01",
-    "name": "explains unavailable configuration without showing a fake login",
+    "name": "hides Google configuration notices when sign-in is unconfigured",
     "file": "frontend/src/components/GoogleSignIn.test.jsx",
     "type": "Component",
     "dependencies": "Synthetic SDK/script events; no Google network",
     "feature": "Authentication",
     "pbi": "1–2",
     "steps": [
-      "Clear public client configuration",
-      "Render sign-in"
+      "Clear both public Google client settings",
+      "Render GoogleSignIn",
+      "Inspect its empty output"
     ],
-    "data": "Empty VITE_GOOGLE_CLIENT_ID",
-    "expected": "Configuration-unavailable status replaces fake login.",
+    "data": "No Google public client ID",
+    "expected": "No Google configuration notice or inactive Google UI is rendered.",
     "spreadsheetIds": []
   },
   {
@@ -1870,5 +1871,44 @@
     "data": "One aborted SDK request then a synthetic successful load",
     "expected": "Second attempt succeeds without navigating away.",
     "dependencies": "Synthetic Google SDK and controlled HTTP responses; no live Google account"
+  },
+  {
+    "id": "TC-FE-INTEGRATION-07",
+    "name": "keeps startup authentication configuration notices off the homepage",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "type": "Integration",
+    "file": "frontend/src/services/auth-ui.test.jsx",
+    "steps": [
+      "Return a structured AUTH_NOT_CONFIGURED startup response",
+      "Open the homepage",
+      "Inspect heading and absence of alerts"
+    ],
+    "data": "Synthetic 503 AUTH_NOT_CONFIGURED",
+    "expected": "Homepage renders without a Google configuration banner.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ],
+    "dependencies": "Controlled fetch responses; real App and frontend API service; synthetic Google widget"
+  },
+  {
+    "id": "TC-FE-INTEGRATION-08",
+    "name": "reports an attempted unavailable sign-in without showing configuration details",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "type": "Integration",
+    "file": "frontend/src/services/auth-ui.test.jsx",
+    "steps": [
+      "Return a signed-out session",
+      "Trigger Google callback",
+      "Return GOOGLE_NOT_CONFIGURED",
+      "Inspect user-facing error and signed-out state"
+    ],
+    "data": "Synthetic 401 session and 503 GOOGLE_NOT_CONFIGURED",
+    "expected": "An honest temporary-unavailability error replaces configuration details; no login success is shown.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ],
+    "dependencies": "Controlled fetch responses; real App and frontend API service; synthetic Google widget"
   }
 ]

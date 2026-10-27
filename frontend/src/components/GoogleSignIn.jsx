@@ -58,7 +58,7 @@ export default function GoogleSignIn({ onCredential, busy }) {
     })
     return () => { active = false }
   }, [clientId, attempt])
-  if (!clientId) return <p className="subtle-text" role="status">Google sign-in is unavailable until the application is configured.</p>
+  if (!clientId) return null
   return <div className="google-signin" aria-busy={busy || loading}>
     <div ref={container} hidden={busy || loading || Boolean(error)} />
     {loading && !busy && <p role="status">Loading Google sign-in…</p>}

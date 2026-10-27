@@ -61,3 +61,18 @@ it('[TC-FE-INTEGRATION-06] recovers from a network failure through the real requ
   await userEvent.click(screen.getByRole('button', { name: 'Retry connection' }))
   expect(await screen.findByRole('heading', { name: user.displayName })).toBeInTheDocument()
 })
+it('[TC-FE-INTEGRATION-07] keeps startup authentication configuration notices off the homepage', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ error: { code: 'AUTH_NOT_CONFIGURED', message: 'Google sign-in is not configured.' } }, 503)))
+  visit('/')
+  expect(await screen.findByRole('heading', { name: /rate, review, and track/i })).toBeInTheDocument()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  expect(screen.queryByText(/not configured/i)).not.toBeInTheDocument()
+})
+it('[TC-FE-INTEGRATION-08] reports an attempted unavailable sign-in without showing configuration details', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json({}, 401)).mockResolvedValueOnce(json({ error: { code: 'GOOGLE_NOT_CONFIGURED', message: 'Google sign-in is not configured.' } }, 503)))
+  visit('/login')
+  await userEvent.click(await screen.findByRole('button', { name: 'Synthetic Google callback' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('Sign-in is temporarily unavailable')
+  expect(screen.queryByText(/not configured/i)).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument()
+})

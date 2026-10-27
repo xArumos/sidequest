@@ -2,10 +2,11 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { vi } from 'vitest'
 import GoogleSignIn from './GoogleSignIn'
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals() })
-it('[TC-FE-GOOGLE-01] explains unavailable configuration without showing a fake login', () => {
+it('[TC-FE-GOOGLE-01] hides Google configuration notices when sign-in is unconfigured', () => {
   vi.stubEnv('VITE_GOOGLE_CLIENT_ID', '')
-  render(<GoogleSignIn onCredential={vi.fn()} />)
-  expect(screen.getByRole('status')).toHaveTextContent('unavailable')
+  vi.stubEnv('SIDEQUEST_GOOGLE_CLIENT_ID', '')
+  const { container } = render(<GoogleSignIn onCredential={vi.fn()} />)
+  expect(container).toBeEmptyDOMElement()
 })
 it('[TC-FE-GOOGLE-02] initializes the official SDK and forwards credentials only while mounted', async () => {
   vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'public-client-id')
