@@ -146,6 +146,8 @@ function LoginPage({ isAuthenticated, onLogin, onPasswordLogin, onRegister, busy
     <p className="eyebrow">{registering ? 'Create account' : 'Welcome back'}</p>
     <h1>{registering ? 'Welcome to SideQuest' : 'Sign in to continue'}</h1>
     <p className="subtle-text">{registering ? 'Create your account with a username, email, and password, or continue with Google.' : 'Use your username or email and password, or continue with Google.'}</p>
+    <GoogleSignIn onCredential={signIn} busy={busy} />
+    <p className="auth-divider">Or use your SideQuest account</p>
     <form key={registering ? 'register' : 'login'} className="stack-form" onSubmit={submit} noValidate>
       <fieldset disabled={busy}>
         {registering ? <>
@@ -161,7 +163,6 @@ function LoginPage({ isAuthenticated, onLogin, onPasswordLogin, onRegister, busy
       </fieldset>
     </form>
     <p className="subtle-text">Your first successful Google sign-in creates a separate SideQuest account.</p>
-    <GoogleSignIn onCredential={signIn} busy={busy} />
     {error && <p role="alert">{error}</p>}
     <p className="auth-switch">{registering ? <>Already have an account? <Link to="/login">Log in here</Link></> : <>Need an account? <Link to="/register">Sign up now</Link></>}</p>
   </div></section>
@@ -501,8 +502,8 @@ function App() {
       {checking ? <p role="status">Checking your session…</p> : <>
       <Routes>
         <Route path="/" element={<LandingPage wishlist={wishlist} onToggleWishlist={handleToggleWishlist} />} />
-        <Route path="/login" element={<LoginPage isAuthenticated={isAuthenticated} onLogin={login} onPasswordLogin={passwordLogin} onRegister={register} busy={busy} />} />
-        <Route path="/register" element={<LoginPage registering isAuthenticated={isAuthenticated} onLogin={login} onPasswordLogin={passwordLogin} onRegister={register} busy={busy} />} />
+        <Route path="/login" element={<LoginPage key="login" isAuthenticated={isAuthenticated} onLogin={login} onPasswordLogin={passwordLogin} onRegister={register} busy={busy} />} />
+        <Route path="/register" element={<LoginPage key="register" registering isAuthenticated={isAuthenticated} onLogin={login} onPasswordLogin={passwordLogin} onRegister={register} busy={busy} />} />
         <Route path="/games" element={<GameDiscoveryPage wishlist={wishlist} onToggleWishlist={handleToggleWishlist} />} />
         <Route
           path="/games/:gameId"

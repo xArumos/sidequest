@@ -8,9 +8,17 @@ function loadGoogle() {
       const script = document.createElement('script')
       script.src = 'https://accounts.google.com/gsi/client'
       script.async = true
-      script.onload = () => window.google?.accounts?.id
-        ? resolve(window.google.accounts.id) : reject(new Error('Google sign-in could not load.'))
-      script.onerror = () => { script.remove(); reject(new Error('Google sign-in could not load. Check your connection and reload.')) }
+      const fail = () => {
+        script.remove()
+        reject(new Error('Google sign-in could not load. Check your connection and try again.'))
+      }
+      const timeout = setTimeout(fail, 15000)
+      script.onload = () => {
+        clearTimeout(timeout)
+        if (window.google?.accounts?.id) resolve(window.google.accounts.id)
+        else fail()
+      }
+      script.onerror = () => { clearTimeout(timeout); fail() }
       document.head.append(script)
     }).catch(error => { scriptPromise = undefined; throw error })
   }
@@ -18,27 +26,46 @@ function loadGoogle() {
 }
 
 export default function GoogleSignIn({ onCredential, busy }) {
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || import.meta.env.SIDEQUEST_GOOGLE_CLIENT_ID
   const container = useRef(null)
   const callback = useRef(onCredential)
+  const pending = useRef(busy)
   const [error, setError] = useState('')
-  useEffect(() => { callback.current = onCredential }, [onCredential])
+  const [loading, setLoading] = useState(Boolean(clientId))
+  const [attempt, setAttempt] = useState(0)
+  useEffect(() => { callback.current = onCredential; pending.current = busy }, [onCredential, busy])
   useEffect(() => {
     if (!clientId) return
     let active = true
     loadGoogle().then(id => {
       if (!active) return
-      id.initialize({ client_id: clientId, callback: ({ credential }) => {
-        if (active) callback.current(credential)
-      } })
-      id.renderButton(container.current, { theme: 'outline', size: 'large', width: 240 })
-    }).catch(error => { if (active) setError(error.message) })
+      id.initialize({
+        client_id: clientId,
+        auto_select: false,
+        callback: ({ credential } = {}) => {
+          if (!active || pending.current) return
+          if (typeof credential !== 'string' || !credential.trim()) {
+            setError('Google did not return a sign-in credential. Please try again.')
+            return
+          }
+          callback.current(credential)
+        },
+      })
+      id.renderButton(container.current, { theme: 'outline', size: 'large', text: 'continue_with', width: 240 })
+      setLoading(false)
+    }).catch(error => {
+      if (active) { setError(error.message); setLoading(false) }
+    })
     return () => { active = false }
-  }, [clientId])
-  if (!clientId) return <p role="status">Google sign-in is unavailable until the application is configured.</p>
-  return <div aria-busy={busy}>
-    <div ref={container} hidden={busy} />
+  }, [clientId, attempt])
+  if (!clientId) return <p className="subtle-text" role="status">Google sign-in is unavailable until the application is configured.</p>
+  return <div className="google-signin" aria-busy={busy || loading}>
+    <div ref={container} hidden={busy || loading || Boolean(error)} />
+    {loading && !busy && <p role="status">Loading Google sign-in…</p>}
     {busy && <p role="status">Signing in…</p>}
-    {error && <p role="alert">{error}</p>}
+    {error && <>
+      <p role="alert">{error}</p>
+      <button type="button" className="secondary-button" disabled={busy} onClick={() => { setError(''); setLoading(true); setAttempt(value => value + 1) }}>Retry Google sign-in</button>
+    </>}
   </div>
 }

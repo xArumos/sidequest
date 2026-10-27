@@ -718,3 +718,6 @@ button:disabled { cursor: not-allowed; opacity: .65; transform: none; }
 .topbar { flex-wrap: wrap; }
 .rating-summary { flex-wrap: wrap; }
 .cover-fallback { display: grid; place-items: center; padding: 1rem; color: #b7bed6; background: #12182a; }
+.google-signin { margin: 1.25rem 0; }
+.google-signin > div { min-height: 44px; }
+.auth-divider { color: #b7bed6; text-align: center; margin: 1.25rem 0 0; }
