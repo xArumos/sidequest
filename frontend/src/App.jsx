@@ -230,8 +230,8 @@ function LoginPage({ isAuthenticated, onLogin, onPasswordLogin, onRegister, busy
         </> : <label>Username or email<input name="identifier" autoComplete="username" required maxLength={254} /></label>}
         <label>Password<input name="password" type="password" autoComplete={registering ? 'new-password' : 'current-password'} required aria-describedby={registering ? 'password-help' : undefined} /></label>
         {registering && <>
-          <p id="password-help" className="subtle-text">Use 15–128 characters. Spaces and Unicode are supported.</p>
           <label>Confirm password<input name="confirmPassword" type="password" autoComplete="new-password" required /></label>
+          <p id="password-help" className="subtle-text">Password must contain at least 15 characters.</p>
         </>}
         <button className="primary-button" type="submit">{busy ? 'Please wait…' : registering ? 'Create account' : 'Log in'}</button>
       </fieldset>
