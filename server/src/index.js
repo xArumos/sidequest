@@ -3,6 +3,7 @@ const { createApp } = require('./app');
 const { readConfig } = require('./config');
 const { createAuthRouter } = require('./auth');
 const { createSessionMiddleware } = require('./session');
+const { createGamesRouter } = require('./games');
 const { createGoogleVerifier } = require('./google');
 const { MongoStore } = require('connect-mongo');
 const User = require('sidequest-database/models/User');
@@ -30,6 +31,9 @@ async function main() {
     frontendOrigin: config.frontendOrigin,
     authRouter,
     sessionMiddleware,
+    routers: {
+      '/games': createGamesRouter({ rankingMinCount: config.rankingMinCount }),
+    },
     isDatabaseReady: async () => {
       if (connection.readyState !== 1) return false;
       await connection.db.command({ ping: 1 }, { timeoutMS: 1500 });

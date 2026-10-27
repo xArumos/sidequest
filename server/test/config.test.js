@@ -4,11 +4,18 @@ const { readConfig } = require('../src/config');
 
 test('configuration supplies local defaults and accepts environment overrides', () => {
   assert.deepEqual(readConfig({}), {
-    host: '127.0.0.1', port: 5000, frontendOrigin: 'http://localhost:5173', auth: null,
+    host: '127.0.0.1', port: 5000, frontendOrigin: 'http://localhost:5173', auth: null, rankingMinCount: 3,
   });
   assert.deepEqual(readConfig({ HOST: '0.0.0.0', PORT: '5001', FRONTEND_ORIGIN: 'https://sidequest.example' }), {
-    host: '0.0.0.0', port: 5001, frontendOrigin: 'https://sidequest.example', auth: null,
+    host: '0.0.0.0', port: 5001, frontendOrigin: 'https://sidequest.example', auth: null, rankingMinCount: 3,
   });
+});
+
+test('configuration reads and validates the ranking minimum count', () => {
+  assert.equal(readConfig({ RANKING_MIN_COUNT: '5' }).rankingMinCount, 5);
+  for (const RANKING_MIN_COUNT of ['', '0', '-1', '1.5', 'abc']) {
+    assert.throws(() => readConfig({ RANKING_MIN_COUNT }), /RANKING_MIN_COUNT/);
+  }
 });
 
 test('configuration rejects invalid ports and origins before startup', () => {
