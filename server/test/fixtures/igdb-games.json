@@ -1,0 +1,36 @@
+[
+  {
+    "id": 113112,
+    "name": "Hades",
+    "slug": "hades--1",
+    "summary": "Defy the god of the dead as you hack and slash out of the Underworld.",
+    "first_release_date": 1600387200,
+    "cover": { "id": 1, "image_id": "co39vc" },
+    "genres": [{ "id": 12, "name": "Role-playing (RPG)" }, { "id": 31, "name": "Adventure" }],
+    "platforms": [{ "id": 6, "name": "PC (Microsoft Windows)" }, { "id": 130, "name": "Nintendo Switch" }],
+    "external_games": [
+      { "id": 10, "uid": "1145360", "external_game_source": 1 },
+      { "id": 11, "uid": "1145360", "external_game_source": 1 },
+      { "id": 12, "uid": "hades-gog", "external_game_source": 5 }
+    ]
+  },
+  {
+    "id": 14593,
+    "name": "Hollow Knight",
+    "slug": "hollow-knight",
+    "first_release_date": 1487894400,
+    "cover": { "id": 2, "image_id": "co93cr" },
+    "genres": [{ "id": 8, "name": "Platform" }],
+    "platforms": [{ "id": 6, "name": "PC (Microsoft Windows)" }],
+    "external_games": [{ "id": 20, "uid": "367520", "category": 1 }]
+  },
+  {
+    "id": 999001,
+    "name": "Unreleased Prototype",
+    "slug": "unreleased-prototype"
+  },
+  {
+    "id": 999002,
+    "slug": "missing-name"
+  }
+]
