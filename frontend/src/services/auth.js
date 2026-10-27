@@ -33,5 +33,11 @@ export const auth = {
   login: (credential) => request('google', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential }),
   }),
+  passwordLogin: (credentials) => request('login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(credentials),
+  }),
+  register: (account) => request('register', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(account),
+  }),
   logout: () => request('logout', { method: 'POST' }),
 }

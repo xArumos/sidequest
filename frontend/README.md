@@ -19,13 +19,15 @@ Production needs HTTPS and a same-site API for the backend's SameSite=Lax sessio
 ## Available functionality
 
 - Google creates an account on first sign-in; returning users reuse their account.
+- Password accounts use `POST /api/auth/register` and `POST /api/auth/login` from backend PR #18. Google and password accounts remain separate.
+- Both methods use the same existing session restoration/logout flow.
 - Startup restores the HttpOnly cookie session through `GET /api/auth/me`.
 - `POST /api/auth/google` exchanges Google's callback credential for the session.
 - `POST /api/auth/logout` clears the session; UI state changes only on success.
 - Profile displays `displayName` and `email` from the API. Credentials are not saved in browser storage.
 - Protected routes wait for session restoration. Errors support retry.
 
-Password registration is not supported by the merged backend, so there are no fake password forms. Google sign-in needs configuration and a real browser to verify end to end.
+Password registration/login are connected to the API contracts implemented in backend PR #18. Until that PR is merged and deployed, those actions are unavailable on main. Registration validates username, email, 15–128 Unicode code points, and confirmation; only username/email/password are sent. Google sign-in still needs matching client configuration.
 
 Catalog, reviews, rankings, wishlist, backlog, profile editing/history, and shared wishlist APIs have not been implemented in the inspected remote branches. These routes show unavailable states and disable persistence rather than use fixture data. Existing `src/data/mockData.js` remains preserved but is not imported into the application. The review form supports local drafting and validation; publishing defaults to disabled. Do not enable it until a real API contract and persistence callback exist.
 
@@ -44,3 +46,5 @@ See [Sprint 1 status](../docs/sprint1-frontend-status.md) and [copy-ready team r
 ## Sprint 1 automated testing
 
 See [the testing guide](docs/testing/FRONTEND_TESTING_GUIDE.md) for Docker-free component tests, measured coverage, responsive Chrome checks, and the spreadsheet traceability/results documentation.
+
+The existing coursework testing documents record the earlier validated revision. See [the authentication integration review](docs/authentication-integration-review.md) for the newer frontend changes and their validation.

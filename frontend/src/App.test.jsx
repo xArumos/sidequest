@@ -39,7 +39,7 @@ it('[TC-LOGIN-01] waits for session restoration before redirecting protected rou
 it('[TC-FE-APP-04] redirects signed-out users to the real sign-in flow', async () => {
   visit('/wishlist')
   expect(await screen.findByRole('heading', { name: /sign in to continue/i })).toBeInTheDocument()
-  expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument()
+  expect(screen.getByLabelText('Password')).toBeInTheDocument()
 })
 it('[TC-FE-APP-06] creates account through the same Google authentication contract', async () => {
   auth.login.mockResolvedValue(user)
