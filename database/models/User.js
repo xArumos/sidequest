@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
     required() { return Boolean(this.passwordHash); } },
   passwordHash: { type: String, select: false },
   bio: { type: String, default: '', trim: true, maxlength: 300 },
+  wishlistVisibility: { type: String, enum: ['public', 'private'], default: 'private' },
 }, { timestamps: true, autoIndex: false });
 
 userSchema.index({ googleId: 1 }, {
