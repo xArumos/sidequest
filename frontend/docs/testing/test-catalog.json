@@ -49,7 +49,7 @@
       "Check absence of password field"
     ],
     "data": "Anonymous session",
-    "expected": "Protected route redirects to Google sign-in.",
+    "expected": "Protected route redirects to sign-in and exposes the supported password field alongside Google.",
     "spreadsheetIds": [
       "TC-LOGIN-02"
     ]
@@ -525,18 +525,19 @@
   },
   {
     "id": "TC-FE-GOOGLE-01",
-    "name": "explains unavailable configuration without showing a fake login",
+    "name": "hides Google configuration notices when sign-in is unconfigured",
     "file": "frontend/src/components/GoogleSignIn.test.jsx",
     "type": "Component",
     "dependencies": "Synthetic SDK/script events; no Google network",
     "feature": "Authentication",
     "pbi": "1–2",
     "steps": [
-      "Clear public client configuration",
-      "Render sign-in"
+      "Clear both public Google client settings",
+      "Render GoogleSignIn",
+      "Inspect the visible disabled button and absence of status/error banners"
     ],
-    "data": "Empty VITE_GOOGLE_CLIENT_ID",
-    "expected": "Configuration-unavailable status replaces fake login.",
+    "data": "No Google public client ID",
+    "expected": "Continue with Google remains visible and disabled; no configuration banner is rendered.",
     "spreadsheetIds": []
   },
   {
@@ -1467,5 +1468,467 @@
     "data": "/users/synthetic-private-player; signed out",
     "expected": "Only unavailable information renders; no list records leak.",
     "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-PASSWORD-01",
+    "name": "validates required registration fields and email without sending a request",
+    "file": "frontend/src/services/password-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; no live backend",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Open /register signed out",
+      "Submit empty form",
+      "Enter username and malformed email",
+      "Submit and check alert/request count"
+    ],
+    "data": "synthetic_player; not-an-email",
+    "expected": "Required username and invalid email errors appear without a registration request.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
+  },
+  {
+    "id": "TC-FE-PASSWORD-02",
+    "name": "rejects short passwords and mismatched confirmation while retaining input",
+    "file": "frontend/src/services/password-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; no live backend",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Enter valid username/email and short password",
+      "Submit and inspect length error",
+      "Replace password with a valid long phrase but keep old confirmation",
+      "Submit and inspect mismatch and retained email"
+    ],
+    "data": "too short; synthetic password phrase; player@example.test",
+    "expected": "Both validation errors prevent requests and retain account input.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
+  },
+  {
+    "id": "TC-FE-PASSWORD-03",
+    "name": "registers through the real frontend service without sending confirmation",
+    "file": "frontend/src/services/password-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; no live backend",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Complete valid registration",
+      "Return a synthetic 201 user response",
+      "Submit",
+      "Inspect profile and request payload"
+    ],
+    "data": "synthetic_player; player@example.test; synthetic password phrase",
+    "expected": "Profile renders after success; POST contains username/email/password only with cookie credentials.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
+  },
+  {
+    "id": "TC-FE-PASSWORD-04",
+    "name": "signs in using a username or email and displays server rejection safely",
+    "file": "frontend/src/services/password-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; no live backend",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Submit empty login",
+      "Enter identifier/password",
+      "Return 401 and inspect error",
+      "Retry with 200 account response"
+    ],
+    "data": "Synthetic email and rejected password; 401 then 200",
+    "expected": "Validation and server error appear; retry signs in without false early success.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
+  },
+  {
+    "id": "TC-FE-PASSWORD-05",
+    "name": "prevents duplicate submissions until the server confirms the session",
+    "file": "frontend/src/services/password-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; no live backend",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Enter credentials",
+      "Hold login response pending",
+      "Attempt repeated submit",
+      "Resolve user response"
+    ],
+    "data": "Deferred synthetic login",
+    "expected": "Form controls disable, one login request runs, and profile appears only after response.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
+  },
+  {
+    "id": "TC-FE-PASSWORD-06",
+    "name": "counts Unicode code points for the minimum password length",
+    "file": "frontend/src/services/password-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; no live backend",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Complete registration with fifteen game-controller emoji",
+      "Return 201 user envelope",
+      "Submit and inspect payload"
+    ],
+    "data": "15 synthetic emoji code points",
+    "expected": "Minimum-length Unicode password is accepted and transmitted unchanged.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-CONFIG-01",
+    "name": "reuses only the backend public client ID when the frontend override is absent",
+    "file": "frontend/config/google-client.test.js",
+    "type": "Unit",
+    "steps": [
+      "Write a temporary backend environment with synthetic client and secret values",
+      "Resolve the frontend Google client ID"
+    ],
+    "data": "Synthetic backend OAuth client ID and private markers",
+    "expected": "Only the public client ID is returned.",
+    "dependencies": "Temporary synthetic environment files; no credentials"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-CONFIG-02",
+    "name": "gives the explicit frontend environment precedence over the backend default",
+    "file": "frontend/config/google-client.test.js",
+    "type": "Unit",
+    "steps": [
+      "Write distinct synthetic root and frontend public IDs",
+      "Resolve production configuration"
+    ],
+    "data": "Two synthetic public client IDs",
+    "expected": "The frontend override takes precedence.",
+    "dependencies": "Temporary synthetic environment files; no credentials"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-CONFIG-03",
+    "name": "isolates unit tests from local Google settings and handles unconfigured environments",
+    "file": "frontend/config/google-client.test.js",
+    "type": "Unit",
+    "steps": [
+      "Resolve an unconfigured checkout",
+      "Write a synthetic root public ID",
+      "Resolve in test mode"
+    ],
+    "data": "Empty configuration; synthetic root client ID",
+    "expected": "Missing configuration and test isolation both return an empty fallback.",
+    "dependencies": "Temporary synthetic environment files; no credentials"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-08",
+    "name": "retries SDK loading in place without leaving the login page",
+    "file": "frontend/src/components/GoogleSignIn.loading.test.jsx",
+    "type": "Component",
+    "steps": [
+      "Fail script loading",
+      "Click Retry Google sign-in",
+      "Complete the next synthetic SDK load"
+    ],
+    "data": "Synthetic SDK load/error events",
+    "expected": "A fresh SDK load renders the button and clears the error.",
+    "dependencies": "Synthetic Google SDK and event/timer spies"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-09",
+    "name": "prevents callbacks while another authentication request is pending",
+    "file": "frontend/src/components/GoogleSignIn.loading.test.jsx",
+    "type": "Component",
+    "steps": [
+      "Render busy Google sign-in",
+      "Invoke SDK callback",
+      "Clear busy and invoke again"
+    ],
+    "data": "Synthetic token; busy flag",
+    "expected": "Pending callback is ignored; the enabled callback runs once.",
+    "dependencies": "Synthetic Google SDK and event/timer spies"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-10",
+    "name": "rejects an empty SDK credential without attempting authentication",
+    "file": "frontend/src/components/GoogleSignIn.loading.test.jsx",
+    "type": "Component",
+    "steps": [
+      "Initialize synthetic SDK",
+      "Invoke callback with an empty credential",
+      "Inspect accessible error"
+    ],
+    "data": "Empty synthetic credential",
+    "expected": "No authentication callback occurs; an error appears.",
+    "dependencies": "Synthetic Google SDK and event/timer spies"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-11",
+    "name": "times out a stalled SDK request and offers retry",
+    "file": "frontend/src/components/GoogleSignIn.loading.test.jsx",
+    "type": "Component",
+    "steps": [
+      "Start an unresolved SDK request",
+      "Advance fake clock 15 seconds",
+      "Inspect error and retry control"
+    ],
+    "data": "Fake timers; no SDK response",
+    "expected": "Loading terminates with a retryable error.",
+    "dependencies": "Synthetic Google SDK and event/timer spies"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-12",
+    "name": "initializes Google with the shared public backend client ID",
+    "file": "frontend/src/components/GoogleSignIn.test.jsx",
+    "type": "Component",
+    "steps": [
+      "Clear frontend ID override",
+      "Provide synthetic shared public ID",
+      "Initialize SDK and inspect options"
+    ],
+    "data": "synthetic-shared.apps.googleusercontent.com",
+    "expected": "Shared ID is used and automatic account selection is disabled.",
+    "dependencies": "Synthetic Google SDK and event/timer spies"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-FLOW-01",
+    "name": "signs in through the actual Google component and restores and logs out the cookie session",
+    "file": "frontend/src/services/google-ui.test.jsx",
+    "type": "Integration",
+    "steps": [
+      "Render real App and GoogleSignIn with synthetic SDK",
+      "Return signed-out response",
+      "Click Google button and return account",
+      "Remount and restore session",
+      "Log out and inspect state"
+    ],
+    "data": "Synthetic Google credential/account; controlled 401/200/204 fetch responses",
+    "expected": "Correct Google POST is sent, account/restored session render, logout clears state, no credential is stored.",
+    "dependencies": "Synthetic Google SDK and controlled HTTP responses; no live Google account"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-FLOW-02",
+    "name": "exposes Google rejection and preserves the password login alternative",
+    "file": "frontend/src/services/google-ui.test.jsx",
+    "type": "Integration",
+    "steps": [
+      "Open registration with real Google component",
+      "Click synthetic SDK button",
+      "Return invalid-token response",
+      "Inspect error and password form"
+    ],
+    "data": "Synthetic 401 INVALID_GOOGLE_TOKEN",
+    "expected": "Error appears; no false login; password registration remains enabled.",
+    "dependencies": "Synthetic Google SDK and controlled HTTP responses; no live Google account"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-FLOW-03",
+    "name": "ignores duplicate SDK callbacks while the session request is pending",
+    "file": "frontend/src/services/google-ui.test.jsx",
+    "type": "Integration",
+    "steps": [
+      "Hold Google authentication response pending",
+      "Invoke SDK callback twice",
+      "Inspect request count and disabled password field",
+      "Resolve account"
+    ],
+    "data": "Deferred synthetic Google authentication",
+    "expected": "Only one login request runs; UI updates after confirmation.",
+    "dependencies": "Synthetic Google SDK and controlled HTTP responses; no live Google account"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-BROWSER-01",
+    "name": "completes the Google callback session flow and refresh/logout at each viewport",
+    "file": "frontend/e2e/google-auth.spec.js",
+    "type": "Integration",
+    "steps": [
+      "Intercept external SDK and auth responses",
+      "Click the real component button above the password form",
+      "Inspect profile and refresh",
+      "Check browser storage and log out"
+    ],
+    "data": "Synthetic browser SDK and account; three viewports",
+    "expected": "Google flow, restored profile and logout work without credential storage or horizontal overflow.",
+    "dependencies": "Synthetic Google SDK and controlled HTTP responses; no live Google account"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-BROWSER-02",
+    "name": "renders rejected Google authentication without losing registration inputs",
+    "file": "frontend/e2e/google-auth.spec.js",
+    "type": "Integration",
+    "steps": [
+      "Enter a registration username",
+      "Click Google sign-in",
+      "Return a synthetic token rejection",
+      "Inspect error and retained form"
+    ],
+    "data": "Synthetic username and INVALID_GOOGLE_TOKEN response",
+    "expected": "Accessible error appears; registration input and alternative remain available.",
+    "dependencies": "Synthetic Google SDK and controlled HTTP responses; no live Google account"
+  },
+  {
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "spreadsheetIds": [
+      "TC-LOGIN-01",
+      "TC-LOGIN-02"
+    ],
+    "id": "TC-FE-GOOGLE-BROWSER-03",
+    "name": "recovers from a failed Google SDK load using the in-page retry",
+    "file": "frontend/e2e/google-auth.spec.js",
+    "type": "Integration",
+    "steps": [
+      "Abort the first SDK script request",
+      "Click Retry Google sign-in",
+      "Load synthetic SDK and authenticate"
+    ],
+    "data": "One aborted SDK request then a synthetic successful load",
+    "expected": "Second attempt succeeds without navigating away.",
+    "dependencies": "Synthetic Google SDK and controlled HTTP responses; no live Google account"
+  },
+  {
+    "id": "TC-FE-INTEGRATION-07",
+    "name": "keeps startup authentication configuration notices off the homepage",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "type": "Integration",
+    "file": "frontend/src/services/auth-ui.test.jsx",
+    "steps": [
+      "Return a structured AUTH_NOT_CONFIGURED startup response",
+      "Open the homepage",
+      "Inspect heading and absence of alerts"
+    ],
+    "data": "Synthetic 503 AUTH_NOT_CONFIGURED",
+    "expected": "Homepage renders without a Google configuration banner.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ],
+    "dependencies": "Controlled fetch responses; real App and frontend API service; synthetic Google widget"
+  },
+  {
+    "id": "TC-FE-INTEGRATION-08",
+    "name": "reports an attempted unavailable sign-in without showing configuration details",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "type": "Integration",
+    "file": "frontend/src/services/auth-ui.test.jsx",
+    "steps": [
+      "Return a signed-out session",
+      "Trigger Google callback",
+      "Return GOOGLE_NOT_CONFIGURED",
+      "Inspect user-facing error and signed-out state"
+    ],
+    "data": "Synthetic 401 session and 503 GOOGLE_NOT_CONFIGURED",
+    "expected": "An honest temporary-unavailability error replaces configuration details; no login success is shown.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ],
+    "dependencies": "Controlled fetch responses; real App and frontend API service; synthetic Google widget"
+  },
+  {
+    "id": "TC-FE-BROWSER-07",
+    "name": "displays the local Google option without configuration banners",
+    "feature": "Authentication",
+    "pbi": "1–2",
+    "type": "Integration",
+    "file": "frontend/e2e/frontend.spec.js",
+    "dependencies": "Real Chrome/Vite; synthetic signed-out session; no public Google client configured",
+    "steps": [
+      "Open the login route with a signed-out response",
+      "Inspect the visible disabled Continue with Google button",
+      "Measure the button and account-divider horizontal centers",
+      "Capture the viewport and check absence of configuration banners and horizontal overflow"
+    ],
+    "data": "Unconfigured Google client; desktop/tablet/mobile viewports",
+    "expected": "The Google option is visible but disabled, the button and divider share a horizontal center, and no configuration banner or horizontal overflow is present.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
   }
 ]

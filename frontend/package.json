@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:browser": "playwright test",
-    "test:browser:ui": "playwright test --ui"
+    "test:browser:ui": "playwright test --ui",
+    "test:google-browser": "playwright test --config playwright.google.config.js"
   },
   "dependencies": {
     "react": "^19.2.8",

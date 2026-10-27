@@ -2,6 +2,7 @@ import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './e2e',
+  testMatch: 'frontend.spec.js',
   fullyParallel: true,
   workers: 2,
   reporter: [['list'], ['json', { outputFile: 'docs/testing/artifacts/browser-results.json' }]],

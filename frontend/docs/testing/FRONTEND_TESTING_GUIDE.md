@@ -123,3 +123,13 @@ The generator reads machine results plus per-case metadata, expands browser view
 Confirm the actual merged endpoint, method, payload, response fields, authorization, status transition semantics, count definitions and pagination. Add controlled response tests through real frontend services before adding configured live E2E. Cover populated catalog/profile/list states, failed mutations, confirmed updates, duplicates, edit/delete ownership and public/private responses. Keep service-mock tests clearly separate from live integration evidence.
 
 Do not implement missing backend endpoints to make these tests pass. Open PR #14 supplies database search helpers only; #10 and #11 are also unmerged groundwork. Privacy rendering tests do not replace server authorization tests. Steam, friendship and developer moderation remain outside this assignment.
+
+## Google-specific UI checks
+
+```bash
+PLAYWRIGHT_CHANNEL=chrome npm run test:google-browser --prefix frontend
+```
+
+This runs three additional Google authentication scenarios at desktop/tablet/mobile sizes (nine executions) using a synthetic external SDK and controlled HTTP responses. The real App, GoogleSignIn component, routing, and frontend API service execute. It verifies Google-first placement, confirmed profile/session display, reload, logout, rejection, input retention and in-page SDK retry. It does not authenticate a real Google account. Normal `test:browser` continues to run the original six scenarios (18 executions). Run both suites for all 27 browser checks.
+
+Vite may reuse the public root `GOOGLE_CLIENT_ID` if the explicit frontend `VITE_GOOGLE_CLIENT_ID` is absent. Tests isolate unit configuration from local OAuth settings, and Google browser tests set a synthetic public ID. No client secret, session secret or actual Google token belongs in frontend settings or test fixtures.

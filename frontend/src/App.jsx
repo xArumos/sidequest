@@ -110,18 +110,60 @@ function LandingPage({ wishlist, onToggleWishlist }) {
   )
 }
 
-function LoginPage({ isAuthenticated, onLogin, busy, registering = false }) {
+function LoginPage({ isAuthenticated, onLogin, onPasswordLogin, onRegister, busy, registering = false }) {
   const [error, setError] = useState('')
+  const googleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID || import.meta.env.SIDEQUEST_GOOGLE_CLIENT_ID)
   if (isAuthenticated) return <Navigate to="/profile" replace />
   async function signIn(credential) {
     setError('')
     try { await onLogin(credential) } catch (error) { setError(error.message) }
   }
+  async function submit(event) {
+    event.preventDefault()
+    setError('')
+    const data = Object.fromEntries(new FormData(event.currentTarget))
+    if (registering) {
+      if (!/^[A-Za-z0-9_]{3,30}$/.test(data.username.trim())) {
+        setError('Use a username of 3–30 letters, numbers, or underscores.'); return
+      }
+      if (data.email.trim().length > 254 || !/^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/.test(data.email.trim())) {
+        setError('Enter a valid email address.'); return
+      }
+      if ([...data.password].length < 15 || [...data.password].length > 128) {
+        setError('Use a password of 15–128 characters.'); return
+      }
+      if (data.password !== data.confirmPassword) {
+        setError('Passwords do not match.'); return
+      }
+    } else if (!data.identifier.trim() || !data.password) {
+      setError('Enter your username or email and password.'); return
+    }
+    try {
+      if (registering) await onRegister({ username: data.username.trim(), email: data.email.trim(), password: data.password })
+      else await onPasswordLogin({ identifier: data.identifier.trim(), password: data.password })
+    } catch (error) { setError(error.message) }
+  }
   return <section className="auth-page"><div className="auth-card">
     <p className="eyebrow">{registering ? 'Create account' : 'Welcome back'}</p>
     <h1>{registering ? 'Welcome to SideQuest' : 'Sign in to continue'}</h1>
-    <p className="subtle-text">Continue with Google. Your first successful sign-in creates your SideQuest account.</p>
+    <p className="subtle-text">{registering ? (googleConfigured ? 'Create your account with a username, email, and password, or continue with Google.' : 'Create your SideQuest account.') : (googleConfigured ? 'Use your username or email and password, or continue with Google.' : 'Sign in with your SideQuest username or email and password.')}</p>
     <GoogleSignIn onCredential={signIn} busy={busy} />
+    <p className="auth-divider">Or use your SideQuest account</p>
+    <form key={registering ? 'register' : 'login'} className="stack-form" onSubmit={submit} noValidate>
+      <fieldset disabled={busy}>
+        {registering ? <>
+          <label>Username<input name="username" autoComplete="username" required maxLength={30} /></label>
+          <label>Email<input name="email" type="email" autoComplete="email" required maxLength={254} /></label>
+        </> : <label>Username or email<input name="identifier" autoComplete="username" required maxLength={254} /></label>}
+        <label>Password<input name="password" type="password" autoComplete={registering ? 'new-password' : 'current-password'} required aria-describedby={registering ? 'password-help' : undefined} /></label>
+        {registering && <>
+          <p id="password-help" className="subtle-text">Use 15–128 characters. Spaces and Unicode are supported.</p>
+          <label>Confirm password<input name="confirmPassword" type="password" autoComplete="new-password" required /></label>
+        </>}
+        <button className="primary-button" type="submit">{busy ? 'Please wait…' : registering ? 'Create account' : 'Log in'}</button>
+      </fieldset>
+    </form>
+    {googleConfigured && <p className="subtle-text">Your first successful Google sign-in creates a separate SideQuest account.</p>}
     {error && <p role="alert">{error}</p>}
     <p className="auth-switch">{registering ? <>Already have an account? <Link to="/login">Log in here</Link></> : <>Need an account? <Link to="/register">Sign up now</Link></>}</p>
   </div></section>
@@ -424,19 +466,22 @@ function App() {
       if (!controller.signal.aborted) setUserProfile(user)
     }).catch(error => {
       if (!controller.signal.aborted) {
-        if (error.status === 401) setUserProfile(null)
+        if (error.status === 401 || ['AUTH_NOT_CONFIGURED', 'GOOGLE_NOT_CONFIGURED'].includes(error.code)) setUserProfile(null)
         else setError(error.message)
       }
     }).finally(() => { if (!controller.signal.aborted) setChecking(false) })
     return () => controller.abort()
   }, [attempt])
-  async function login(credential) {
+  async function authenticate(request) {
     if (loginInFlight.current) return
     loginInFlight.current = true
     setBusy(true)
-    try { setUserProfile(await auth.login(credential)); setError('') }
+    try { setUserProfile(await request()); setError('') }
     finally { loginInFlight.current = false; setBusy(false) }
   }
+  const login = credential => authenticate(() => auth.login(credential))
+  const passwordLogin = credentials => authenticate(() => auth.passwordLogin(credentials))
+  const register = account => authenticate(() => auth.register(account))
   async function logout() {
     if (busy) return
     setBusy(true)
@@ -458,8 +503,8 @@ function App() {
       {checking ? <p role="status">Checking your session…</p> : <>
       <Routes>
         <Route path="/" element={<LandingPage wishlist={wishlist} onToggleWishlist={handleToggleWishlist} />} />
-        <Route path="/login" element={<LoginPage isAuthenticated={isAuthenticated} onLogin={login} busy={busy} />} />
-        <Route path="/register" element={<LoginPage registering isAuthenticated={isAuthenticated} onLogin={login} busy={busy} />} />
+        <Route path="/login" element={<LoginPage key="login" isAuthenticated={isAuthenticated} onLogin={login} onPasswordLogin={passwordLogin} onRegister={register} busy={busy} />} />
+        <Route path="/register" element={<LoginPage key="register" registering isAuthenticated={isAuthenticated} onLogin={login} onPasswordLogin={passwordLogin} onRegister={register} busy={busy} />} />
         <Route path="/games" element={<GameDiscoveryPage wishlist={wishlist} onToggleWishlist={handleToggleWishlist} />} />
         <Route
           path="/games/:gameId"

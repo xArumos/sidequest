@@ -1,7 +1,8 @@
 {
-  "branch": "test/sprint1-frontend-tests",
-  "validatedCodeCommit": "54d243f3d139a49c320827eef00a4bcf308094db",
+  "branch": "feature/frontend-password-auth-integration",
+  "validatedCodeCommit": "033a92531be395e525ca219211d2085399b5e10c",
   "baselineTests": 35,
   "node": "v24.16.0",
-  "browserCommand": "PLAYWRIGHT_CHANNEL=chrome npm run test:browser --prefix frontend"
+  "browserCommand": "PLAYWRIGHT_CHANNEL=chrome npm run test:browser --prefix frontend",
+  "googleBrowserCommand": "PLAYWRIGHT_CHANNEL=chrome npm run test:google-browser --prefix frontend"
 }
