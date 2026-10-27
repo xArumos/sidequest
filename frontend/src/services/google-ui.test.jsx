@@ -3,6 +3,9 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 import App from '../App'
+
+// These tests drive auth through fetch; catalog and library calls are mocked separately.
+vi.mock('../services/api', async () => ({ api: (await import('../test/apiMock')).createApiMock() }))
 // The real App, GoogleSignIn component, and auth service run together.
 // Only Google's external SDK and HTTP responses are synthetic.
 const user = { id: 'synthetic-google-user', username: null, displayName: 'Synthetic Google Player', email: 'google-player@example.test', avatarUrl: '' }
