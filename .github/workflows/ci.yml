@@ -38,6 +38,10 @@ jobs:
           key: mongodb-binaries-${{ runner.os }}-${{ hashFiles(format('{0}/package-lock.json', matrix.package)) }}
 
       - run: npm ci
+      # server loads Mongoose models from ../database, which resolve their own deps there.
+      - name: Install database package for server
+        if: matrix.package == 'server'
+        run: npm ci --prefix ../database
       - run: npm run lint --if-present
       - run: npm test
       - run: npm run build --if-present

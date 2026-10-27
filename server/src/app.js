@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { requireSameOrigin } = require('./session');
+const { HttpError } = require('./http');
 
 // `sessionMiddleware` is mounted on all of /api so feature routers can use
 // req.session. `routers` maps a path under /api to a router, e.g. { '/games': gamesRouter }.
@@ -38,6 +39,9 @@ function createApp({ frontendOrigin, isDatabaseReady, authRouter, sessionMiddlew
 
   app.use((error, _req, res, next) => {
     if (res.headersSent) return next(error);
+    if (error instanceof HttpError) {
+      return res.status(error.status).json({ error: { code: error.code, message: error.message } });
+    }
     const clientErrors = {
       'entity.parse.failed': [400, 'INVALID_JSON', 'Request body must be valid JSON.'],
       'entity.too.large': [413, 'BODY_TOO_LARGE', 'Request body exceeds the 100 KB limit.'],
