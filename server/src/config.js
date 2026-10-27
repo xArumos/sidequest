@@ -30,7 +30,12 @@ function readConfig(env = process.env) {
     }
     auth = { googleClientId, sessionSecret, secureCookies: env.NODE_ENV === 'production' };
   }
-  return { port, host, frontendOrigin, auth };
+  const minText = env.RANKING_MIN_COUNT ?? '3';
+  const rankingMinCount = Number(minText);
+  if (!/^\d+$/.test(minText) || rankingMinCount < 1) {
+    throw new Error('RANKING_MIN_COUNT must be a positive whole number.');
+  }
+  return { port, host, frontendOrigin, auth, rankingMinCount };
 }
 
 module.exports = { readConfig };

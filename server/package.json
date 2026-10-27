@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "node --env-file-if-exists=../.env --watch src/index.js",
     "start": "node --env-file-if-exists=../.env src/index.js",
-    "test": "node --test test/session.test.js test/app.test.js test/config.test.js test/auth.test.js test/google.test.js",
+    "test": "node --test test/games.test.js test/session.test.js test/app.test.js test/config.test.js test/auth.test.js test/google.test.js",
     "test:integration": "node --env-file-if-exists=../.env --test test/startup.test.js test/auth.integration.test.js"
   },
   "dependencies": {
@@ -20,5 +20,8 @@
     "express-session": "^1.19.0",
     "google-auth-library": "^11.3.1",
     "sidequest-database": "file:../database"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^11.3.0"
   }
 }
