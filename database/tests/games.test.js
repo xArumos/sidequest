@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 const require = createRequire(import.meta.url);
 const { connectDatabase, disconnectDatabase } = require('../connection.js');
 const Game = require('../models/Game.js');
-const { findGames, getGameById, getGameFilters } = require('../games.js');
+const { findGames, topGames, getGameById, getGameFilters } = require('../games.js');
 
 describe('game queries', () => {
   let mongod;
@@ -15,11 +15,13 @@ describe('game queries', () => {
     mongod = await MongoMemoryServer.create();
     await connectDatabase({ uri: mongod.getUri(), dbName: 'sidequest_games_test' });
     games = await Game.create([
-      { title: 'A Game (Deluxe)', genres: ['Adventure'], platforms: ['PC'] },
-      { title: 'Halo', genres: ['Shooter'], platforms: ['PC', 'Xbox'] },
+      { title: 'A Game (Deluxe)', genres: ['Adventure'], platforms: ['PC'], ratingAvg: 2, ratingCount: 3 },
+      { title: 'Halo', genres: ['Shooter'], platforms: ['PC', 'Xbox'], ratingAvg: 4.5, ratingCount: 2,
+        releaseDate: new Date('2001-11-15') },
       { title: 'Halo', genres: ['Shooter'], platforms: ['Xbox'] },
-      { title: 'Portal 2', genres: ['Puzzle'], platforms: ['PC'] },
-      { title: 'Zelda', genres: ['Adventure'], platforms: ['Switch'] },
+      { title: 'Portal 2', genres: ['Puzzle'], platforms: ['PC'], ratingAvg: 4.5, ratingCount: 10,
+        releaseDate: new Date('2011-04-19') },
+      { title: 'Zelda', genres: ['Adventure'], platforms: ['Switch'], ratingAvg: 3, ratingCount: 3 },
     ]);
   });
 
@@ -79,5 +81,38 @@ describe('game queries', () => {
     expect(await getGameFilters()).toEqual({
       genres: ['Adventure', 'Puzzle', 'Shooter'], platforms: ['PC', 'Switch', 'Xbox'],
     });
+  });
+
+  const titles = result => result.games.map(game => game.title);
+
+  it('sorts by rating, with unrated games last either way', async () => {
+    expect(titles(await findGames({ sort: 'top' }))).toEqual(['Portal 2', 'Halo', 'Zelda', 'A Game (Deluxe)', 'Halo']);
+    expect(titles(await findGames({ sort: 'lowest' }))).toEqual(['A Game (Deluxe)', 'Zelda', 'Portal 2', 'Halo', 'Halo']);
+  });
+
+  it('sorts by rating count and by newest release', async () => {
+    expect(titles(await findGames({ sort: 'popular' }))[0]).toBe('Portal 2');
+    expect(titles(await findGames({ sort: 'newest' })).slice(0, 2)).toEqual(['Portal 2', 'Halo']);
+  });
+
+  it('combines a sort with filters and pagination', async () => {
+    const result = await findGames({ platform: 'PC', sort: 'top', page: 2, limit: 1 });
+    expect(titles(result)).toEqual(['Halo']);
+    expect(result).toMatchObject({ total: 3, pages: 3 });
+  });
+
+  it('rejects unknown sorts', async () => {
+    for (const sort of ['rating', '', 'constructor', ['top']]) {
+      await expect(findGames({ sort })).rejects.toThrow();
+    }
+  });
+
+  it('ranks top games that meet the minimum rating count', async () => {
+    expect((await topGames({ minCount: 3 })).map(game => game.title)).toEqual(['Portal 2', 'Zelda', 'A Game (Deluxe)']);
+    expect((await topGames({ minCount: 2, limit: 2 })).map(game => game.title)).toEqual(['Portal 2', 'Halo']);
+    expect(await topGames({ minCount: 11 })).toEqual([]);
+    for (const options of [{ minCount: 0 }, { minCount: 1.5 }, { limit: 0 }, { limit: 51 }]) {
+      await expect(topGames(options)).rejects.toThrow(RangeError);
+    }
   });
 });
