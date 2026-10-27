@@ -1,22 +1,51 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import './App.css'
 import Layout from './components/Layout'
 import GameCard from './components/GameCard'
 import ReviewForm from './components/ReviewForm'
 import GoogleSignIn from './components/GoogleSignIn'
 import { auth } from './services/auth'
-import { filterAndSortGames } from './utils/games'
+import { api } from './services/api'
+import { useApi } from './services/useApi'
+import { ratingLabel } from './utils/games'
 
-// No catalog HTTP contract exists yet. Never substitute fixture rankings.
-const games = []
-const communityHighlights = [
-  { label: 'Top Rated', value: 'Coming soon', meta: 'Waiting for community rating data' },
-  { label: 'Most Reviewed', value: 'Coming soon', meta: 'Waiting for review counts' },
-  { label: 'Community Mood', value: 'Unavailable', meta: 'No published community statistics yet' },
+const SORTS = [
+  ['title', 'Title (A–Z)'],
+  ['top', 'Highest rated'],
+  ['lowest', 'Lowest rated'],
+  ['popular', 'Most rated'],
+  ['newest', 'Newest'],
 ]
-function Unavailable({ title, children }) {
-  return <section className="content-section card-panel"><h1>{title}</h1><p role="status">{children}</p><Link className="text-link" to="/games">Browse games</Link></section>
+const STATUS_LABELS = { wishlist: 'Wishlist', backlog: 'Backlog', playing: 'Playing', played: 'Played' }
+const PAGE_SIZE = 24
+
+function stars(rating) {
+  return Number.isInteger(rating) ? `${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}` : ''
+}
+
+function formatDate(value) {
+  return value ? new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''
+}
+
+function LoadState({ loading, error, onRetry, children }) {
+  if (error) {
+    return <div className="empty-state card-panel" role="alert">
+      <h3>Couldn&apos;t load this</h3><p>{error.message}</p>
+      {onRetry && <button type="button" className="secondary-button" onClick={onRetry}>Try again</button>}
+    </div>
+  }
+  if (loading) return <p role="status">Loading…</p>
+  return children
+}
+
+function Pager({ page, pages, onPage }) {
+  if (!pages || pages <= 1) return null
+  return <div className="inline-actions pager">
+    <button type="button" className="secondary-button" disabled={page <= 1} onClick={() => onPage(page - 1)}>Previous</button>
+    <span className="subtle-text">Page {page} of {pages}</span>
+    <button type="button" className="secondary-button" disabled={page >= pages} onClick={() => onPage(page + 1)}>Next</button>
+  </div>
 }
 
 function ProtectedRoute({ isAuthenticated, children }) {
@@ -27,13 +56,63 @@ function ProtectedRoute({ isAuthenticated, children }) {
   return children
 }
 
-function UserProfileRoute() {
-  const { userId } = useParams()
-  return <UserProfilePage userId={userId} />
+// The signed-in user's wishlist/backlog/playing/played status per game. One
+// record holds one status, so adding to the wishlist moves a game off the backlog.
+function useLibrary(isAuthenticated) {
+  const [statuses, setStatuses] = useState({})
+  const [pending, setPending] = useState({})
+  const [version, setVersion] = useState(0)
+  useEffect(() => {
+    setStatuses({})
+    if (!isAuthenticated) return undefined
+    const controller = new AbortController()
+    async function loadAll() {
+      const next = {}
+      for (let page = 1, pages = 1; page <= pages; page += 1) {
+        const result = await api.myLogs({ page, limit: 50 }, controller.signal)
+        for (const log of result.logs) if (log.status) next[log.game.id] = log.status
+        pages = result.pages
+      }
+      if (!controller.signal.aborted) setStatuses(next)
+    }
+    loadAll().catch(() => {})
+    return () => controller.abort()
+  }, [isAuthenticated])
+  const setStatus = useCallback(async (gameId, status) => {
+    setPending(previous => ({ ...previous, [gameId]: true }))
+    try {
+      const { log } = await api.saveLog(gameId, { status })
+      setStatuses(previous => {
+        const next = { ...previous }
+        if (log?.status) next[gameId] = log.status
+        else delete next[gameId]
+        return next
+      })
+      setVersion(value => value + 1)
+    } finally {
+      setPending(previous => { const next = { ...previous }; delete next[gameId]; return next })
+    }
+  }, [])
+  const forget = useCallback(gameId => {
+    setStatuses(previous => { const next = { ...previous }; delete next[gameId]; return next })
+    setVersion(value => value + 1)
+  }, [])
+  return { statuses, pending, version, setStatus, forget }
 }
 
-function LandingPage({ wishlist, onToggleWishlist }) {
-  const featured = games.slice(0, 3)
+function LandingPage({ wishlistProps }) {
+  const top = useApi(signal => api.topGames(3, signal), [])
+  const popular = useApi(signal => api.games({ sort: 'popular', limit: 3 }, signal), [])
+  const topGame = top.data?.games[0]
+  const mostRated = popular.data?.games[0]
+  const highlights = [
+    { label: 'Top Rated', value: topGame?.title ?? 'Not enough ratings yet',
+      meta: topGame ? ratingLabel(topGame) : `Games need ${top.data?.minCount ?? 3}+ ratings to rank` },
+    { label: 'Most Rated', value: mostRated?.ratingCount ? mostRated.title : 'No ratings yet',
+      meta: mostRated?.ratingCount ? ratingLabel(mostRated) : 'Be the first to rate a game' },
+    { label: 'In the Catalog', value: popular.data ? `${popular.data.total} games` : '—', meta: 'Imported from IGDB' },
+  ]
+  const featured = top.data?.games.length ? top.data.games : popular.data?.games ?? []
 
   return (
     <>
@@ -74,12 +153,12 @@ function LandingPage({ wishlist, onToggleWishlist }) {
         </div>
         <div className="feature-card">
           <h3>Share with Friends</h3>
-          <p>Follow friends and browse public wishlists so you always know what to play next.</p>
+          <p>Make your wishlist public so friends always know what to gift or play next.</p>
         </div>
       </section>
 
       <section className="community-grid">
-        {communityHighlights.map((item) => (
+        {highlights.map((item) => (
           <div className="community-panel card-panel" key={item.label}>
             <p className="eyebrow">{item.label}</p>
             <strong>{item.value}</strong>
@@ -90,21 +169,15 @@ function LandingPage({ wishlist, onToggleWishlist }) {
 
       <section className="content-section">
         <div className="section-header-inline">
-          <h2>Top Rated Games</h2>
+          <h2>{top.data?.games.length ? 'Top Rated Games' : 'Popular Games'}</h2>
           <Link to="/rankings" className="text-link">See all rankings</Link>
         </div>
 
-        <div className="game-grid compact-grid">
-          {!featured.length && <p role="status">Game rankings are unavailable until the catalog and community APIs are published.</p>}
-          {featured.map((game) => (
-            <GameCard
-              key={game.id}
-              game={game}
-              isWishlisted={wishlist.includes(game.id)}
-              onToggleWishlist={onToggleWishlist}
-            />
-          ))}
-        </div>
+        <LoadState loading={top.loading || popular.loading} error={top.error || popular.error} onRetry={() => { top.reload(); popular.reload() }}>
+          <div className="game-grid compact-grid">
+            {featured.map((game) => <GameCard key={game.id} game={game} {...wishlistProps(game.id)} />)}
+          </div>
+        </LoadState>
       </section>
     </>
   )
@@ -169,14 +242,24 @@ function LoginPage({ isAuthenticated, onLogin, onPasswordLogin, onRegister, busy
   </div></section>
 }
 
-function GameDiscoveryPage({ wishlist, onToggleWishlist }) {
+function GameDiscoveryPage({ wishlistProps }) {
   const [search, setSearch] = useState('')
+  const [query, setQuery] = useState('')
   const [sort, setSort] = useState('title')
-  const [genre, setGenre] = useState('All')
-
-  const genres = ['All', ...new Set(games.map((game) => game.genre))]
-
-  const filteredGames = useMemo(() => filterAndSortGames(games, { search, genre, sort }), [genre, search, sort])
+  const [genre, setGenre] = useState('')
+  const [platform, setPlatform] = useState('')
+  const [page, setPage] = useState(1)
+  useEffect(() => {
+    const timer = setTimeout(() => { setQuery(search.trim()); setPage(1) }, 300)
+    return () => clearTimeout(timer)
+  }, [search])
+  const filters = useApi(signal => api.gameFilters(signal), [])
+  const results = useApi(signal => api.games({ q: query, genre, platform, sort, page, limit: PAGE_SIZE }, signal),
+    [query, genre, platform, sort, page])
+  const change = setter => event => { setter(event.target.value); setPage(1) }
+  function reset() {
+    setSearch(''); setQuery(''); setGenre(''); setPlatform(''); setSort('title'); setPage(1)
+  }
 
   return (
     <section className="content-section">
@@ -192,73 +275,108 @@ function GameDiscoveryPage({ wishlist, onToggleWishlist }) {
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search games"
           aria-label="Search games"
+          maxLength={100}
         />
 
-        <select value={genre} onChange={(event) => setGenre(event.target.value)} aria-label="Filter by genre">
-          {genres.map((entry) => (
-            <option key={entry} value={entry}>
-              {entry}
-            </option>
-          ))}
+        <select value={genre} onChange={change(setGenre)} aria-label="Filter by genre">
+          <option value="">All genres</option>
+          {filters.data?.genres.map((entry) => <option key={entry} value={entry}>{entry}</option>)}
         </select>
 
-        <select value={sort} onChange={(event) => setSort(event.target.value)} aria-label="Sort games">
-          <option value="rating">Highest rated</option>
-          <option value="reviews">Most reviewed</option>
-          <option value="title">Title</option>
+        <select value={platform} onChange={change(setPlatform)} aria-label="Filter by platform">
+          <option value="">All platforms</option>
+          {filters.data?.platforms.map((entry) => <option key={entry} value={entry}>{entry}</option>)}
+        </select>
+
+        <select value={sort} onChange={change(setSort)} aria-label="Sort games">
+          {SORTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
       </div>
 
-      <p role="status">The game catalog API is not available yet. Search and filters will apply to published catalog data.</p>
-      <button type="button" className="secondary-button" onClick={() => { setSearch(''); setGenre('All'); setSort('title') }}>Reset filters</button>
-      <div className="game-grid">
-        {filteredGames.length > 0 ? (
-          filteredGames.map((game) => (
-            <GameCard
-              key={game.id}
-              game={game}
-              isWishlisted={wishlist.includes(game.id)}
-              onToggleWishlist={onToggleWishlist}
-            />
-          ))
-        ) : (
-          <div className="empty-state card-panel">
-            <h3>{games.length ? 'No games match those filters.' : 'Catalog unavailable'}</h3>
-            <p>Search and filtering will be available when catalog data can be loaded.</p>
-          </div>
-        )}
+      <div className="inline-actions">
+        <button type="button" className="secondary-button" onClick={reset}>Reset filters</button>
+        {results.data && <p role="status" className="subtle-text">{results.data.total} {results.data.total === 1 ? 'game' : 'games'} found</p>}
       </div>
+      <LoadState loading={results.loading && !results.data} error={results.error} onRetry={results.reload}>
+        <div className="game-grid">
+          {results.data?.games.length ? (
+            results.data.games.map((game) => <GameCard key={game.id} game={game} {...wishlistProps(game.id)} />)
+          ) : (
+            <div className="empty-state card-panel">
+              <h3>No games match those filters.</h3>
+              <p>Try a different search, or reset the filters.</p>
+            </div>
+          )}
+        </div>
+        <Pager page={page} pages={results.data?.pages} onPage={setPage} />
+      </LoadState>
     </section>
   )
 }
 
-function GameDetailsPage({ wishlist, backlog, onToggleWishlist, onToggleBacklog, reviews }) {
+function GameDetailsPage({ isAuthenticated, library, onError }) {
   const { gameId } = useParams()
-  const game = games.find((entry) => entry.id === gameId)
+  const [reviewPage, setReviewPage] = useState(1)
+  const game = useApi(signal => api.game(gameId, signal), [gameId])
+  const reviews = useApi(signal => api.reviews(gameId, { page: reviewPage, limit: 10 }, signal), [gameId, reviewPage])
+  const mine = useApi(signal => (isAuthenticated ? api.myLog(gameId, signal) : Promise.resolve({ log: null })),
+    [gameId, isAuthenticated, library.version])
 
-  if (!game) {
-    return <Unavailable title="Game unavailable">Game details and reviews cannot be loaded until the catalog API is published.</Unavailable>
+  if (game.error?.status === 404 || game.error?.status === 400) {
+    return <section className="content-section empty-state card-panel"><h1>Game not found</h1>
+      <p>That game isn&apos;t in the catalog.</p><Link className="text-link" to="/games">Browse games</Link></section>
   }
+  if (!game.data) return <section className="content-section"><LoadState loading={game.loading} error={game.error} onRetry={game.reload} /></section>
 
-  const relevantReviews = reviews.filter((review) => review.gameId === gameId)
+  const details = game.data.game
+  const status = library.statuses[gameId]
+  const myLog = mine.data?.log
+  const busy = Boolean(library.pending[gameId])
+  async function setStatus(next) {
+    try { await library.setStatus(gameId, status === next ? null : next) } catch (error) { onError(error.message) }
+  }
+  async function saveReview(review) {
+    await api.saveLog(gameId, review)
+    game.reload(); reviews.reload(); mine.reload()
+  }
+  async function deleteReview() {
+    try {
+      await api.deleteLog(myLog.id)
+      library.forget(gameId)
+      game.reload(); reviews.reload(); mine.reload()
+    } catch (error) { onError(error.message) }
+  }
 
   return (
     <section className="content-section">
       <div className="game-detail-hero card-panel">
-        <img src={game.cover} alt={game.title} className="detail-cover" />
+        {details.coverUrl
+          ? <img src={details.coverUrl} alt={details.title} className="detail-cover" />
+          : <div role="img" aria-label={`Artwork unavailable for ${details.title}`} className="detail-cover cover-fallback">Artwork unavailable</div>}
         <div className="detail-copy">
-          <p className="eyebrow">{game.genre}</p>
-          <h1>{game.title}</h1>
-          <p className="detail-meta">{game.developer} · {game.reviewCount} reviews</p>
-          <p className="lead small">{game.description}</p>
-          <div className="inline-actions">
-            <button type="button" className="primary-button" disabled onClick={() => onToggleWishlist(game.id)}>
-              {wishlist.includes(game.id) ? 'Remove from wishlist' : 'Add to wishlist'}
-            </button>
-            <button type="button" className="secondary-button" disabled onClick={() => onToggleBacklog(game.id)}>
-              {backlog.includes(game.id) ? 'Remove from backlog' : 'Add to backlog'}
-            </button>
-          </div>
+          <p className="eyebrow">{details.genres.join(' · ')}</p>
+          <h1>{details.title}</h1>
+          <p className="detail-meta">
+            {[details.releaseDate && formatDate(details.releaseDate), `${details.reviewCount} written ${details.reviewCount === 1 ? 'review' : 'reviews'}`].filter(Boolean).join(' · ')}
+          </p>
+          <p className="lead small">{details.summary}</p>
+          {isAuthenticated ? (
+            <div className="inline-actions">
+              <button type="button" className="primary-button" disabled={busy} aria-pressed={status === 'wishlist'} onClick={() => setStatus('wishlist')}>
+                {status === 'wishlist' ? 'Remove from wishlist' : 'Add to wishlist'}
+              </button>
+              <button type="button" className="secondary-button" disabled={busy} aria-pressed={status === 'backlog'} onClick={() => setStatus('backlog')}>
+                {status === 'backlog' ? 'Remove from backlog' : 'Add to backlog'}
+              </button>
+              <label className="subtle-text">Status{' '}
+                <select aria-label="Play status" value={status ?? ''} disabled={busy}
+                  onChange={event => library.setStatus(gameId, event.target.value || null).catch(error => onError(error.message))}>
+                  <option value="">None</option>
+                  {Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </label>
+            </div>
+          ) : <p className="subtle-text"><Link to="/login">Log in</Link> to rate this game or add it to your lists.</p>}
         </div>
       </div>
 
@@ -266,50 +384,64 @@ function GameDetailsPage({ wishlist, backlog, onToggleWishlist, onToggleBacklog,
         <div className="card-panel">
           <h2>Community rating</h2>
           <div className="rating-summary">
-            <strong>{game.rating.toFixed(1)}</strong>
-            <span>Based on {game.reviewCount} community ratings</span>
+            <strong>{details.ratingCount ? details.ratingAvg.toFixed(1) : '—'}</strong>
+            <span>{details.ratingCount ? `Based on ${details.ratingCount} community ${details.ratingCount === 1 ? 'rating' : 'ratings'}` : 'No ratings yet'}</span>
           </div>
           <div className="tag-list">
-            {game.tags.map((tag) => (
-              <span key={tag} className="tag">{tag}</span>
-            ))}
+            {details.platforms.map((tag) => <span key={tag} className="tag">{tag}</span>)}
           </div>
         </div>
+      </div>
 
-      </div>
-      <div className="card-panel review-panel">
-        <h2>Rate and review</h2>
-        <ReviewForm />
-      </div>
+      {isAuthenticated && (
+        <div className="card-panel review-panel">
+          <h2>{myLog?.rating || myLog?.text ? 'Update your review' : 'Rate and review'}</h2>
+          {(myLog?.rating || myLog?.text) && (
+            <div className="review-item">
+              <p>Your rating: {myLog.rating ? stars(myLog.rating) : 'none'}</p>
+              {myLog.text && <p>{myLog.text}</p>}
+              <button type="button" className="secondary-button" onClick={deleteReview}>Delete my review</button>
+            </div>
+          )}
+          <ReviewForm available onSubmit={saveReview} />
+        </div>
+      )}
 
       <div className="card-panel">
         <h2>Recent reviews</h2>
-        <div className="review-list">
-          {relevantReviews.length > 0 ? (
-            relevantReviews.map((review) => (
-              <article key={review.id} className="review-item">
-                <div className="review-header">
-                  <div>
-                    <strong>{review.userName}</strong>
-                    <p>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</p>
+        <LoadState loading={reviews.loading && !reviews.data} error={reviews.error} onRetry={reviews.reload}>
+          <div className="review-list">
+            {reviews.data?.reviews.length ? (
+              reviews.data.reviews.map((review) => (
+                <article key={review.id} className="review-item">
+                  <div className="review-header">
+                    <div>
+                      {review.user ? <Link to={`/users/${review.user.id}`}><strong>{review.user.displayName}</strong></Link> : <strong>Former player</strong>}
+                      <p aria-label={review.rating ? `${review.rating} out of 5 stars` : 'No rating'}>{stars(review.rating)}</p>
+                    </div>
+                    <span className="review-title">{formatDate(review.createdAt)}</span>
                   </div>
-                  <span className="review-title">{review.title}</span>
-                </div>
-                <p>{review.text}</p>
-              </article>
-            ))
-          ) : (
-            <p className="subtle-text">No reviews yet — be the first to share your thoughts.</p>
-          )}
-        </div>
+                  {review.text && <p>{review.text}</p>}
+                </article>
+              ))
+            ) : (
+              <p className="subtle-text">No reviews yet — be the first to share your thoughts.</p>
+            )}
+          </div>
+          <Pager page={reviewPage} pages={reviews.data?.pages} onPage={setReviewPage} />
+        </LoadState>
       </div>
     </section>
   )
 }
 
-function RankingsPage() {
+function RankingsPage({ wishlistProps }) {
   const [sort, setSort] = useState('rating')
-  const rankedGames = filterAndSortGames(games, { sort })
+  const ranking = useApi(signal => (sort === 'rating'
+    ? api.topGames(50, signal)
+    : api.games({ sort: 'popular', limit: 50 }, signal).then(result => ({ games: result.games.filter(game => game.ratingCount > 0) }))),
+  [sort])
+  const games = ranking.data?.games ?? []
 
   return (
     <section className="content-section">
@@ -318,123 +450,183 @@ function RankingsPage() {
         <p className="subtle-text">Top-rated games across the community.</p>
       </div>
 
-      <label>Rank games by <select aria-label="Rank games by" value={sort} onChange={event => setSort(event.target.value)}><option value="rating">Top rated</option><option value="reviews">Most reviewed</option></select></label>
-      <p role="status">Rankings are unavailable until the API provides real community ratings and review counts.</p>
-      <div className="rankings-list">
-        {rankedGames.map((game, index) => (
-          <div className="ranking-row card-panel" key={game.id}>
-            <div className="rank-number">#{index + 1}</div>
-            <img src={game.cover} alt={game.title} className="ranking-cover" />
-            <div className="ranking-copy">
-              <h3>{game.title}</h3>
-              <p>{game.genre} · {game.developer}</p>
+      <label>Rank games by <select aria-label="Rank games by" value={sort} onChange={event => setSort(event.target.value)}><option value="rating">Top rated</option><option value="popular">Most rated</option></select></label>
+      {sort === 'rating' && ranking.data && <p className="subtle-text">Only games with at least {ranking.data.minCount} ratings are ranked.</p>}
+      <LoadState loading={ranking.loading} error={ranking.error} onRetry={ranking.reload}>
+        {games.length === 0 && <div className="empty-state card-panel"><h3>No ranked games yet</h3><p>Rate a few games to get the rankings started.</p></div>}
+        <div className="rankings-list">
+          {games.map((game, index) => (
+            <div className="ranking-row card-panel" key={game.id}>
+              <div className="rank-number">#{index + 1}</div>
+              {game.coverUrl ? <img src={game.coverUrl} alt={game.title} className="ranking-cover" /> : <div className="ranking-cover cover-fallback" />}
+              <div className="ranking-copy">
+                <h3>{game.title}</h3>
+                <p>{game.genres.slice(0, 2).join(' · ')}</p>
+              </div>
+              <div className="ranking-score">
+                <strong>{game.ratingAvg.toFixed(1)}</strong>
+                <span>{game.ratingCount} {game.ratingCount === 1 ? 'rating' : 'ratings'}</span>
+              </div>
+              {wishlistProps(game.id).onToggleWishlist && <GameCardWishlist game={game} {...wishlistProps(game.id)} />}
+              <Link to={`/games/${game.id}`} className="text-link">Open</Link>
             </div>
-            <div className="ranking-score">
-              <strong>{game.rating.toFixed(1)}</strong>
-              <span>{game.reviewCount} ratings</span>
-            </div>
-            <Link to={`/games/${game.id}`} className="text-link">Open</Link>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </LoadState>
     </section>
   )
 }
 
-function ProfilePage({ user }) {
+function GameCardWishlist({ game, isWishlisted, onToggleWishlist, busy }) {
+  return <button type="button" disabled={busy} aria-pressed={isWishlisted} aria-label={`${isWishlisted ? 'Remove' : 'Add'} ${game.title} ${isWishlisted ? 'from' : 'to'} wishlist`}
+    className={`mini-button ${isWishlisted ? 'active' : ''}`} onClick={() => onToggleWishlist(game.id)}>
+    {isWishlisted ? 'Wishlisted' : '+ Wishlist'}
+  </button>
+}
+
+function HistoryList({ logs, emptyText }) {
+  if (!logs.length) return <p className="subtle-text">{emptyText}</p>
+  return <div className="review-list">
+    {logs.map(log => (
+      <article key={log.id} className="review-item">
+        <div className="review-header">
+          <div>
+            <Link to={`/games/${log.game.id}`}><strong>{log.game.title}</strong></Link>
+            {log.rating && <p aria-label={`${log.rating} out of 5 stars`}>{stars(log.rating)}</p>}
+          </div>
+          <span className="review-title">{[STATUS_LABELS[log.status], formatDate(log.updatedAt)].filter(Boolean).join(' · ')}</span>
+        </div>
+        {log.text && <p>{log.text}</p>}
+      </article>
+    ))}
+  </div>
+}
+
+function ProfilePage({ user, library }) {
+  const history = useApi(signal => api.myLogs({ limit: 50 }, signal), [library.version])
+  const counts = Object.values(library.statuses).reduce((total, status) => ({ ...total, [status]: (total[status] ?? 0) + 1 }), {})
   return <section className="content-section">
     <div className="profile-header card-panel"><div><p className="eyebrow">Profile</p>
-      <h1>{user.displayName}</h1><p>{user.email}</p></div>
+      <h1>{user.displayName}</h1><p>{user.email}</p>
+      <p className="subtle-text"><Link to={`/users/${user.id}`}>View your public profile</Link></p></div>
       <Link to="/profile/edit" className="secondary-button">Edit profile</Link>
     </div>
     <div className="list-grid">
-      <Unavailable title="Played games and rating history">Your history is unavailable until the profile and review APIs are published.</Unavailable>
-      <Unavailable title="Your library"><Link to="/wishlist">Wishlist</Link> and <Link to="/backlog">Backlog</Link> are awaiting persistence APIs.</Unavailable>
+      <div className="card-panel"><h2>Your library</h2>
+        <p><Link to="/wishlist">Wishlist</Link>: {counts.wishlist ?? 0} · <Link to="/backlog">Backlog</Link>: {counts.backlog ?? 0}</p>
+        <p>Playing: {counts.playing ?? 0} · Played: {counts.played ?? 0}</p>
+      </div>
+      <div className="card-panel"><h2>Played games and rating history</h2>
+        <LoadState loading={history.loading && !history.data} error={history.error} onRetry={history.reload}>
+          <HistoryList logs={history.data?.logs ?? []} emptyText="Rate a game or add one to your lists and it will show up here." />
+        </LoadState>
+      </div>
     </div>
   </section>
 }
 
 function EditProfilePage() {
+  const visibility = useApi(signal => api.wishlistVisibility(signal), [])
+  const [value, setValue] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState(null)
+  const current = value ?? visibility.data?.wishlistVisibility ?? 'private'
+  async function save(event) {
+    event.preventDefault()
+    setSaving(true); setMessage(null)
+    try {
+      const result = await api.setWishlistVisibility(current)
+      setValue(result.wishlistVisibility)
+      setMessage({ role: 'status', text: `Saved. Your wishlist is now ${result.wishlistVisibility}.` })
+    } catch (error) {
+      setMessage({ role: 'alert', text: error.message })
+    } finally { setSaving(false) }
+  }
   return <section className="content-section card-panel form-panel"><h1>Edit profile</h1>
-    <p role="status">Profile editing and wishlist privacy updates are unavailable until the server supports saving and enforcing them.</p>
-    <form className="stack-form" onSubmit={event => event.preventDefault()}><fieldset disabled>
-      <label>Bio<textarea maxLength={300} rows={4} /></label>
-      <label>Wishlist visibility<select defaultValue="private"><option value="private">Private</option><option value="public">Public</option></select></label>
-      <button className="primary-button" type="submit">Save changes</button>
-    </fieldset></form><Link to="/profile">Back to profile</Link>
+    <LoadState loading={visibility.loading} error={visibility.error} onRetry={visibility.reload}>
+      <form className="stack-form" onSubmit={save}><fieldset disabled={saving}>
+        <label>Wishlist visibility<select value={current} onChange={event => { setValue(event.target.value); setMessage(null) }}>
+          <option value="private">Private (only you)</option><option value="public">Public (anyone with your profile link)</option>
+        </select></label>
+        <button className="primary-button" type="submit">{saving ? 'Saving…' : 'Save changes'}</button>
+      </fieldset></form>
+      {message && <p role={message.role}>{message.text}</p>}
+      <p className="subtle-text">Bio and display name editing are coming soon.</p>
+    </LoadState>
+    <Link to="/profile">Back to profile</Link>
   </section>
 }
 
-function WishlistPage({ wishlist, onToggleWishlist }) {
-  const items = games.filter((game) => wishlist.includes(game.id))
-
+function LibraryPage({ status, title, subtitle, emptyText, library, onError }) {
+  const list = useApi(signal => api.myLogs({ status, limit: 50 }, signal), [status, library.version])
+  async function remove(gameId) {
+    try { await library.setStatus(gameId, null) } catch (error) { onError(error.message) }
+  }
   return (
     <section className="content-section">
       <div className="section-header-inline">
-        <h1>My Wishlist</h1>
-        <p className="subtle-text">Saved for later.</p>
+        <h1>{title}</h1>
+        <p className="subtle-text">{subtitle}</p>
       </div>
-
-      <p role="status">This list is unavailable until the server provides persistence. No saved items have been loaded.</p>
-      {items.length > 0 ? (
-        <div className="game-grid">
-          {items.map((game) => (
-            <GameCard
-              key={game.id}
-              game={game}
-              isWishlisted={true}
-              onToggleWishlist={onToggleWishlist}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="empty-state card-panel">
-          <h3>Wishlist unavailable</h3>
-          <p>Adding and removing wishlist games is currently unavailable.</p>
-        </div>
-      )}
-    </section>
-  )
-}
-
-function BacklogPage({ backlog, onToggleBacklog }) {
-  const items = games.filter((game) => backlog.includes(game.id))
-
-  return (
-    <section className="content-section">
-      <div className="section-header-inline">
-        <h1>My Backlog</h1>
-        <p className="subtle-text">Games planned for future play.</p>
-      </div>
-
-      <p role="status">This list is unavailable until the server provides persistence. No saved items have been loaded.</p>
-      {items.length > 0 ? (
-        <div className="game-grid">
-          {items.map((game) => (
-            <article key={game.id} className="game-card backlog-card">
-              <img src={game.cover} alt={game.title} className="game-cover" />
-              <div className="game-card-body">
-                <h3>{game.title}</h3>
-                <p>{game.genre}</p>
-                <button type="button" className="secondary-button" disabled onClick={() => onToggleBacklog(game.id)}>
-                  Remove from backlog
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <div className="empty-state card-panel">
-          <h3>Backlog unavailable</h3>
-          <p>Adding, removing, and updating backlog games is currently unavailable.</p>
-        </div>
-      )}
+      <LoadState loading={list.loading && !list.data} error={list.error} onRetry={list.reload}>
+        {list.data?.logs.length ? (
+          <div className="game-grid">
+            {list.data.logs.map(({ game }) => (
+              <article key={game.id} className="game-card backlog-card">
+                {game.coverUrl ? <img src={game.coverUrl} alt={game.title} className="game-cover" /> : <div className="game-cover cover-fallback">Artwork unavailable</div>}
+                <div className="game-card-body">
+                  <h3>{game.title}</h3>
+                  <p>{game.genres.slice(0, 2).join(' · ')}</p>
+                  <Link to={`/games/${game.id}`} className="text-link">View details</Link>
+                  <button type="button" className="secondary-button" disabled={Boolean(library.pending[game.id])} onClick={() => remove(game.id)}>
+                    Remove from {STATUS_LABELS[status].toLowerCase()}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state card-panel">
+            <h3>Your {STATUS_LABELS[status].toLowerCase()} is empty</h3>
+            <p>{emptyText} <Link to="/games">Browse games</Link></p>
+          </div>
+        )}
+      </LoadState>
     </section>
   )
 }
 
 function UserProfilePage() {
-  return <Unavailable title="Public profile unavailable">Public profiles and shared wishlists cannot be loaded. Server authorization and privacy enforcement are required before any list can be displayed.</Unavailable>
+  const { userId } = useParams()
+  const profile = useApi(signal => api.user(userId, signal), [userId])
+  const history = useApi(signal => api.userLogs(userId, { limit: 50 }, signal), [userId])
+  const wishlist = useApi(signal => api.userWishlist(userId, { limit: 50 }, signal), [userId])
+  if (profile.error?.status === 404 || profile.error?.status === 400) {
+    return <section className="content-section empty-state card-panel"><h1>Player not found</h1>
+      <p>That profile doesn&apos;t exist.</p><Link className="text-link" to="/games">Browse games</Link></section>
+  }
+  if (!profile.data) return <section className="content-section"><LoadState loading={profile.loading} error={profile.error} onRetry={profile.reload} /></section>
+  const person = profile.data.user
+  return <section className="content-section">
+    <div className="profile-header card-panel"><div><p className="eyebrow">Player</p>
+      <h1>{person.displayName}</h1>{person.username && <p>@{person.username}</p>}{person.bio && <p>{person.bio}</p>}</div></div>
+    <div className="list-grid">
+      <div className="card-panel"><h2>Wishlist</h2>
+        {wishlist.error?.code === 'WISHLIST_PRIVATE'
+          ? <p role="status">This wishlist is private.</p>
+          : <LoadState loading={wishlist.loading} error={wishlist.error} onRetry={wishlist.reload}>
+            {wishlist.data?.logs.length
+              ? <ul>{wishlist.data.logs.map(({ game }) => <li key={game.id}><Link to={`/games/${game.id}`}>{game.title}</Link></li>)}</ul>
+              : <p className="subtle-text">Nothing on this wishlist yet.</p>}
+          </LoadState>}
+      </div>
+      <div className="card-panel"><h2>Played games and ratings</h2>
+        <LoadState loading={history.loading} error={history.error} onRetry={history.reload}>
+          <HistoryList logs={history.data?.logs ?? []} emptyText="No public activity yet." />
+        </LoadState>
+      </div>
+    </div>
+  </section>
 }
 
 function NotFoundPage() {
@@ -457,9 +649,9 @@ function App() {
   const [attempt, setAttempt] = useState(0)
   const loginInFlight = useRef(false)
   const isAuthenticated = Boolean(userProfile)
-  const wishlist = []
-  const backlog = []
-  const reviews = []
+  const library = useLibrary(isAuthenticated)
+  const [actionError, setActionError] = useState('')
+  const navigate = useNavigate()
   useEffect(() => {
     const controller = new AbortController()
     auth.me(controller.signal).then(user => {
@@ -493,38 +685,41 @@ function App() {
     } catch (error) { setError(error.message) }
     finally { setBusy(false) }
   }
-  const unavailable = () => setError('Saving is unavailable until the server publishes this feature.')
-  const handleToggleWishlist = unavailable
-  const handleToggleBacklog = unavailable
+  // Props for any wishlist toggle; signed-out visitors are sent to log in.
+  function wishlistProps(gameId) {
+    const isWishlisted = library.statuses[gameId] === 'wishlist'
+    return {
+      isWishlisted,
+      busy: Boolean(library.pending[gameId]),
+      onToggleWishlist: () => {
+        if (!isAuthenticated) { navigate('/login'); return }
+        setActionError('')
+        library.setStatus(gameId, isWishlisted ? null : 'wishlist').catch(error => setActionError(error.message))
+      },
+    }
+  }
 
   return (
     <Layout isAuthenticated={isAuthenticated} onLogout={logout} busy={busy}>
       {error && <div className="card-panel" role="alert">{error} <button type="button" className="secondary-button" onClick={() => { setError(''); setChecking(true); setAttempt(value => value + 1) }}>Retry connection</button></div>}
+      {actionError && <div className="card-panel" role="alert">{actionError} <button type="button" className="secondary-button" onClick={() => setActionError('')}>Dismiss</button></div>}
       {checking ? <p role="status">Checking your session…</p> : <>
       <Routes>
-        <Route path="/" element={<LandingPage wishlist={wishlist} onToggleWishlist={handleToggleWishlist} />} />
+        <Route path="/" element={<LandingPage wishlistProps={wishlistProps} />} />
         <Route path="/login" element={<LoginPage key="login" isAuthenticated={isAuthenticated} onLogin={login} onPasswordLogin={passwordLogin} onRegister={register} busy={busy} />} />
         <Route path="/register" element={<LoginPage key="register" registering isAuthenticated={isAuthenticated} onLogin={login} onPasswordLogin={passwordLogin} onRegister={register} busy={busy} />} />
-        <Route path="/games" element={<GameDiscoveryPage wishlist={wishlist} onToggleWishlist={handleToggleWishlist} />} />
+        <Route path="/games" element={<GameDiscoveryPage wishlistProps={wishlistProps} />} />
         <Route
           path="/games/:gameId"
-          element={
-            <GameDetailsPage
-              wishlist={wishlist}
-              backlog={backlog}
-              onToggleWishlist={handleToggleWishlist}
-              onToggleBacklog={handleToggleBacklog}
-              reviews={reviews}
-            />
-          }
+          element={<GameDetailsPage isAuthenticated={isAuthenticated} library={library} onError={setActionError} />}
         />
-        <Route path="/rankings" element={<RankingsPage />} />
-        <Route path="/users/:userId" element={<UserProfileRoute />} />
+        <Route path="/rankings" element={<RankingsPage wishlistProps={wishlistProps} />} />
+        <Route path="/users/:userId" element={<UserProfilePage />} />
         <Route
           path="/profile"
           element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <ProfilePage user={userProfile} />
+              <ProfilePage user={userProfile} library={library} />
             </ProtectedRoute>
           }
         />
@@ -540,7 +735,7 @@ function App() {
           path="/wishlist"
           element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <WishlistPage wishlist={wishlist} onToggleWishlist={handleToggleWishlist} />
+              <LibraryPage status="wishlist" title="My Wishlist" subtitle="Saved for later." emptyText="Add games you want to play." library={library} onError={setActionError} />
             </ProtectedRoute>
           }
         />
@@ -548,7 +743,7 @@ function App() {
           path="/backlog"
           element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <BacklogPage backlog={backlog} onToggleBacklog={handleToggleBacklog} />
+              <LibraryPage status="backlog" title="My Backlog" subtitle="Games planned for future play." emptyText="Add games you own but haven't played yet." library={library} onError={setActionError} />
             </ProtectedRoute>
           }
         />

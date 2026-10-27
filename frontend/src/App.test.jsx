@@ -4,10 +4,12 @@ import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 import App from './App'
 import { auth, ApiError } from './services/auth'
+import { api } from './services/api'
 
 vi.mock('./services/auth', async importOriginal => ({
   ...await importOriginal(), auth: { me: vi.fn(), login: vi.fn(), logout: vi.fn() },
 }))
+vi.mock('./services/api', async () => ({ api: (await import('./test/apiMock')).createApiMock() }))
 vi.mock('./components/GoogleSignIn', () => ({ default: ({ onCredential, busy }) =>
   <button disabled={busy} onClick={() => onCredential('google-test-credential')}>Continue with Google</button>,
 }))
@@ -72,45 +74,137 @@ it('[TC-FE-APP-12] allows retry after a session connection failure', async () =>
   await userEvent.click(await screen.findByRole('button', { name: /retry connection/i }))
   expect(await screen.findByRole('heading', { name: user.displayName })).toBeInTheDocument()
 })
-it('[TC-FE-APP-14] resets catalog filters and distinguishes unavailable data from an empty library', async () => {
+const celeste = {
+  id: 'a'.repeat(24), title: 'Celeste', slug: 'celeste', coverUrl: '', genres: ['Platform', 'Indie'], platforms: ['PC'],
+  releaseDate: '2018-01-25T00:00:00.000Z', ratingAvg: 4.5, ratingCount: 4,
+}
+const page = games => ({ games, total: games.length, page: 1, pages: games.length ? 1 : 0 })
+const lastCall = mock => mock.mock.calls.at(-1)[0]
+
+it('[TC-FE-APP-14] loads the catalog and sends search, filter, and sort changes to the API', async () => {
+  api.games.mockResolvedValue(page([celeste]))
+  api.gameFilters.mockResolvedValue({ genres: ['Indie', 'Platform'], platforms: ['PC', 'Switch'] })
   visit('/games')
-  const search = await screen.findByRole('searchbox')
-  await userEvent.type(search, 'a game')
-  await userEvent.selectOptions(screen.getByRole('combobox', { name: /sort games/i }), 'reviews')
+  expect(await screen.findByRole('heading', { name: 'Celeste' })).toBeInTheDocument()
+  expect(screen.getByText('1 game found')).toBeInTheDocument()
+  expect(lastCall(api.games)).toMatchObject({ q: '', genre: '', platform: '', sort: 'title', page: 1 })
+
+  await userEvent.type(screen.getByRole('searchbox'), 'cel')
+  await waitFor(() => expect(lastCall(api.games)).toMatchObject({ q: 'cel' }))
+  await userEvent.selectOptions(await screen.findByRole('combobox', { name: /filter by genre/i }), 'Indie')
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: /sort games/i }), 'top')
+  await waitFor(() => expect(lastCall(api.games)).toMatchObject({ q: 'cel', genre: 'Indie', sort: 'top' }))
+
   await userEvent.click(screen.getByRole('button', { name: /reset filters/i }))
-  expect(search).toHaveValue('')
+  expect(screen.getByRole('searchbox')).toHaveValue('')
   expect(screen.getByRole('combobox', { name: /sort games/i })).toHaveValue('title')
-  expect(screen.getByRole('heading', { name: /catalog unavailable/i })).toBeInTheDocument()
+  await waitFor(() => expect(lastCall(api.games)).toMatchObject({ q: '', genre: '', sort: 'title' }))
 })
-it.each([[1, '/users/unknown'], [2, '/users/u1'], [3, '/users/u2']])('[TC-FE-PRIVACY-01-%d] never shows fixture or private profile data', async (_case, path) => {
-  visit(path)
-  expect(await screen.findByRole('heading', { name: /public profile unavailable/i })).toBeInTheDocument()
-  expect(screen.queryByText('Alex Morgan')).not.toBeInTheDocument()
-  expect(screen.queryByText('Sam Rivera')).not.toBeInTheDocument()
+it('[TC-SORT-03] shows an empty result instead of an error when nothing matches', async () => {
+  visit('/games')
+  expect(await screen.findByRole('heading', { name: /no games match/i })).toBeInTheDocument()
 })
-it.each([['WISHLIST', '/wishlist', 'Wishlist unavailable'], ['BACKLOG', '/backlog', 'Backlog unavailable'], ['DETAIL', '/games/unknown', 'Game unavailable']])('[TC-FE-UNAVAILABLE-%s] shows the unavailable state', async (_feature, path, heading) => {
+it('[TC-FE-APP-15] sends signed-out visitors to log in when they try to wishlist a game', async () => {
+  api.games.mockResolvedValue(page([celeste]))
+  visit('/games')
+  await userEvent.click(await screen.findByRole('button', { name: '+ Wishlist' }))
+  expect(await screen.findByRole('heading', { name: /sign in to continue/i })).toBeInTheDocument()
+  expect(api.saveLog).not.toHaveBeenCalled()
+})
+it('[TC-USRDATA-01] adds a game to the wishlist from the catalog for a signed-in user', async () => {
   auth.me.mockResolvedValue(user)
-  visit(path)
-  expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument()
+  api.games.mockResolvedValue(page([celeste]))
+  api.saveLog.mockResolvedValue({ log: { id: 'log-1', game: celeste.id, status: 'wishlist' } })
+  visit('/games')
+  await userEvent.click(await screen.findByRole('button', { name: '+ Wishlist' }))
+  expect(api.saveLog).toHaveBeenCalledWith(celeste.id, { status: 'wishlist' })
+  expect(await screen.findByRole('button', { name: 'Wishlisted' })).toHaveAttribute('aria-pressed', 'true')
 })
-it('[TC-FE-APP-16] disables profile changes and privacy controls without persistence', async () => {
+it('[TC-RATE-01] submits a rating and review from the game page and refreshes the game', async () => {
+  auth.me.mockResolvedValue(user)
+  api.game.mockResolvedValue({ game: { ...celeste, summary: 'Climb the mountain.', reviewCount: 0 } })
+  api.saveLog.mockResolvedValue({ log: { id: 'log-1', game: celeste.id, rating: 4, text: 'Tough.' } })
+  visit(`/games/${celeste.id}`)
+  expect(await screen.findByRole('heading', { name: 'Celeste' })).toBeInTheDocument()
+  expect(screen.getByText('Based on 4 community ratings')).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Rate 4 stars' }))
+  await userEvent.type(screen.getByRole('textbox'), 'Tough.')
+  const loads = api.game.mock.calls.length
+  await userEvent.click(screen.getByRole('button', { name: /submit review/i }))
+  expect(api.saveLog).toHaveBeenCalledWith(celeste.id, { rating: 4, text: 'Tough.' })
+  await waitFor(() => expect(api.game.mock.calls.length).toBeGreaterThan(loads))
+})
+it('[TC-RATE-03] deletes the signed-in user’s own review', async () => {
+  auth.me.mockResolvedValue(user)
+  api.game.mockResolvedValue({ game: { ...celeste, summary: '', reviewCount: 1 } })
+  api.myLog.mockResolvedValue({ log: { id: 'log-1', game: celeste.id, rating: 5, text: 'Loved it.', status: null } })
+  visit(`/games/${celeste.id}`)
+  await userEvent.click(await screen.findByRole('button', { name: /delete my review/i }))
+  expect(api.deleteLog).toHaveBeenCalledWith('log-1')
+})
+it('[TC-FE-APP-17] shows public reviews with links to the reviewer profiles', async () => {
+  api.game.mockResolvedValue({ game: { ...celeste, summary: '', reviewCount: 1 } })
+  api.reviews.mockResolvedValue({ reviews: [{ id: 'r1', rating: 3, text: 'Fine.', createdAt: '2026-10-01T00:00:00.000Z',
+    user: { id: 'u2', displayName: 'Other Player', username: null, avatarUrl: '' } }], total: 1, page: 1, pages: 1 })
+  visit(`/games/${celeste.id}`)
+  expect(await screen.findByRole('link', { name: 'Other Player' })).toHaveAttribute('href', '/users/u2')
+  expect(screen.getByText('Fine.')).toBeInTheDocument()
+  expect(screen.getByText(/to rate this game or add it to your lists/i)).toBeInTheDocument()
+})
+it('[TC-FE-PRIVACY-01] shows a private wishlist as private without listing its games', async () => {
+  api.user.mockResolvedValue({ user: { id: 'u2', displayName: 'Other Player', username: 'other', avatarUrl: '', bio: '', wishlistVisibility: 'private' } })
+  api.userWishlist.mockRejectedValue(new ApiError("This user's wishlist is private.", 403, 'WISHLIST_PRIVATE'))
+  visit('/users/u2')
+  expect(await screen.findByRole('heading', { name: 'Other Player' })).toBeInTheDocument()
+  expect(await screen.findByText('This wishlist is private.')).toBeInTheDocument()
+})
+it('[TC-WISH-01] shows a public wishlist and the player’s history', async () => {
+  api.user.mockResolvedValue({ user: { id: 'u2', displayName: 'Other Player', username: null, avatarUrl: '', bio: '', wishlistVisibility: 'public' } })
+  api.userWishlist.mockResolvedValue({ logs: [{ id: 'l1', game: celeste, status: 'wishlist' }], total: 1, page: 1, pages: 1 })
+  api.userLogs.mockResolvedValue({ logs: [{ id: 'l2', game: { ...celeste, id: 'b'.repeat(24), title: 'Hades' }, rating: 5, text: '', status: 'played', updatedAt: '2026-10-01T00:00:00.000Z' }], total: 1, page: 1, pages: 1 })
+  visit('/users/u2')
+  expect(await screen.findByRole('link', { name: 'Celeste' })).toBeInTheDocument()
+  expect(await screen.findByRole('link', { name: 'Hades' })).toBeInTheDocument()
+})
+it('[TC-FE-PRIVACY-02] reports an unknown player', async () => {
+  visit('/users/unknown')
+  expect(await screen.findByRole('heading', { name: /player not found/i })).toBeInTheDocument()
+})
+it.each([['wishlist', '/wishlist'], ['backlog', '/backlog']])('[TC-USRDATA-02-%s] lists the %s and removes a game from it', async (status, path) => {
+  auth.me.mockResolvedValue(user)
+  api.myLogs.mockImplementation(async ({ status: requested } = {}) => (requested === status
+    ? { logs: [{ id: 'l1', game: celeste, status }], total: 1, page: 1, pages: 1 }
+    : { logs: [], total: 0, page: 1, pages: 0 }))
+  visit(path)
+  await userEvent.click(await screen.findByRole('button', { name: `Remove from ${status}` }))
+  expect(api.saveLog).toHaveBeenCalledWith(celeste.id, { status: null })
+})
+it('[TC-FE-UNAVAILABLE-DETAIL] reports a game that is not in the catalog', async () => {
+  visit('/games/unknown')
+  expect(await screen.findByRole('heading', { name: /game not found/i })).toBeInTheDocument()
+})
+it('[TC-FE-APP-16] saves wishlist visibility and confirms the server value', async () => {
   auth.me.mockResolvedValue(user)
   visit('/profile/edit')
-  expect(await screen.findByRole('button', { name: /save changes/i })).toBeDisabled()
-  expect(screen.getByRole('combobox', { name: /wishlist visibility/i })).toBeDisabled()
+  await userEvent.selectOptions(await screen.findByRole('combobox', { name: /wishlist visibility/i }), 'public')
+  await userEvent.click(screen.getByRole('button', { name: /save changes/i }))
+  expect(api.setWishlistVisibility).toHaveBeenCalledWith('public')
+  expect(await screen.findByText(/your wishlist is now public/i)).toBeInTheDocument()
 })
 it('[TC-FE-APP-18] handles unmatched routes', async () => {
   visit('/missing')
   expect(await screen.findByRole('heading', { name: /page not found/i })).toBeInTheDocument()
   await waitFor(() => expect(auth.me).toHaveBeenCalledTimes(1))
 })
-it('[TC-FE-APP-20] lets users select most-reviewed rankings without showing invented results', async () => {
+it('[TC-SORT-02] ranks top-rated games by default and most-rated games on request', async () => {
+  api.topGames.mockResolvedValue({ games: [celeste], minCount: 3 })
+  api.games.mockResolvedValue(page([{ ...celeste, id: 'c'.repeat(24), title: 'Hades', ratingCount: 9 }]))
   visit('/rankings')
-  const ranking = await screen.findByRole('combobox', { name: /rank games by/i })
-  await userEvent.selectOptions(ranking, 'reviews')
-  expect(ranking).toHaveValue('reviews')
-  expect(screen.getByText(/rankings are unavailable until/i)).toBeInTheDocument()
-  expect(screen.queryByText(/1,740/)).not.toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: 'Celeste' })).toBeInTheDocument()
+  expect(screen.getByText(/at least 3 ratings/i)).toBeInTheDocument()
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: /rank games by/i }), 'popular')
+  expect(await screen.findByRole('heading', { name: 'Hades' })).toBeInTheDocument()
+  expect(lastCall(api.games)).toMatchObject({ sort: 'popular' })
 })
 it('[TC-FE-APP-22] clears a stale account when session retry reports expiration', async () => {
   auth.me.mockResolvedValueOnce(user).mockRejectedValueOnce(new ApiError('Please sign in.', 401))

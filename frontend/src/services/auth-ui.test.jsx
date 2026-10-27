@@ -3,6 +3,9 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 import App from '../App'
+
+// These tests drive auth through fetch; catalog and library calls are mocked separately.
+vi.mock('../services/api', async () => ({ api: (await import('../test/apiMock')).createApiMock() }))
 // Only the external Google widget is replaced. App and the real frontend auth service run together.
 vi.mock('../components/GoogleSignIn', () => ({ default: ({ onCredential, busy }) =>
   <button disabled={busy} onClick={() => onCredential('synthetic-google-credential')}>Synthetic Google callback</button>,
