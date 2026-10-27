@@ -1,108 +1,178 @@
-# Google account sign-in
+# Account authentication
 
-Google-only sign-in creates a SideQuest account on the first successful login.
-The backend verifies Google's ID token using `google-auth-library`, identifies the account by Google's stable `sub`, and stores the account in MongoDB.
+SideQuest supports password accounts and Google sign-in.
+Password registration collects a username, email, and password; login accepts either the username or email.
+Google sign-in creates an account on its first successful login and identifies returning users by Google's stable `sub`.
+Accounts are never automatically linked by email, so a Google account and a password account may share an email while remaining separate users.
+
+Both methods use the same HttpOnly session cookie, valid for up to seven days.
+Sessions live in MongoDB and survive API restarts when the session secret stays the same.
 No Google passwords, access tokens, or ID tokens are stored.
-An HttpOnly session cookie keeps the user signed in for up to seven days.
-Sessions are stored in MongoDB and survive server restarts.
 
-## Enable locally
+## Local setup and migration
 
-1. Create or select a project in [Google Cloud Console](https://console.cloud.google.com/).
-2. Configure Google Auth Platform branding, audience, and test users as required by your project's publishing status.
-3. Create an OAuth client with application type **Web application**.
-4. Add `http://localhost` and `http://localhost:5173` to **Authorized JavaScript origins**.
-5. Copy the client ID into `GOOGLE_CLIENT_ID` in the root `.env`.
-6. Generate a random session secret with the command below and put it in `SESSION_SECRET`.
-7. Start MongoDB and restart the API using the root README instructions.
+Start MongoDB and install the database and server packages as described in the root README.
+Set `SESSION_SECRET` in the root `.env` to at least 32 bytes of random data.
+Generate a secret with:
 
 ```sh
 node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 ```
 
-The client ID ends in `.apps.googleusercontent.com` and is also supplied to the frontend.
-This Google Identity Services callback flow does not need a client secret or redirect URI.
-Keep the session secret private and stable across server restarts and instances.
-Do not commit `.env`.
-If both authentication settings are empty, health endpoints continue working and auth endpoints return `503 AUTH_NOT_CONFIGURED`.
-If only one setting is provided or the secret is too short, startup fails with a configuration error.
+Keep the secret private and stable across restarts and API instances.
+Never commit `.env`.
+`GOOGLE_CLIENT_ID` is optional: leaving it empty enables password authentication without Google.
+Leaving both settings empty keeps health checks available but returns `503 AUTH_NOT_CONFIGURED` from auth endpoints.
+A Google client ID without a session secret, an invalid client ID, or a short secret prevents startup.
 
-Google's setup and verification references:
-[Client setup](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid) and [server verification](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token).
+Before starting the API against an existing database, stop all API instances and run:
 
-## Frontend handoff
+```sh
+npm run migrate:auth --prefix server
+npm start --prefix server
+```
 
-The frontend teammate adds Google's official **Sign in with Google** button using the script at `https://accounts.google.com/gsi/client`.
-Initialize it with the same client ID and a JavaScript callback that receives `{ credential }`.
-Post that credential to the backend as JSON:
+The migration replaces the legacy required unique `googleId` index with a partial unique index that includes only string Google IDs.
+It also creates the username and password-account email indexes.
+It preserves accounts and unrelated indexes, is safe to repeat, and uses the root environment's database settings.
+Run it during a maintenance window with no API instances accepting writes.
+A failed migration exits nonzero; correct the reported database issue and rerun before starting the API.
+Startup refuses a legacy Google index and tells you to run this command.
+Fresh databases receive the required indexes at startup.
+
+Usernames are globally unique.
+Emails are unique among password accounts, but Google accounts may share those emails.
+Existing Google accounts keep their IDs, profile fields, and sessions.
+The database schema permits exactly one authentication method per account.
+
+## Optional Google setup
+
+1. Create or select a project in [Google Cloud Console](https://console.cloud.google.com/).
+2. Configure Google Auth Platform branding, audience, and test users as required by the project's publishing status.
+3. Create an OAuth client with application type **Web application**.
+4. Add your frontend origin, normally `http://localhost:5173`, to **Authorized JavaScript origins**.
+5. Set the root `GOOGLE_CLIENT_ID` and frontend `VITE_GOOGLE_CLIENT_ID` to the same client ID, then restart both servers.
+
+The client ID ends in `.apps.googleusercontent.com`.
+This Google Identity Services JavaScript callback flow does not require a client secret or redirect URI.
+The backend verifies the credential through `google-auth-library` and requires a verified Google email.
+Subsequent Google logins refresh only that Google account's email, display name, and avatar.
+
+## API contract
+
+All paths below are relative to `/api/auth`.
+POST requests must use JSON and include the exact configured `Origin`, including its port.
+Browsers set Origin automatically; non-browser clients must supply it explicitly.
+Every authentication request should use `credentials: 'include'`.
+
+| Method and path | JSON body | Success |
+| --- | --- | --- |
+| `POST /register` | `{ "username": "player_1", "email": "player@example.com", "password": "a long example phrase" }` | `201 { user }`, creates account and session |
+| `POST /login` | `{ "identifier": "player_1", "password": "a long example phrase" }` | `200 { user }`, starts a new session; identifier can also be an email |
+| `POST /google` | `{ "credential": "<Google ID token>" }` | `200 { user }`, creates or finds a Google account and starts a session |
+| `GET /me` | None | `200 { user }`, restores account state from the session |
+| `POST /logout` | `{}` | `204`, destroys the session and clears its cookie |
+
+The public user shape is `{ id, username, email, displayName, avatarUrl }`.
+`username` is `null` for Google accounts without one.
+Password accounts initially use their normalized username as the display name and have an empty avatar URL.
+Credential hashes and Google IDs are never included in public user responses.
+
+Registration trims and lowercases usernames and emails.
+Usernames must contain 3-30 ASCII letters, digits, or underscores.
+Emails must have a valid address structure and be at most 254 characters.
+Passwords must contain 15-128 Unicode code points and are neither trimmed nor normalized.
+Password confirmation belongs in the frontend; do not send it to the API.
+Passwords are stored as salted, versioned scrypt hashes with `N=32768`, `r=8`, `p=3`, a 16-byte random salt, and a 64-byte derived key.
+Verification uses timing-safe comparison, including a dummy derivation for unknown users.
+Login trims and lowercases the identifier and accepts the exact password.
+
+| Status | Code | Meaning |
+| --- | --- | --- |
+| `400` | `INVALID_REGISTRATION` | Invalid username, email, or password |
+| `400` | `INVALID_LOGIN` | Missing or malformed identifier/password |
+| `400` | `INVALID_CREDENTIAL` | Missing or malformed Google credential |
+| `401` | `INVALID_CREDENTIALS` | Unknown password account or incorrect password; same message for both |
+| `401` | `INVALID_GOOGLE_TOKEN` | Invalid Google token or unverified email |
+| `401` | `UNAUTHENTICATED` | Missing, expired, tampered, or deleted-user session |
+| `403` | `INVALID_ORIGIN` | Missing or incorrect POST Origin |
+| `409` | `ACCOUNT_EXISTS` | Registration username or password-account email is already taken |
+| `429` | `RATE_LIMITED` | More than 30 attempts per IP per endpoint per 15 minutes |
+| `503` | `GOOGLE_NOT_CONFIGURED` | Password auth is enabled but Google is not configured |
+| `503` | `AUTH_NOT_CONFIGURED` | Session secret is not configured |
+
+Each registration/login/Google limiter is independent and held in memory per API process.
+A multi-instance production deployment should use a shared limiter store.
+Errors use `{ "error": { "code": "...", "message": "..." } }`.
+Unexpected failures return a generic `500 INTERNAL_ERROR`.
+Authentication responses use `Cache-Control: no-store`.
+Session IDs rotate after registration and either login method to prevent session fixation.
+
+## Temporary frontend and teammate handoff
+
+The current React app includes a temporary authentication panel for manual testing.
+It provides password registration with confirmation, username/email login, session restoration, account details, logout, and Google's official button when configured.
+The existing rating form remains a standalone prototype.
+The panel can be replaced without changing the API contract.
+
+Copy `frontend/.env.example` to `frontend/.env` if overrides are needed.
+`VITE_API_BASE_URL` defaults to `http://localhost:5000` and excludes `/api/auth`.
+`VITE_GOOGLE_CLIENT_ID` is optional and must match the backend Google client ID.
+Vite loads frontend environment variables from `frontend/.env`, separately from the root backend `.env`.
+Restart Vite after changing them.
 
 ```js
-const response = await fetch('http://localhost:5000/api/auth/google', {
+const response = await fetch('http://localhost:5000/api/auth/login', {
   method: 'POST',
   credentials: 'include',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ credential }),
+  body: JSON.stringify({ identifier: 'player_1', password }),
 });
 const result = await response.json();
 if (!response.ok) throw new Error(result.error.message);
-// result.user contains id, email, displayName, and avatarUrl.
+// result.user is the authenticated account.
 ```
 
-Use `credentials: 'include'` for `/api/auth/me` and `/api/auth/logout` too.
-Call `GET /api/auth/me` when the app loads to restore the signed-in state.
-Call `POST /api/auth/logout` to log out of SideQuest, then clear frontend user state and call `google.accounts.id.disableAutoSelect()` if using automatic Google sign-in.
-Logout ends the SideQuest session; it does not sign the user out of Google.
+Call `GET /me` on page load; `401` means the visitor is signed out.
+For Google, initialize the SDK at `https://accounts.google.com/gsi/client` with the configured client ID and POST the callback's credential to `/google`.
+Only the SDK callback flow is accepted, not Google's direct HTML form POST mode.
+On successful logout, clear the frontend account state and call `google.accounts.id.disableAutoSelect()` if the SDK is loaded.
+Logout ends the SideQuest session and does not sign the visitor out of Google.
 
-Use `localhost` for both the frontend and API request URLs during development.
-Mixing `localhost` with `127.0.0.1` makes them different sites for cookie purposes.
-The backend may still bind to `127.0.0.1`.
-`FRONTEND_ORIGIN` must exactly match the browser's frontend origin, including the port.
-The browser supplies the Origin header automatically; the frontend must not try to set it.
-Non-browser POST tests such as curl must supply `Origin: http://localhost:5173` explicitly.
-
-This endpoint accepts the Google JavaScript callback flow only, not Google's direct HTML form-post mode.
-The backend requires an exact allowed Origin on login and logout to prevent cross-site login/logout requests, in addition to validating Google's token.
-
-## API behavior
-
-| Endpoint | Success | Expected errors |
-| --- | --- | --- |
-| `POST /api/auth/google` | `200 { user: { id, email, displayName, avatarUrl } }` and session cookie | `400` missing credential; `401` rejected token or unverified email; `403` invalid/missing Origin; `429` excessive attempts |
-| `GET /api/auth/me` | `200 { user: { id, email, displayName, avatarUrl } }` | `401` absent, expired, tampered, or deleted-user session |
-| `POST /api/auth/logout` | `204`, clears cookie and destroys session | `403` invalid/missing Origin |
-
-Login updates the Google-supplied display name, email, and avatar on the existing account.
-Email is not a unique account key, and accounts are never automatically linked by email.
-Sessions are rotated after login to prevent session fixation.
-Login is limited to 30 attempts per IP per 15 minutes per server process.
-Auth responses are marked `Cache-Control: no-store`.
-
-`NODE_ENV=production` enables Secure cookies, which require HTTPS.
-For deployment behind an HTTPS reverse proxy, configure Express's `trust proxy` for that trusted proxy before enabling production mode.
-Frontend and API must be on the same site for the current `SameSite=Lax` cookie setting.
-
-## Health checks and errors
-
-| Endpoint | Response |
-| --- | --- |
-| `GET /api/health` | `200 {"status":"ok"}` while the HTTP process is running |
-| `GET /api/ready` | `200 {"status":"ready"}` after a successful database ping, otherwise `503 {"status":"unavailable"}` |
-
-Readiness pings have a 1.5-second timeout and responses are not cached.
-Unknown routes return a JSON `404`.
-Malformed JSON returns `400`, and JSON bodies larger than 100 KB return `413`.
-Errors use the shape `{"error":{"code":"NOT_FOUND","message":"Route not found."}}`.
-Unexpected errors return a generic `500` response without exposing internal details.
+Use `localhost` consistently for frontend and API URLs.
+Mixing `localhost` and `127.0.0.1` causes cross-site cookie problems, even though the API may bind to `127.0.0.1`.
+If macOS AirPlay occupies port 5000, choose another backend `PORT` and update `VITE_API_BASE_URL` to match.
+If Vite selects another port, set `FRONTEND_ORIGIN` to the displayed origin and restart the API.
+For example, these root commands use fixed alternative ports in two terminals:
 
 ```sh
-curl http://127.0.0.1:5000/api/health
-curl http://127.0.0.1:5000/api/ready
+PORT=5001 FRONTEND_ORIGIN=http://localhost:5174 npm start --prefix server
+VITE_API_BASE_URL=http://localhost:5001 npm run dev --prefix frontend -- --host localhost --port 5174 --strictPort
 ```
 
-## Tests and limitations
+`NODE_ENV=production` enables Secure cookies and requires HTTPS.
+For a trusted HTTPS reverse proxy, configure Express's `trust proxy` to match that deployment before enabling production mode.
+Frontend and API must be on the same site for the current `SameSite=Lax` cookie setting.
 
-Run `npm test --prefix server` and `npm run test:integration --prefix server` from the repository root.
-Tests cover signed-token verification, invalid credentials, cross-site requests, session rotation, cookie tampering, logout, rate limits, and MongoDB persistence.
-Test-only Google credentials are injected into test app instances; production always verifies through Google's SDK.
-A real browser Google sign-in still requires your own configured client ID and the frontend button.
-Password login, password recovery, account linking, and profile editing are outside this first version.
+## Health checks, verification, and limits
+
+`GET /api/health` returns `200 {"status":"ok"}` while the HTTP process is running.
+`GET /api/ready` returns `200 {"status":"ready"}` after a database ping or `503 {"status":"unavailable"}` otherwise.
+Readiness pings have a 1.5-second timeout and responses are not cached.
+Unknown routes return JSON `404` errors; malformed JSON returns `400`, and bodies larger than 100 KB return `413`.
+
+```sh
+npm test --prefix server
+npm run test:integration --prefix server
+npm test --prefix frontend
+npm run lint --prefix frontend
+npm run build --prefix frontend
+```
+
+Integration tests require MongoDB and use `sidequest_test` unless `MONGODB_TEST_URI` supplies another URI.
+They clean up their own account and session records.
+Migration tests create and drop a uniquely named disposable database and verify repeatability and preservation of legacy users and unrelated indexes.
+Google credentials are injected only into test app instances; the production verifier has no bypass.
+A real Google browser login requires a configured OAuth client.
+Email verification, password recovery and changes, account linking, and profile editing are deferred.
+Emails collected by password registration are unverified contact information and must not be treated as proof of ownership.
