@@ -1,0 +1,44 @@
+[
+  {
+    "report": "components-before-fix.json",
+    "passed": 15,
+    "failed": 5,
+    "failures": [
+      {
+        "test": "[TC-FE-CARD-03] handles missing rating and review-count data without crashing",
+        "error": "TypeError: Cannot read properties of undefined (reading 'toFixed')"
+      },
+      {
+        "test": "[TC-FE-CARD-04] replaces a failed image with an accessible fallback",
+        "error": "TestingLibraryElementError: Unable to find an accessible element with the role \"img\" and name `/artwork unavailable.*synthetic adventure/i`"
+      },
+      {
+        "test": "[TC-FE-CARD-05] handles an absent cover with a named fallback",
+        "error": "TestingLibraryElementError: Unable to find an accessible element with the role \"img\" and name `/artwork unavailable/i`"
+      },
+      {
+        "test": "[TC-FE-RATE-02] blocks rating changes while disabled",
+        "error": "AssertionError: expected false to be true // Object.is equality"
+      },
+      {
+        "test": "[TC-FE-RATE-06] does not discard a new draft while an earlier submission is pending",
+        "error": "Error: expect(element).toBeDisabled()"
+      }
+    ]
+  },
+  {
+    "report": "auth-before-fix.json",
+    "passed": 12,
+    "failed": 2,
+    "failures": [
+      {
+        "test": "[TC-FE-AUTH-12] rejects malformed user fields rather than creating a partial account",
+        "error": "Error: promise resolved \"{ id: {}, \u2026(2) }\" instead of rejecting"
+      },
+      {
+        "test": "[TC-FE-AUTH-13] rejects an empty success body for session restoration",
+        "error": "Error: promise resolved \"null\" instead of rejecting"
+      }
+    ]
+  }
+]
