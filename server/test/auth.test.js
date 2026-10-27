@@ -17,12 +17,26 @@ async function fixture(t, options = {}) {
       return user;
     },
     async findById(id) { return records.get(id); },
+    async create(data) {
+      if ([...records.values()].some(user => user.username === data.username || user.passwordHash && user.email === data.email)) {
+        throw Object.assign(new Error('Duplicate'), { code: 11000 });
+      }
+      const user = { _id: data.username, avatarUrl: '', ...data };
+      records.set(user._id, user);
+      return user;
+    },
+    findOne(query) {
+      return { async select() {
+        return [...records.values()].find(user => user.passwordHash &&
+          (query.username ? user.username === query.username : user.email === query.email));
+      } };
+    },
   };
   const store = options.store || new MemoryStore();
   const authRouter = createAuthRouter({
     frontendOrigin: origin, sessionSecret: 'test-secret-with-at-least-32-bytes',
     secureCookies: false, store, users,
-    verifyGoogleToken: options.verifyGoogleToken || (async credential => {
+    verifyGoogleToken: options.verifyGoogleToken === null ? undefined : options.verifyGoogleToken || (async credential => {
       if (credential !== 'valid-google-token') throw new Error('Invalid token');
       return profile;
     }),
@@ -95,7 +109,7 @@ test('unverified Google email is rejected', async t => {
 test('cross-origin and missing-origin requests cannot sign in or log out', async t => {
   const { request, records } = await fixture(t);
   for (const requestOrigin of ['https://unrelated.example', null]) {
-    for (const path of ['/google', '/logout']) {
+    for (const path of ['/google', '/register', '/login', '/logout']) {
       assert.equal((await request(path, { method: 'POST', requestOrigin, body: { credential: 'valid-google-token' } })).status, 403);
     }
   }
@@ -127,4 +141,74 @@ test('database failures return a generic error and never authenticate the reques
   assert.equal(response.status, 500);
   assert.equal(response.headers.get('set-cookie'), null);
   assert.equal((await response.json()).error.code, 'INTERNAL_ERROR');
+});
+
+const registration = { username: 'Player_1', email: 'Player@Example.com', password: 'a long test password' };
+
+test('password registration and login normalize identifiers, rotate sessions, and never expose hashes', async t => {
+  const { request, records } = await fixture(t);
+  const signup = await request('/register', { method: 'POST', body: registration });
+  assert.equal(signup.status, 201);
+  const { user } = await signup.json();
+  assert.equal(user.username, 'player_1');
+  assert.equal(user.email, 'player@example.com');
+  assert.equal(user.passwordHash, undefined);
+  assert.match(records.get(user.id).passwordHash, /^scrypt\$v1\$/);
+  const cookie = signup.headers.get('set-cookie').split(';')[0];
+  assert.equal((await request('/me', { cookie })).status, 200);
+  for (const identifier of [' PLAYER_1 ', 'PLAYER@EXAMPLE.COM']) {
+    const login = await request('/login', { method: 'POST', cookie, body: { identifier, password: registration.password } });
+    assert.equal(login.status, 200);
+    assert.deepEqual((await login.json()).user, user);
+    const rotated = login.headers.get('set-cookie').split(';')[0];
+    assert.notEqual(rotated, cookie);
+    assert.equal((await request('/me', { cookie })).status, 401);
+    assert.equal((await request('/logout', { method: 'POST', cookie: rotated })).status, 204);
+    assert.equal((await request('/me', { cookie: rotated })).status, 401);
+  }
+});
+
+test('invalid registration and duplicate identifiers do not create extra accounts', async t => {
+  const { request, records } = await fixture(t);
+  for (const change of [{ username: 'ab' }, { username: 'player@one' }, { email: 'invalid' },
+    { password: 'short' }, { password: 'x'.repeat(129) }, { password: {} }]) {
+    assert.equal((await request('/register', { method: 'POST', body: { ...registration, ...change } })).status, 400);
+  }
+  assert.equal(records.size, 0);
+  assert.equal((await request('/register', { method: 'POST', body: registration })).status, 201);
+  for (const change of [{ username: 'PLAYER_1', email: 'other@example.com' },
+    { username: 'different', email: 'PLAYER@EXAMPLE.COM' }]) {
+    assert.equal((await request('/register', { method: 'POST', body: { ...registration, ...change } })).status, 409);
+  }
+  assert.equal(records.size, 1);
+});
+
+test('unknown users and wrong passwords receive the same generic rejection', async t => {
+  const { request } = await fixture(t);
+  await request('/register', { method: 'POST', body: registration });
+  const responses = [];
+  for (const identifier of ['player_1', 'missing', 'missing@example.com']) {
+    const response = await request('/login', { method: 'POST', body: { identifier, password: 'incorrect password' } });
+    assert.equal(response.status, 401);
+    assert.equal(response.headers.get('set-cookie'), null);
+    responses.push(await response.json());
+  }
+  assert.deepEqual(responses[0], responses[1]);
+  assert.deepEqual(responses[1], responses[2]);
+});
+
+test('password login and registration each rate limit attempts', async t => {
+  const { request } = await fixture(t);
+  for (const path of ['/register', '/login']) {
+    for (let i = 0; i < 30; i++) {
+      assert.equal((await request(path, { method: 'POST', body: {} })).status, 400);
+    }
+    assert.equal((await request(path, { method: 'POST', body: {} })).status, 429);
+  }
+});
+
+test('Google is optional for password authentication', async t => {
+  const { request } = await fixture(t, { verifyGoogleToken: null });
+  assert.equal((await request('/google', { method: 'POST', body: { credential: 'token' } })).status, 503);
+  assert.equal((await request('/register', { method: 'POST', body: registration })).status, 201);
 });

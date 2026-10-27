@@ -28,11 +28,15 @@ test('configuration rejects invalid ports and origins before startup', () => {
   assert.throws(() => readConfig({ HOST: '' }), /HOST/);
 });
 
-test('Google authentication requires both a client ID and a strong session secret', () => {
+test('authentication requires a strong session secret with an optional Google client ID', () => {
   const googleClientId = '123-example.apps.googleusercontent.com';
   const sessionSecret = 'x'.repeat(32);
   assert.throws(() => readConfig({ GOOGLE_CLIENT_ID: googleClientId }), /SESSION_SECRET/);
-  assert.throws(() => readConfig({ SESSION_SECRET: sessionSecret }), /GOOGLE_CLIENT_ID/);
+  assert.deepEqual(readConfig({ SESSION_SECRET: sessionSecret }).auth, {
+    googleClientId: '', sessionSecret, secureCookies: false,
+  });
+  assert.throws(() => readConfig({ SESSION_SECRET: sessionSecret, GOOGLE_CLIENT_ID: 'invalid' }), /GOOGLE_CLIENT_ID/);
+  assert.throws(() => readConfig({ SESSION_SECRET: 'short' }), /SESSION_SECRET/);
   assert.deepEqual(readConfig({ GOOGLE_CLIENT_ID: googleClientId, SESSION_SECRET: sessionSecret, NODE_ENV: 'production' }).auth, {
     googleClientId, sessionSecret, secureCookies: true,
   });
