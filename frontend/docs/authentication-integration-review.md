@@ -1,5 +1,13 @@
 # Frontend authentication integration review
 
+## Coordinated integration update
+
+PR #18 is merged into main and PR #19 is consolidated into frontend PR #13. The six overlapping frontend files are resolved by preserving the existing routed UI, Google SDK component, polished Google button, and real API service. Backend/database functionality is taken unchanged from PR #18. Earlier draft/dependency notes below are historical.
+
+The exact combined application tree was validated before publishing the resolved merge: 105 frontend tests (98 current tests plus seven preserved teammate prototype tests), 26 backend unit/HTTP tests, one database test, six MongoDB migration/session/startup integration tests, frontend lint/build, and 30 responsive/Google browser checks all passed. A real browser with the combined Express API and disposable MongoDB also passed registration, username/email login, rejected passwords, refresh/session restoration, and logout with no runtime exceptions.
+
+Local password authentication requires a private root SESSION_SECRET and the existing migration for legacy User indexes. It does not require a Google client ID. Live Google account verification still requires real Google configuration; synthetic SDK checks do not establish that setup. No credentials are committed or embedded in frontend code.
+
 This branch contains frontend-only changes on top of the existing frontend/test work. It keeps the gaming design, routed discovery/profile/list pages, and Google SDK component while adding the password API contracts from teammate PR #18. It does not modify that PR or any server/database file.
 
 ## Dependency and review status

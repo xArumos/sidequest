@@ -19,7 +19,7 @@ Production needs HTTPS and a same-site API for the backend's SameSite=Lax sessio
 ## Available functionality
 
 - Google creates an account on first sign-in; returning users reuse their account.
-- Password accounts use `POST /api/auth/register` and `POST /api/auth/login` from backend PR #18. Google and password accounts remain separate.
+- Password accounts use `POST /api/auth/register` and `POST /api/auth/login` from merged backend PR #18. Google and password accounts remain separate.
 - Both methods use the same existing session restoration/logout flow.
 - Startup restores the HttpOnly cookie session through `GET /api/auth/me`.
 - `POST /api/auth/google` exchanges Google's callback credential for the session.
@@ -27,7 +27,7 @@ Production needs HTTPS and a same-site API for the backend's SameSite=Lax sessio
 - Profile displays `displayName` and `email` from the API. Credentials are not saved in browser storage.
 - Protected routes wait for session restoration. Errors support retry.
 
-Password registration/login are connected to the API contracts implemented in backend PR #18. Until that PR is merged and deployed, those actions are unavailable on main. Registration validates username, email, 15–128 Unicode code points, and confirmation; only username/email/password are sent. Google sign-in works with the existing Google API in main and PR #18, independently of the password endpoints. It still needs matching client/origin configuration and a running API.
+Password registration/login use the backend supplied by merged PR #18. Set a private root `SESSION_SECRET`, run the documented authentication index migration for existing databases, and restart the API to enable them. Google is optional for password accounts. Registration validates username, email, 15–128 Unicode code points, and confirmation; only username/email/password are sent. Google sign-in works with the existing Google API in main and PR #18, independently of the password endpoints. It still needs matching client/origin configuration and a running API.
 
 Catalog, reviews, rankings, wishlist, backlog, profile editing/history, and shared wishlist APIs have not been implemented in the inspected remote branches. These routes show unavailable states and disable persistence rather than use fixture data. Existing `src/data/mockData.js` remains preserved but is not imported into the application. The review form supports local drafting and validation; publishing defaults to disabled. Do not enable it until a real API contract and persistence callback exist.
 
