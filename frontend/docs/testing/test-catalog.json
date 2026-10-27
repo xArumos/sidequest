@@ -49,7 +49,7 @@
       "Check absence of password field"
     ],
     "data": "Anonymous session",
-    "expected": "Protected route redirects to Google sign-in.",
+    "expected": "Protected route redirects to sign-in and exposes the supported password field alongside Google.",
     "spreadsheetIds": [
       "TC-LOGIN-02"
     ]
@@ -1467,5 +1467,124 @@
     "data": "/users/synthetic-private-player; signed out",
     "expected": "Only unavailable information renders; no list records leak.",
     "spreadsheetIds": []
+  },
+  {
+    "id": "TC-FE-PASSWORD-01",
+    "name": "validates required registration fields and email without sending a request",
+    "file": "frontend/src/services/password-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; no live backend",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Open /register signed out",
+      "Submit empty form",
+      "Enter username and malformed email",
+      "Submit and check alert/request count"
+    ],
+    "data": "synthetic_player; not-an-email",
+    "expected": "Required username and invalid email errors appear without a registration request.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
+  },
+  {
+    "id": "TC-FE-PASSWORD-02",
+    "name": "rejects short passwords and mismatched confirmation while retaining input",
+    "file": "frontend/src/services/password-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; no live backend",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Enter valid username/email and short password",
+      "Submit and inspect length error",
+      "Replace password with a valid long phrase but keep old confirmation",
+      "Submit and inspect mismatch and retained email"
+    ],
+    "data": "too short; synthetic password phrase; player@example.test",
+    "expected": "Both validation errors prevent requests and retain account input.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
+  },
+  {
+    "id": "TC-FE-PASSWORD-03",
+    "name": "registers through the real frontend service without sending confirmation",
+    "file": "frontend/src/services/password-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; no live backend",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Complete valid registration",
+      "Return a synthetic 201 user response",
+      "Submit",
+      "Inspect profile and request payload"
+    ],
+    "data": "synthetic_player; player@example.test; synthetic password phrase",
+    "expected": "Profile renders after success; POST contains username/email/password only with cookie credentials.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
+  },
+  {
+    "id": "TC-FE-PASSWORD-04",
+    "name": "signs in using a username or email and displays server rejection safely",
+    "file": "frontend/src/services/password-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; no live backend",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Submit empty login",
+      "Enter identifier/password",
+      "Return 401 and inspect error",
+      "Retry with 200 account response"
+    ],
+    "data": "Synthetic email and rejected password; 401 then 200",
+    "expected": "Validation and server error appear; retry signs in without false early success.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
+  },
+  {
+    "id": "TC-FE-PASSWORD-05",
+    "name": "prevents duplicate submissions until the server confirms the session",
+    "file": "frontend/src/services/password-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; no live backend",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Enter credentials",
+      "Hold login response pending",
+      "Attempt repeated submit",
+      "Resolve user response"
+    ],
+    "data": "Deferred synthetic login",
+    "expected": "Form controls disable, one login request runs, and profile appears only after response.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
+  },
+  {
+    "id": "TC-FE-PASSWORD-06",
+    "name": "counts Unicode code points for the minimum password length",
+    "file": "frontend/src/services/password-ui.test.jsx",
+    "type": "Integration",
+    "dependencies": "Mocked fetch; real App and frontend auth service; no live backend",
+    "feature": "Authentication",
+    "pbi": "1–4",
+    "steps": [
+      "Complete registration with fifteen game-controller emoji",
+      "Return 201 user envelope",
+      "Submit and inspect payload"
+    ],
+    "data": "15 synthetic emoji code points",
+    "expected": "Minimum-length Unicode password is accepted and transmitted unchanged.",
+    "spreadsheetIds": [
+      "TC-LOGIN-02"
+    ]
   }
 ]

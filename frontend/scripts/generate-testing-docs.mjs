@@ -74,7 +74,7 @@ Source: \`Mod9_SoftwareTests-2.xlsx\`, found in Downloads. All 13 populated case
 | TC-USRDATA-02 | Supplemental component/browser tests distinguish backlog from wishlist | NOT IMPLEMENTED: add/remove/update, duplicates, populated backlog and mutation failure flows are absent |
 | TC-RATE-02 | Integer-only star choices and production validator boundaries (-1,0,6,5.4,NaN,Infinity,string/undefined) | PARTIAL: deleting/recalculating community totals is outside available frontend behavior |
 | TC-RATE-03 | No manufactured edit/delete test | NOT IMPLEMENTED: own-review edit/delete, upsert/duplicate handling and other-author controls do not exist; workbook's API path is a test-plan reference, not an implemented endpoint |
-| TC-LOGIN-02 | Mocked login errors, Google account creation UI, logout and protected navigation | PARTIAL: Google-only implementation has no email/password form, password rules, duplicate-email registration or password-validation UI |
+| TC-LOGIN-02 | Mocked login errors, Google account creation UI, logout and protected navigation | PARTIAL: password forms and validation use the API contract from unmerged backend PR #18; duplicate-email handling and live deployment remain separate verification |
 | TC-STEAM-01, TC-STEAM-02 | Excluded | OUT OF SCOPE: Sprint 2 |
 | TC-FRIEND-01 | Excluded | OUT OF SCOPE: friendship |
 | TC-DEV-01, TC-DEV-02 | Excluded | OUT OF SCOPE: developer accounts/moderation |
@@ -142,7 +142,7 @@ A temporary test-ID annotation mistake also changed route fixture strings during
 
 App component tests mock the frontend auth service. Frontend integration tests run App and the actual fetch service together with controlled fetch responses and a synthetic Google widget. Browser tests run real Vite/React/CSS/Chrome but intercept auth responses; the card fixture renders actual GameCard with synthetic games. Pure sorting tests call production logic with a known four-game dataset. Review tests use callback spies/deferred promises, never an invented review route.
 
-The catalog remains empty in the real application until an API exists. These tests do not inject synthetic catalog rankings into production. List add/remove flows, own-review editing/deletion, public list data and confirmed privacy changes cannot be meaningfully mocked because their frontend persistence handlers do not exist. Missing password forms are intentional for merged Google-only authentication. Live Google sign-in, real API cookies/persistence and backend privacy remain unverified.
+The catalog remains empty in the real application until an API exists. These tests do not inject synthetic catalog rankings into production. List add/remove flows, own-review editing/deletion, public list data and confirmed privacy changes cannot be meaningfully mocked because their frontend persistence handlers do not exist. Password forms are connected to the contract in unmerged backend PR #18; tests do not imply those endpoints exist on main. Live Google sign-in, real API cookies/persistence and backend privacy remain unverified.
 
 Remote review: PR #13 contains the original frontend integration. Open PR #10 proposes models, #11 ingestion, and new #14 database game-search/filter helpers; none supplies the missing HTTP feature routes. None was merged or changed. Server/database and Steam functionality were untouched. Untracked wireframes were preserved.
 
