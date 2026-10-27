@@ -22,7 +22,7 @@ function createApp({ frontendOrigin, isDatabaseReady, authRouter, logger = conso
   });
 
   app.use('/api/auth', authRouter || ((_req, res) => {
-    res.status(503).json({ error: { code: 'AUTH_NOT_CONFIGURED', message: 'Google sign-in is not configured.' } });
+    res.status(503).json({ error: { code: 'AUTH_NOT_CONFIGURED', message: 'Authentication is not configured.' } });
   }));
 
   app.use((_req, res) => {
