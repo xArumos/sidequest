@@ -1922,10 +1922,11 @@
     "steps": [
       "Open the login route with a signed-out response",
       "Inspect the visible disabled Continue with Google button",
-      "Check absence of configuration banners and horizontal overflow"
+      "Measure the button and account-divider horizontal centers",
+      "Capture the viewport and check absence of configuration banners and horizontal overflow"
     ],
     "data": "Unconfigured Google client; desktop/tablet/mobile viewports",
-    "expected": "The Google option is visible but disabled, with no configuration banner and no horizontal overflow.",
+    "expected": "The Google option is visible but disabled, the button and divider share a horizontal center, and no configuration banner or horizontal overflow is present.",
     "spreadsheetIds": [
       "TC-LOGIN-02"
     ]
