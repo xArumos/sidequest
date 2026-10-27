@@ -14,6 +14,8 @@ const gameSchema = new mongoose.Schema({
   // Denormalized from Review by recalculateGameRating() in ../ratings.js; never set directly.
   ratingAvg: { type: Number, default: 0, min: 0, max: 5 },
   ratingCount: { type: Number, default: 0, min: 0 },
+  // Bumped on every recalculation so concurrent recalculations can't store stale stats.
+  ratingVersion: { type: Number, default: 0, min: 0 },
 }, { timestamps: true });
 
 gameSchema.index({ genres: 1 });
