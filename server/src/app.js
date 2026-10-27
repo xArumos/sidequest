@@ -30,7 +30,7 @@ function createApp({ frontendOrigin, isDatabaseReady, authRouter, sessionMiddlew
   for (const [path, router] of Object.entries(routers)) app.use(`/api${path}`, router);
 
   app.use('/api/auth', authRouter || ((_req, res) => {
-    res.status(503).json({ error: { code: 'AUTH_NOT_CONFIGURED', message: 'Google sign-in is not configured.' } });
+    res.status(503).json({ error: { code: 'AUTH_NOT_CONFIGURED', message: 'Authentication is not configured.' } });
   }));
 
   app.use((_req, res) => {

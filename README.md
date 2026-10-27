@@ -11,7 +11,7 @@ This is a university software engineering course project (Section 10705, Group 1
 | Layer | Tech |
 |---|---|
 | Database | MongoDB 8 (via Docker Compose), Mongoose |
-| Backend | Node.js + Express 5, Google sign-in with MongoDB-backed sessions |
+| Backend | Node.js + Express 5, Password and Google sign-in with MongoDB-backed sessions |
 | Frontend | React 19 + Vite |
 | External API | Steam Web API *(Sprint 2)* |
 
@@ -36,8 +36,9 @@ docker compose up -d mongodb
 npm ci --prefix database
 npm run check --prefix database     # prints "Connected to sidequest_dev."
 
-# 4. Run the API server (http://127.0.0.1:5000)
+# 4. Install the server, prepare authentication indexes, and run the API
 npm ci --prefix server
+npm run migrate:auth --prefix server
 npm run dev --prefix server
 ```
 
@@ -48,9 +49,14 @@ npm ci --prefix frontend
 npm run dev --prefix frontend       # http://localhost:5173
 ```
 
-The server imports the `database` package as a local npm dependency, so install both. It waits for MongoDB before accepting requests, and Ctrl+C shuts down the HTTP server and database connection cleanly. If Vite picks a port other than 5173, set `FRONTEND_ORIGIN` to the URL it shows and restart the server.
+The server imports the `database` package as a local npm dependency, so install both.
+It waits for MongoDB before accepting requests, and Ctrl+C shuts down the HTTP server and database connection cleanly.
+If Vite picks a port other than 5173, set `FRONTEND_ORIGIN` to the URL it shows and restart the server.
 
-Google sign-in stays disabled until `GOOGLE_CLIENT_ID` and `SESSION_SECRET` are set. See [server/README.md](server/README.md) for Google Cloud setup and the frontend integration guide.
+Set a random `SESSION_SECRET` of at least 32 bytes in the root `.env` to enable password authentication.
+`GOOGLE_CLIENT_ID` additionally enables Google sign-in.
+The routed frontend provides password registration/login and Google sign-in while preserving the SideQuest discovery, profile, and library UI.
+See [server/README.md](server/README.md) for secret generation, the required migration for existing databases, optional Google setup, and the frontend integration contract.
 
 Stop MongoDB with `docker compose stop mongodb` when you're done.
 
@@ -78,6 +84,8 @@ Run any of these from the root with `--prefix <package>`, e.g. `npm test --prefi
 |---|---|---|
 | GET | `/api/health` | `200` while the HTTP process is running |
 | GET | `/api/ready` | `200` once MongoDB answers a ping, otherwise `503` |
+| POST | `/api/auth/register` | Register with username, email, and password; start a session |
+| POST | `/api/auth/login` | Sign in with username or email and password |
 | POST | `/api/auth/google` | Verify a Google ID token, find or create the account, start a session |
 | GET | `/api/auth/me` | The signed-in user, or `401` |
 | POST | `/api/auth/logout` | End the session (`204`) |
@@ -96,12 +104,12 @@ npm test --prefix frontend             # Vitest + React Testing Library (jsdom)
 - **server/** uses Node's built-in test runner (`node --test`). Integration tests start child server processes on temporary ports, use the `sidequest_test` database, and delete only the records they create. Set `MONGODB_TEST_URI` to point them at a different MongoDB instance.
 - **database/** and **frontend/** use [Vitest](https://vitest.dev). The database tests use `mongodb-memory-server`, which downloads a `mongod` binary on the first run. Frontend tests sit next to the code as `*.test.jsx`, and database tests are under `database/tests/`.
 
-**CI:** GitHub Actions (`.github/workflows/ci.yml`) runs `npm ci`, lint, tests, and build for every package in its matrix, on every pull request and on pushes to `main`. When you add a package, add it to the matrix. `server` isn't in the matrix yet.
+**CI:** GitHub Actions (`.github/workflows/ci.yml`) runs `npm ci`, lint, tests, and build for every package in its matrix, on every pull request and on pushes to `main`. When you add a package, add it to the matrix.
 
 ## Repository layout
 
 ```
-server/              Express API: health checks, Google sign-in, sessions
+server/              Express API: health checks, password and Google sign-in, sessions
 database/            Mongoose connection helper, models, `npm run check` script
 frontend/            Vite + React client
 config/app.yaml      Historical planning reference; no code loads it
@@ -120,8 +128,8 @@ Server and database scripts load the root `.env` if it exists. Variables already
 | `HOST` | `127.0.0.1` | HTTP bind address; use `0.0.0.0` inside a container |
 | `PORT` | `5000` | HTTP port; pick another if 5000 is taken |
 | `FRONTEND_ORIGIN` | `http://localhost:5173` | Browser origin allowed by CORS, with no trailing slash |
-| `GOOGLE_CLIENT_ID` | *(empty)* | Google OAuth web client ID; required for sign-in |
-| `SESSION_SECRET` | *(empty)* | Random session signing secret, at least 32 bytes; required with the client ID |
+| `GOOGLE_CLIENT_ID` | *(empty)* | Optional Google OAuth web client ID; enables Google sign-in |
+| `SESSION_SECRET` | *(empty)* | Random session signing secret, at least 32 bytes; enables password authentication |
 
 ## Contributing
 

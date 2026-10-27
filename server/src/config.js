@@ -22,7 +22,7 @@ function readConfig(env = process.env) {
   const sessionSecret = env.SESSION_SECRET || '';
   let auth = null;
   if (googleClientId || sessionSecret) {
-    if (!/^[a-zA-Z0-9-]+\.apps\.googleusercontent\.com$/.test(googleClientId)) {
+    if (googleClientId && !/^[a-zA-Z0-9-]+\.apps\.googleusercontent\.com$/.test(googleClientId)) {
       throw new Error('GOOGLE_CLIENT_ID must be a Google OAuth web client ID.');
     }
     if (Buffer.byteLength(sessionSecret) < 32) {

@@ -1,0 +1,527 @@
+{
+  "config": {
+    "argv": [
+      "/Users/liliannag/.nvm/versions/node/v24.16.0/bin/node",
+      "/Users/liliannag/sidequest/frontend/node_modules/.bin/playwright",
+      "test",
+      "--config",
+      "playwright.google.config.js"
+    ],
+    "configFile": "/Users/liliannag/sidequest/frontend/playwright.google.config.js",
+    "rootDir": "/Users/liliannag/sidequest/frontend/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 2
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "google-auth.spec.js"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "tablet",
+        "name": "tablet",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "google-auth.spec.js"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "google-auth.spec.js"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "name": "desktop",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
+        "snapshotDir": "/Users/liliannag/sidequest/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": "google-auth.spec.js",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:4174",
+          "browserName": "chromium",
+          "channel": "chrome",
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure",
+          "viewport": {
+            "width": 1280,
+            "height": 900
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "desktop"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "name": "tablet",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
+        "snapshotDir": "/Users/liliannag/sidequest/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": "google-auth.spec.js",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:4174",
+          "browserName": "chromium",
+          "channel": "chrome",
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure",
+          "viewport": {
+            "width": 768,
+            "height": 1024
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "tablet"
+      },
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/Users/liliannag/sidequest/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "name": "mobile",
+        "testDir": "/Users/liliannag/sidequest/frontend/e2e",
+        "snapshotDir": "/Users/liliannag/sidequest/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": "google-auth.spec.js",
+        "timeout": 30000,
+        "use": {
+          "baseURL": "http://127.0.0.1:4174",
+          "browserName": "chromium",
+          "channel": "chrome",
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "isMobile": true,
+          "hasTouch": true
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "mobile"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "docs/testing/artifacts/google-browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 2,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 4174 --strictPort",
+      "url": "http://127.0.0.1:4174",
+      "reuseExistingServer": false,
+      "env": {
+        "VITE_API_BASE_URL": "",
+        "VITE_GOOGLE_CLIENT_ID": "synthetic-google-browser.apps.googleusercontent.com"
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "google-auth.spec.js",
+      "file": "google-auth.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "[TC-FE-GOOGLE-BROWSER-01] completes the Google callback session flow and refresh/logout at each viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3733,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-27T02:01:25.330Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9d0b0c7b14b9f2c1cf1c-74ad6a1e46a2937e76a0",
+          "file": "google-auth.spec.js",
+          "line": 33,
+          "column": 1
+        },
+        {
+          "title": "[TC-FE-GOOGLE-BROWSER-02] renders rejected Google authentication without losing registration inputs",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2859,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-27T02:01:25.346Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9d0b0c7b14b9f2c1cf1c-008de5f89f4a831dff51",
+          "file": "google-auth.spec.js",
+          "line": 52,
+          "column": 1
+        },
+        {
+          "title": "[TC-FE-GOOGLE-BROWSER-03] recovers from a failed Google SDK load using the in-page retry",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1191,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-27T02:01:29.163Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9d0b0c7b14b9f2c1cf1c-bfd4fce43c28e8e3a049",
+          "file": "google-auth.spec.js",
+          "line": 63,
+          "column": 1
+        },
+        {
+          "title": "[TC-FE-GOOGLE-BROWSER-01] completes the Google callback session flow and refresh/logout at each viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2439,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-27T02:01:32.804Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9d0b0c7b14b9f2c1cf1c-059ad07ef5aa1022ef70",
+          "file": "google-auth.spec.js",
+          "line": 33,
+          "column": 1
+        },
+        {
+          "title": "[TC-FE-GOOGLE-BROWSER-02] renders rejected Google authentication without losing registration inputs",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1553,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-27T02:01:32.804Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9d0b0c7b14b9f2c1cf1c-07b986cbc10b7c34512b",
+          "file": "google-auth.spec.js",
+          "line": 52,
+          "column": 1
+        },
+        {
+          "title": "[TC-FE-GOOGLE-BROWSER-03] recovers from a failed Google SDK load using the in-page retry",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "tablet",
+              "projectName": "tablet",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1314,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-27T02:01:34.921Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9d0b0c7b14b9f2c1cf1c-8443d9d8bc3f1b246e52",
+          "file": "google-auth.spec.js",
+          "line": 63,
+          "column": 1
+        },
+        {
+          "title": "[TC-FE-GOOGLE-BROWSER-01] completes the Google callback session flow and refresh/logout at each viewport",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2813,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-27T02:01:42.332Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9d0b0c7b14b9f2c1cf1c-9a86a32335769d002006",
+          "file": "google-auth.spec.js",
+          "line": 33,
+          "column": 1
+        },
+        {
+          "title": "[TC-FE-GOOGLE-BROWSER-02] renders rejected Google authentication without losing registration inputs",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2018,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-27T02:01:42.333Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9d0b0c7b14b9f2c1cf1c-8c9fcc2cbc8c169c3655",
+          "file": "google-auth.spec.js",
+          "line": 52,
+          "column": 1
+        },
+        {
+          "title": "[TC-FE-GOOGLE-BROWSER-03] recovers from a failed Google SDK load using the in-page retry",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1354,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-27T02:01:45.092Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9d0b0c7b14b9f2c1cf1c-df3b4f5aa43ad2e1b8ba",
+          "file": "google-auth.spec.js",
+          "line": 63,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-27T02:01:24.328Z",
+    "duration": 28065.873,
+    "expected": 9,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
