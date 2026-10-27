@@ -1,0 +1,69 @@
+[WebServer] (node:77303) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 18 tests using 2 workers
+
+(node:77457) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:77454) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   2 [desktop] › e2e/frontend.spec.js:23:1 › [TC-FE-BROWSER-02] keyboard skip navigation becomes visible and targets main content (3.0s)
+  ✓   1 [desktop] › e2e/frontend.spec.js:9:1 › [TC-FE-BROWSER-01] homepage navigation fits the viewport and links reach auth pages (3.0s)
+  ✓   4 [desktop] › e2e/frontend.spec.js:44:1 › [TC-FE-BROWSER-04] long card titles stay inside cards and above metadata (2.3s)
+  ✓   3 [desktop] › e2e/frontend.spec.js:33:1 › [TC-FE-BROWSER-03] discovery controls reset without horizontal overflow (2.5s)
+  ✓   6 [desktop] › e2e/frontend.spec.js:68:1 › [TC-FE-BROWSER-06] private profile route reveals no list data or edit controls (1.9s)
+  ✓   5 [desktop] › e2e/frontend.spec.js:57:1 › [TC-FE-BROWSER-05] signed-in library navigation remains usable and distinguishes unavailable lists (2.1s)
+(node:77514) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:77515) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   8 [tablet] › e2e/frontend.spec.js:23:1 › [TC-FE-BROWSER-02] keyboard skip navigation becomes visible and targets main content (1.6s)
+  ✓   7 [tablet] › e2e/frontend.spec.js:9:1 › [TC-FE-BROWSER-01] homepage navigation fits the viewport and links reach auth pages (1.7s)
+  ✓  10 [tablet] › e2e/frontend.spec.js:44:1 › [TC-FE-BROWSER-04] long card titles stay inside cards and above metadata (863ms)
+  ✓   9 [tablet] › e2e/frontend.spec.js:33:1 › [TC-FE-BROWSER-03] discovery controls reset without horizontal overflow (960ms)
+  ✓  12 [tablet] › e2e/frontend.spec.js:68:1 › [TC-FE-BROWSER-06] private profile route reveals no list data or edit controls (826ms)
+  ✓  11 [tablet] › e2e/frontend.spec.js:57:1 › [TC-FE-BROWSER-05] signed-in library navigation remains usable and distinguishes unavailable lists (981ms)
+(node:77587) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:77588) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  14 [mobile] › e2e/frontend.spec.js:23:1 › [TC-FE-BROWSER-02] keyboard skip navigation becomes visible and targets main content (1.4s)
+  ✓  13 [mobile] › e2e/frontend.spec.js:9:1 › [TC-FE-BROWSER-01] homepage navigation fits the viewport and links reach auth pages (1.9s)
+  ✓  16 [mobile] › e2e/frontend.spec.js:44:1 › [TC-FE-BROWSER-04] long card titles stay inside cards and above metadata (854ms)
+  ✓  15 [mobile] › e2e/frontend.spec.js:33:1 › [TC-FE-BROWSER-03] discovery controls reset without horizontal overflow (1.0s)
+  ✓  18 [mobile] › e2e/frontend.spec.js:68:1 › [TC-FE-BROWSER-06] private profile route reveals no list data or edit controls (820ms)
+  ✓  17 [mobile] › e2e/frontend.spec.js:57:1 › [TC-FE-BROWSER-05] signed-in library navigation remains usable and distinguishes unavailable lists (973ms)
+
+  18 passed (21.4s)
+
+> client@0.0.0 test:google-browser
+> playwright test --config playwright.google.config.js
+
+[WebServer] (node:77660) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 9 tests using 2 workers
+
+(node:77662) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:77661) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [desktop] › e2e/google-auth.spec.js:52:1 › [TC-FE-GOOGLE-BROWSER-02] renders rejected Google authentication without losing registration inputs (1.5s)
+  ✓  2 [desktop] › e2e/google-auth.spec.js:33:1 › [TC-FE-GOOGLE-BROWSER-01] completes the Google callback session flow and refresh/logout at each viewport (2.5s)
+  ✓  3 [desktop] › e2e/google-auth.spec.js:63:1 › [TC-FE-GOOGLE-BROWSER-03] recovers from a failed Google SDK load using the in-page retry (999ms)
+(node:77695) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:77696) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  5 [tablet] › e2e/google-auth.spec.js:52:1 › [TC-FE-GOOGLE-BROWSER-02] renders rejected Google authentication without losing registration inputs (1.4s)
+  ✓  4 [tablet] › e2e/google-auth.spec.js:33:1 › [TC-FE-GOOGLE-BROWSER-01] completes the Google callback session flow and refresh/logout at each viewport (2.0s)
+(node:77724) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  6 [tablet] › e2e/google-auth.spec.js:63:1 › [TC-FE-GOOGLE-BROWSER-03] recovers from a failed Google SDK load using the in-page retry (1.0s)
+(node:77729) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  7 [mobile] › e2e/google-auth.spec.js:33:1 › [TC-FE-GOOGLE-BROWSER-01] completes the Google callback session flow and refresh/logout at each viewport (1.9s)
+  ✓  8 [mobile] › e2e/google-auth.spec.js:52:1 › [TC-FE-GOOGLE-BROWSER-02] renders rejected Google authentication without losing registration inputs (1.5s)
+  ✓  9 [mobile] › e2e/google-auth.spec.js:63:1 › [TC-FE-GOOGLE-BROWSER-03] recovers from a failed Google SDK load using the in-page retry (1.0s)
+
+  9 passed (10.8s)

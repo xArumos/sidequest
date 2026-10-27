@@ -11,6 +11,7 @@
     "start": "node --env-file-if-exists=../.env src/index.js",
     "test": "node --test test/app.test.js test/config.test.js test/auth.test.js test/google.test.js test/igdb.test.js",
     "test:integration": "node --env-file-if-exists=../.env --test test/startup.test.js test/auth.integration.test.js",
+    "migrate:auth": "node --env-file-if-exists=../.env scripts/migrate-auth.js",
     "import:games": "node --env-file-if-exists=../.env scripts/import-games.js"
   },
   "dependencies": {
