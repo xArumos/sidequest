@@ -55,7 +55,7 @@ If Vite picks a port other than 5173, set `FRONTEND_ORIGIN` to the URL it shows 
 
 Set a random `SESSION_SECRET` of at least 32 bytes in the root `.env` to enable password authentication.
 `GOOGLE_CLIENT_ID` additionally enables Google sign-in.
-The frontend includes a temporary login and registration panel for testing.
+The routed frontend provides password registration/login and Google sign-in while preserving the SideQuest discovery, profile, and library UI.
 See [server/README.md](server/README.md) for secret generation, the required migration for existing databases, optional Google setup, and the frontend integration contract.
 
 Stop MongoDB with `docker compose stop mongodb` when you're done.

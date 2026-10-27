@@ -1,0 +1,41 @@
+
+> client@0.0.0 test:browser
+> playwright test
+
+[WebServer] (node:63543) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 18 tests using 2 workers
+
+(node:63555) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:63554) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [desktop] › e2e/frontend.spec.js:23:1 › [TC-FE-BROWSER-02] keyboard skip navigation becomes visible and targets main content (2.2s)
+  ✓   2 [desktop] › e2e/frontend.spec.js:9:1 › [TC-FE-BROWSER-01] homepage navigation fits the viewport and links reach auth pages (2.3s)
+  ✓   4 [desktop] › e2e/frontend.spec.js:44:1 › [TC-FE-BROWSER-04] long card titles stay inside cards and above metadata (1.4s)
+  ✓   3 [desktop] › e2e/frontend.spec.js:33:1 › [TC-FE-BROWSER-03] discovery controls reset without horizontal overflow (1.6s)
+  ✓   6 [desktop] › e2e/frontend.spec.js:68:1 › [TC-FE-BROWSER-06] private profile route reveals no list data or edit controls (1.3s)
+  ✓   5 [desktop] › e2e/frontend.spec.js:57:1 › [TC-FE-BROWSER-05] signed-in library navigation remains usable and distinguishes unavailable lists (1.5s)
+(node:63602) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:63603) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   8 [tablet] › e2e/frontend.spec.js:23:1 › [TC-FE-BROWSER-02] keyboard skip navigation becomes visible and targets main content (1.7s)
+  ✓   7 [tablet] › e2e/frontend.spec.js:9:1 › [TC-FE-BROWSER-01] homepage navigation fits the viewport and links reach auth pages (1.8s)
+  ✓  10 [tablet] › e2e/frontend.spec.js:44:1 › [TC-FE-BROWSER-04] long card titles stay inside cards and above metadata (1.1s)
+  ✓   9 [tablet] › e2e/frontend.spec.js:33:1 › [TC-FE-BROWSER-03] discovery controls reset without horizontal overflow (1.2s)
+  ✓  12 [tablet] › e2e/frontend.spec.js:68:1 › [TC-FE-BROWSER-06] private profile route reveals no list data or edit controls (1.2s)
+  ✓  11 [tablet] › e2e/frontend.spec.js:57:1 › [TC-FE-BROWSER-05] signed-in library navigation remains usable and distinguishes unavailable lists (1.3s)
+(node:63643) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:63644) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  14 [mobile] › e2e/frontend.spec.js:23:1 › [TC-FE-BROWSER-02] keyboard skip navigation becomes visible and targets main content (1.8s)
+  ✓  13 [mobile] › e2e/frontend.spec.js:9:1 › [TC-FE-BROWSER-01] homepage navigation fits the viewport and links reach auth pages (1.9s)
+  ✓  16 [mobile] › e2e/frontend.spec.js:44:1 › [TC-FE-BROWSER-04] long card titles stay inside cards and above metadata (1.2s)
+  ✓  15 [mobile] › e2e/frontend.spec.js:33:1 › [TC-FE-BROWSER-03] discovery controls reset without horizontal overflow (1.3s)
+  ✓  17 [mobile] › e2e/frontend.spec.js:57:1 › [TC-FE-BROWSER-05] signed-in library navigation remains usable and distinguishes unavailable lists (1.2s)
+  ✓  18 [mobile] › e2e/frontend.spec.js:68:1 › [TC-FE-BROWSER-06] private profile route reveals no list data or edit controls (1.1s)
+
+  18 passed (19.2s)
