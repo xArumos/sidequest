@@ -20,6 +20,8 @@ async function main() {
     await assertUserIndexes(User.collection);
     await User.createIndexes();
     const store = MongoStore.create({ client: connection.getClient(), dbName: connection.name });
+    // Finish the session expiry index before serving requests or allowing shutdown.
+    await store.collectionP;
     sessionMiddleware = createSessionMiddleware({ ...config.auth, store });
     authRouter = createAuthRouter({
       ...config.auth,

@@ -11,6 +11,8 @@ async function emptyApi(page) {
     const body = path.endsWith('/filters') ? { genres: [], platforms: [] }
       : path.endsWith('/games/top') ? { games: [], minCount: 3 }
       : path.startsWith('/api/games') ? { games: [], total: 0, page: 1, pages: 0 }
+      : path === '/api/me/profile' ? { user: { id: 'synthetic-browser-user', displayName: 'Synthetic Browser Player',
+        username: null, avatarUrl: '', bio: '', wishlistVisibility: 'private' } }
       : path === '/api/me/wishlist-visibility' ? { wishlistVisibility: 'private' }
       : path.startsWith('/api/users/') && !path.endsWith('/logs') && !path.endsWith('/wishlist') ? null
       : { logs: [], total: 0, page: 1, pages: 0 }
@@ -100,5 +102,23 @@ test('[TC-FE-BROWSER-07] displays the local Google option without configuration 
   expect(Math.abs(buttonBounds.x + buttonBounds.width / 2 - dividerBounds.x - dividerBounds.width / 2)).toBeLessThan(1)
   await page.screenshot({ path: testInfo.outputPath('google-signin.png'), fullPage: true })
   await expect(page.getByText(/not configured|until the application is configured/i)).toHaveCount(0)
+  await fitsViewport(page)
+})
+
+test('profile bio retains its accessible label when saved text is loaded', async ({ page }) => {
+  await emptyApi(page)
+  const user = { id: 'synthetic-browser-user', displayName: 'Synthetic Browser Player',
+    email: 'browser@example.test', bio: 'I enjoy platform games.', avatarUrl: '' }
+  await page.route('**/api/auth/me', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ user }),
+  }))
+  await page.route('**/api/me/profile', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ user }),
+  }))
+  await page.goto('/profile/edit')
+  const bio = page.getByLabel('Bio', { exact: true })
+  await expect(bio).toHaveValue(user.bio)
+  await bio.fill('')
+  await expect(bio).toHaveValue('')
   await fitsViewport(page)
 })

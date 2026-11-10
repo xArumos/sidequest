@@ -47,6 +47,8 @@ export const api = {
   saveLog: (gameId, changes) => request(`/games/${id(gameId)}/log`, { method: 'POST', body: changes }),
   deleteLog: logId => request(`/logs/${id(logId)}`, { method: 'DELETE' }),
   myLogs: ({ status, page, limit } = {}, signal) => request(`/me/logs${query({ status, page, limit })}`, { signal }),
+  myProfile: signal => request('/me/profile', { signal }),
+  updateProfile: changes => request('/me/profile', { method: 'PATCH', body: changes }),
   wishlistVisibility: signal => request('/me/wishlist-visibility', { signal }),
   setWishlistVisibility: wishlistVisibility =>
     request('/me/wishlist-visibility', { method: 'PATCH', body: { wishlistVisibility } }),

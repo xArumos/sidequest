@@ -5,6 +5,10 @@ import { vi } from 'vitest'
 // with mockResolvedValueOnce / mockRejectedValueOnce.
 export const emptyGames = { games: [], total: 0, page: 1, pages: 0 }
 const emptyLogs = { logs: [], total: 0, page: 1, pages: 0 }
+const defaultProfile = {
+  id: 'user-1', displayName: 'Synthetic Player', username: null,
+  avatarUrl: '', bio: '', wishlistVisibility: 'private',
+}
 
 export function createApiMock() {
   return {
@@ -17,6 +21,8 @@ export function createApiMock() {
     saveLog: vi.fn(async () => ({ log: null })),
     deleteLog: vi.fn(async () => null),
     myLogs: vi.fn(async () => emptyLogs),
+    myProfile: vi.fn(async () => ({ user: { ...defaultProfile } })),
+    updateProfile: vi.fn(async changes => ({ user: { ...defaultProfile, ...changes } })),
     wishlistVisibility: vi.fn(async () => ({ wishlistVisibility: 'private' })),
     setWishlistVisibility: vi.fn(async wishlistVisibility => ({ wishlistVisibility })),
     user: vi.fn(async () => { throw Object.assign(new Error('User not found.'), { status: 404, code: 'USER_NOT_FOUND' }) }),

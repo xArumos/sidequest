@@ -61,6 +61,46 @@ async function findUser(id) {
 function createUsersRouter({ requireAuth }) {
   const router = Router();
 
+  router.use('/me/profile', (_req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+  });
+
+  router.get('/me/profile', requireAuth, async (req, res) => {
+    const user = await User.findById(req.session.userId).lean();
+    if (!user) throw new HttpError(401, 'UNAUTHENTICATED', 'Please sign in.');
+    res.json({ user: publicProfile(user) });
+  });
+
+  router.patch('/me/profile', requireAuth, async (req, res) => {
+    const body = req.body;
+    if (!req.is('application/json') || !body || typeof body !== 'object' || Array.isArray(body) ||
+        Object.keys(body).length === 0 || Object.keys(body).some(key => !['displayName', 'bio'].includes(key))) {
+      throw new HttpError(400, 'INVALID_PROFILE', 'Send a displayName, a bio, or both.');
+    }
+
+    const updates = {};
+    for (const [key, value] of Object.entries(body)) {
+      if (typeof value !== 'string') {
+        throw new HttpError(400, 'INVALID_PROFILE', `${key} must be text.`);
+      }
+      const trimmed = value.trim();
+      if (key === 'displayName' && (!trimmed || trimmed.length > 80)) {
+        throw new HttpError(400, 'INVALID_PROFILE', 'Display name must contain 1-80 characters.');
+      }
+      if (key === 'bio' && trimmed.length > 300) {
+        throw new HttpError(400, 'INVALID_PROFILE', 'Bio must contain at most 300 characters.');
+      }
+      updates[key] = trimmed;
+    }
+
+    const user = await User.findByIdAndUpdate(req.session.userId, { $set: updates }, {
+      returnDocument: 'after', runValidators: true,
+    }).lean();
+    if (!user) throw new HttpError(401, 'UNAUTHENTICATED', 'Please sign in.');
+    res.json({ user: publicProfile(user) });
+  });
+
   // The caller's own lists and history: wishlist, backlog, playing, played, or all.
   router.get('/me/logs', requireAuth, async (req, res) => {
     const status = textParam(req.query, 'status');
