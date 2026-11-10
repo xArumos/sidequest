@@ -123,9 +123,9 @@ function createAuthRouter({ frontendOrigin, sessionSecret, secureCookies, store,
     const user = await users.findOneAndUpdate({ googleId: profile.sub }, {
       $set: {
         email: profile.email,
-        displayName: profile.name || 'SideQuest player',
         avatarUrl: profile.picture || '',
       },
+      $setOnInsert: { displayName: profile.name || 'SideQuest player' },
     }, { upsert: true, returnDocument: 'after', runValidators: true });
 
     // Rotate the session ID after authentication to prevent session fixation.
