@@ -10,6 +10,9 @@ const userSchema = new mongoose.Schema({
   passwordHash: { type: String, select: false },
   bio: { type: String, default: '', trim: true, maxlength: 300 },
   wishlistVisibility: { type: String, enum: ['public', 'private'], default: 'private' },
+  steamId: { type: String, select: false },
+  steamLinkHash: { type: String, select: false },
+  steamLinkExpiresAt: { type: Date, select: false },
 }, { timestamps: true, autoIndex: false });
 
 userSchema.index({ googleId: 1 }, {
@@ -17,6 +20,9 @@ userSchema.index({ googleId: 1 }, {
 });
 userSchema.index({ email: 1 }, {
   name: 'password_email_unique', unique: true, partialFilterExpression: { passwordHash: { $type: 'string' } },
+});
+userSchema.index({ steamId: 1 }, {
+  unique: true, partialFilterExpression: { steamId: { $type: 'string' } },
 });
 userSchema.pre('validate', function () {
   // Projected existing documents may not contain their hidden password hash.

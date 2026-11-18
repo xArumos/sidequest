@@ -2,7 +2,7 @@
 
 *A way to discover and share games with friends.*
 
-SideQuest is a social video game tracking and review site, like Letterboxd but for games. Users can rate and review games, track what they've played, want to play, or own but haven't played, and (later) connect Steam to show achievements next to their ratings.
+SideQuest is a social video game tracking and review site, like Letterboxd but for games. Users can rate and review games, track what they've played, want to play, or own but haven't played, and connect their Steam account. Showing Steam achievements alongside ratings is planned for Sprint 2.
 
 This is a university software engineering course project (Section 10705, Group 1), run in Scrum across two sprints.
 
@@ -13,7 +13,7 @@ This is a university software engineering course project (Section 10705, Group 1
 | Database | MongoDB 8 (via Docker Compose), Mongoose |
 | Backend | Node.js + Express 5, Password and Google sign-in with MongoDB-backed sessions |
 | Frontend | React 19 + Vite |
-| External API | Steam Web API *(Sprint 2)* |
+| External services | IGDB for game data and Steam OpenID for account linking |
 
 ## Prerequisites
 
@@ -59,6 +59,12 @@ The routed frontend provides password registration/login and Google sign-in whil
 See [server/README.md](server/README.md) for secret generation, the required migration for existing databases, optional Google setup, and the frontend integration contract.
 
 Stop MongoDB with `docker compose stop mongodb` when you're done.
+
+## Connect Steam
+
+Sign into SideQuest and open **Profile → Connect Steam**. Steam asks you to sign in and then returns you to SideQuest. Use **Disconnect Steam** on the same page to remove the link.
+
+Account linking uses Steam OpenID and requires no Steam API key. Keep `FRONTEND_ORIGIN` set to the address you open in the browser. That origin must route `/api/steam/callback` to the API, as the Vite dev proxy does.
 
 ## Scripts
 
