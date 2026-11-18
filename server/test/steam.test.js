@@ -36,10 +36,16 @@ beforeEach(async () => {
   steamReply = 'ns:http://specs.openid.net/auth/2.0\nis_valid:true\n';
 });
 
+async function startConnection(cookie) {
+  return fetch(api.base + '/steam/connect', {
+    method: 'POST', redirect: 'manual', headers: { Origin: origin, Cookie: cookie },
+  });
+}
+
 async function begin(cookie = alice.cookie) {
-  const result = await api.request('/steam/connect', { method: 'POST', cookie });
-  assert.equal(result.status, 200);
-  const url = new URL(result.body.url);
+  const result = await startConnection(cookie);
+  assert.equal(result.status, 303);
+  const url = new URL(result.headers.get('location'));
   assert.equal(url.origin + url.pathname, endpoint);
   assert.equal(url.searchParams.get('openid.mode'), 'checkid_setup');
   assert.equal(url.searchParams.get('openid.realm'), origin + '/');
@@ -86,7 +92,9 @@ test('links a verified Steam ID once and allows disconnecting', async () => {
   assert.equal(checks[0].method, 'POST');
   assert.equal(checks[0].body.get('openid.mode'), 'check_authentication');
   assert.deepEqual(await connection(), { steamId });
-  assert.equal((await api.request('/steam/connect', { method: 'POST', cookie: alice.cookie })).status, 409);
+  const alreadyConnected = await startConnection(alice.cookie);
+  assert.equal(alreadyConnected.status, 303);
+  assert.equal(alreadyConnected.headers.get('location'), origin + '/profile');
   assert.equal((await api.request('/steam', { method: 'DELETE', cookie: alice.cookie })).status, 204);
   assert.deepEqual(await connection(), { steamId: null });
   assert.equal(await callback(returnTo, proof), origin + '/profile?steam=expired');

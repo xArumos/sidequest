@@ -86,10 +86,8 @@ function createSteamRouter({ requireAuth, frontendOrigin, fetchSteam = fetch }) 
         steamLinkExpiresAt: new Date(Date.now() + linkLifetime),
       },
     });
-    if (!result.matchedCount) {
-      throw new HttpError(409, 'STEAM_ALREADY_LINKED', 'Disconnect your current Steam account before connecting another one.');
-    }
-    res.json({ url: signInUrl(frontendOrigin, returnTo(state)) });
+    if (!result.matchedCount) return res.redirect(303, frontendOrigin + '/profile');
+    return res.redirect(303, signInUrl(frontendOrigin, returnTo(state)));
   });
 
   router.get('/callback', async (req, res) => {

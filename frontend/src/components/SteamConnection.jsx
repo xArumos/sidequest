@@ -19,7 +19,7 @@ export default function SteamConnection() {
   const result = params.get('steam')
   const message = error || (Object.hasOwn(messages, result) ? messages[result] : '')
 
-  async function toggleConnection() {
+  async function disconnect() {
     setBusy(true)
     setError('')
     if (params.has('steam')) {
@@ -28,14 +28,8 @@ export default function SteamConnection() {
       setParams(next, { replace: true })
     }
     try {
-      if (linked) {
-        await api.disconnectSteam()
-        connection.reload()
-      } else {
-        const { url } = await api.connectSteam()
-        window.location.assign(url)
-        return
-      }
+      await api.disconnectSteam()
+      connection.reload()
     } catch (error) {
       setError(error.message)
     }
@@ -50,12 +44,14 @@ export default function SteamConnection() {
         <button type="button" className="secondary-button" onClick={connection.reload}>Try again</button>
       </p>}
       {message && <p role={error || result !== 'cancelled' ? 'alert' : 'status'}>{message}</p>}
-      {!connection.loading && !connection.error && <>
-        {linked && <p>Connected to Steam.</p>}
-        <button type="button" className="secondary-button" disabled={busy} onClick={toggleConnection}>
-          {busy ? 'Working…' : linked ? 'Disconnect Steam' : 'Connect Steam'}
+      {!connection.loading && !connection.error && (linked ? <>
+        <p>Connected to Steam.</p>
+        <button type="button" className="secondary-button" disabled={busy} onClick={disconnect}>
+          {busy ? 'Working…' : 'Disconnect Steam'}
         </button>
-      </>}
+      </> : <form method="post" action={api.steamConnectUrl}>
+        <button type="submit" className="secondary-button">Connect Steam</button>
+      </form>)}
     </section>
   )
 }

@@ -54,6 +54,6 @@ export const api = {
   userLogs: (userId, { page, limit } = {}, signal) => request(`/users/${id(userId)}/logs${query({ page, limit })}`, { signal }),
   userWishlist: (userId, { page, limit } = {}, signal) => request(`/users/${id(userId)}/wishlist${query({ page, limit })}`, { signal }),
   steamConnection: signal => request('/steam', { signal }),
-  connectSteam: () => request('/steam/connect', { method: 'POST' }),
+  steamConnectUrl: `${baseUrl}/api/steam/connect`,
   disconnectSteam: () => request('/steam', { method: 'DELETE' }),
 }

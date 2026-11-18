@@ -23,5 +23,6 @@ export function createApiMock() {
     userLogs: vi.fn(async () => emptyLogs),
     userWishlist: vi.fn(async () => emptyLogs),
     steamConnection: vi.fn(async () => ({ steamId: null })),
+    steamConnectUrl: '/api/steam/connect',
   }
 }
