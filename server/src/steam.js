@@ -4,7 +4,8 @@ const User = require('sidequest-database/models/User');
 const { HttpError } = require('./http');
 
 const endpoint = 'https://steamcommunity.com/openid/login';
-const namespace = 'http://specs.openid.net/auth/2.0';
+// OpenID 2.0 requires this exact namespace identifier. Steam requests use the HTTPS endpoint above.
+const namespace = 'http://specs.openid.net/auth/2.0'; //NOSONAR
 const callbackPath = '/api/steam/callback';
 const linkLifetime = 10 * 60 * 1000;
 const signedFields = ['op_endpoint', 'claimed_id', 'identity', 'return_to', 'response_nonce', 'assoc_handle'];
