@@ -22,5 +22,6 @@ export function createApiMock() {
     user: vi.fn(async () => { throw Object.assign(new Error('User not found.'), { status: 404, code: 'USER_NOT_FOUND' }) }),
     userLogs: vi.fn(async () => emptyLogs),
     userWishlist: vi.fn(async () => emptyLogs),
+    steamConnection: vi.fn(async () => ({ steamId: null })),
   }
 }

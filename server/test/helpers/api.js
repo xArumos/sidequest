@@ -69,7 +69,7 @@ async function startApi(routers) {
     await Promise.all([Game.deleteMany({}), Review.deleteMany({}), User.deleteMany({})]);
   }
 
-  return { request, signIn, reset, stop };
+  return { base, request, signIn, reset, stop };
 }
 
 module.exports = { startApi };

@@ -4,6 +4,7 @@ import './App.css'
 import Layout from './components/Layout'
 import GameCard from './components/GameCard'
 import ReviewForm from './components/ReviewForm'
+import SteamConnection from './components/SteamConnection'
 import GoogleSignIn from './components/GoogleSignIn'
 import { auth } from './services/auth'
 import { api } from './services/api'
@@ -521,6 +522,7 @@ function ProfilePage({ user, library }) {
           <HistoryList logs={history.data?.logs ?? []} emptyText="Rate a game or add one to your lists and it will show up here." />
         </LoadState>
       </div>
+      <SteamConnection />
     </div>
   </section>
 }
