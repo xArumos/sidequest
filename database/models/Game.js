@@ -22,5 +22,7 @@ gameSchema.index({ genres: 1 });
 gameSchema.index({ platforms: 1 });
 gameSchema.index({ ratingAvg: -1, ratingCount: -1 });
 gameSchema.index({ title: 'text' });
+// Multikey, not unique: one Steam app can appear on more than one IGDB record.
+gameSchema.index({ steamAppIds: 1 });
 
 module.exports = mongoose.model('Game', gameSchema);
