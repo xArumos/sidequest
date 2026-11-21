@@ -104,4 +104,7 @@ async function findGamesBySteamAppIds(appIds) {
   return matches;
 }
 
-module.exports = { findGames, topGames, getGameById, getGameFilters, findGamesBySteamAppIds, SORTS: Object.keys(SORTS) };
+module.exports = {
+  findGames, topGames, getGameById, getGameFilters, findGamesBySteamAppIds, normalizeSteamAppId,
+  SORTS: Object.keys(SORTS),
+};
