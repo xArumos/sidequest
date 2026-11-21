@@ -196,3 +196,10 @@ The import upserts by IGDB id, so re-running it refreshes titles, covers, genres
 Steam features are optional. Put a key from https://steamcommunity.com/dev/apikey in the root `.env` as `STEAM_API_KEY`.
 When it is empty, the API starts normally, logs that Steam is disabled, and Steam data routes return `503 STEAM_UNAVAILABLE`.
 The key is never logged or included in responses.
+
+### Steam Web API client
+
+`src/steamApi.js` wraps the four Steam calls the app needs. Build it with `createSteamApi({ apiKey: config.steam.apiKey })`; pass the key explicitly, since it is non-enumerable on `config.steam`.
+It exposes `getOwnedGames(steamId)`, `getPlayerAchievements(steamId, appId)`, `getSchemaForGame(appId)` and `getPlayerSummaries(steamIds)`, each returning normalized objects documented in JSDoc. App IDs are strings, matching `Game.steamAppIds`.
+Requests time out after 5 seconds. Failures throw `SteamApiError` with a `code` (`STEAM_PROFILE_PRIVATE`, `STEAM_NO_DATA`, `STEAM_RATE_LIMITED`, `STEAM_UNAVAILABLE`, `STEAM_BAD_KEY`) and a suggested HTTP `status`; the comment at the top of the file explains how Steam's responses map to each code.
+The key is sent only as the `key` query parameter and is scrubbed from every error. Tests use the `test/fixtures/steam-*.json` fixtures and never call Steam.

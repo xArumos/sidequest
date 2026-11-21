@@ -1,0 +1,35 @@
+{
+  "response": {
+    "players": [
+      {
+        "steamid": "76561197960435530",
+        "communityvisibilitystate": 3,
+        "profilestate": 1,
+        "personaname": "Robin",
+        "profileurl": "https://steamcommunity.com/id/robinwalker/",
+        "avatar": "https://avatars.steamstatic.com/abc.jpg",
+        "avatarmedium": "https://avatars.steamstatic.com/abc_medium.jpg",
+        "avatarfull": "https://avatars.steamstatic.com/abc_full.jpg",
+        "avatarhash": "abc",
+        "personastate": 0,
+        "realname": "Robin Walker",
+        "primaryclanid": "103582791429521412",
+        "timecreated": 1063407589,
+        "personastateflags": 0,
+        "loccountrycode": "US"
+      },
+      {
+        "steamid": "76561198000000001",
+        "communityvisibilitystate": 1,
+        "profilestate": 1,
+        "personaname": "Hidden Player",
+        "profileurl": "https://steamcommunity.com/profiles/76561198000000001/",
+        "avatar": "https://avatars.steamstatic.com/def.jpg",
+        "avatarmedium": "https://avatars.steamstatic.com/def_medium.jpg",
+        "avatarfull": "https://avatars.steamstatic.com/def_full.jpg",
+        "avatarhash": "def",
+        "personastate": 0
+      }
+    ]
+  }
+}

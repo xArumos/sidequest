@@ -1,0 +1,37 @@
+{
+  "response": {
+    "game_count": 3,
+    "games": [
+      {
+        "appid": 1145360,
+        "name": "Hades",
+        "playtime_forever": 3125,
+        "img_icon_url": "5ad4ffde7a5d0c1a0c2c8b6f4f8b2b6e8d3d2a91",
+        "has_community_visible_stats": true,
+        "playtime_windows_forever": 3125,
+        "playtime_mac_forever": 0,
+        "playtime_linux_forever": 0,
+        "playtime_deck_forever": 0,
+        "rtime_last_played": 1700000000,
+        "playtime_disconnected": 0
+      },
+      {
+        "appid": 367520,
+        "name": "Hollow Knight",
+        "playtime_2weeks": 45,
+        "playtime_forever": 1250,
+        "img_icon_url": "4d2b5c0e4b1f3c6f0d6f7c0b3d6a2b9e1d5f3c2a",
+        "has_community_visible_stats": true,
+        "rtime_last_played": 1710000000
+      },
+      {
+        "appid": 440,
+        "name": "Team Fortress 2",
+        "playtime_forever": 0,
+        "img_icon_url": "",
+        "has_community_visible_stats": true,
+        "rtime_last_played": 0
+      }
+    ]
+  }
+}

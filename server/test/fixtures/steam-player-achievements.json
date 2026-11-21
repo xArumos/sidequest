@@ -1,0 +1,12 @@
+{
+  "playerstats": {
+    "steamID": "76561197960435530",
+    "gameName": "Hades",
+    "achievements": [
+      { "apiname": "AchBeatHades", "achieved": 1, "unlocktime": 1600400000 },
+      { "apiname": "AchFishing", "achieved": 0, "unlocktime": 0 },
+      { "apiname": "AchMirror", "achieved": 1, "unlocktime": 1600500000 }
+    ],
+    "success": true
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "game": {
+    "gameName": "Hades",
+    "gameVersion": "12",
+    "availableGameStats": {
+      "achievements": [
+        {
+          "name": "AchBeatHades",
+          "defaultvalue": 0,
+          "displayName": "Is There No Escape?",
+          "hidden": 0,
+          "description": "Clear an escape attempt.",
+          "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1145360/ach1.jpg",
+          "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1145360/ach1_gray.jpg"
+        },
+        {
+          "name": "AchFishing",
+          "defaultvalue": 0,
+          "displayName": "Catch of the Day",
+          "hidden": 1,
+          "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1145360/ach2.jpg",
+          "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1145360/ach2_gray.jpg"
+        }
+      ]
+    }
+  }
+}
