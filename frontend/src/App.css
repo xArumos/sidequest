@@ -760,3 +760,9 @@ button:disabled { cursor: not-allowed; opacity: .65; transform: none; }
 }
 
 .google-signin-icon { flex: 0 0 20px; width: 20px; height: 20px; }
+.review-header .feed-line { margin: 0; color: #dfe7ff; overflow-wrap: anywhere; }
+.form-legend { padding: 0; margin-bottom: .25rem; color: #ffffff; font-size: 1.1rem; font-weight: 700; }
+.field-help { margin: -.5rem 0 0; font-size: .9rem; }
+.feed-item .review-header { flex-wrap: nowrap; align-items: flex-start; }
+.feed-item .review-header > div { min-width: 0; }
+.feed-item .review-title { flex-shrink: 0; white-space: nowrap; }

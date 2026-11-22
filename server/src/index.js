@@ -6,14 +6,19 @@ const { createSessionMiddleware, authNotConfigured } = require('./session');
 const { createGamesRouter } = require('./games');
 const { createLogsRouter } = require('./logs');
 const { createUsersRouter } = require('./users');
+const { createFeedRouter } = require('./feed');
 const { createGoogleVerifier } = require('./google');
 const { MongoStore } = require('connect-mongo');
 const { assertUserIndexes } = require('./user-indexes');
+const Follow = require('sidequest-database/models/Follow');
 const User = require('sidequest-database/models/User');
 
 async function main() {
   const config = readConfig();
   const connection = await connectDatabase();
+  // The unique (follower, followee) index keeps follows idempotent, so it must
+  // exist before the API accepts requests.
+  await Follow.init();
   let authRouter;
   let sessionMiddleware;
   if (config.auth) {
@@ -39,6 +44,7 @@ async function main() {
     writeRateLimit: config.writeRateLimit,
     routers: {
       '/games': createGamesRouter({ rankingMinCount: config.rankingMinCount }),
+      '/feed': createFeedRouter({ requireAuth: requireUser }),
       // These span /games/:id/log, /logs, /me, and /users, so they mount at /api itself.
       '': [createLogsRouter({ requireAuth: requireUser }), createUsersRouter({ requireAuth: requireUser })],
     },

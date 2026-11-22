@@ -35,7 +35,7 @@ function query(params) {
 
 const id = value => encodeURIComponent(value)
 
-// Thin wrappers over the routes documented in PRs #28-#30.
+// Thin wrappers over the routes documented in PRs #28-#30 and the follow and privacy API.
 export const api = {
   games: ({ q, genre, platform, sort, page, limit } = {}, signal) =>
     request(`/games${query({ q, genre, platform, sort, page, limit })}`, { signal }),
@@ -50,7 +50,15 @@ export const api = {
   wishlistVisibility: signal => request('/me/wishlist-visibility', { signal }),
   setWishlistVisibility: wishlistVisibility =>
     request('/me/wishlist-visibility', { method: 'PATCH', body: { wishlistVisibility } }),
+  activityVisibility: signal => request('/me/activity-visibility', { signal }),
+  setActivityVisibility: activityVisibility =>
+    request('/me/activity-visibility', { method: 'PATCH', body: { activityVisibility } }),
+  feed: ({ page, limit } = {}, signal) => request(`/feed${query({ page, limit })}`, { signal }),
   user: (userId, signal) => request(`/users/${id(userId)}`, { signal }),
+  follow: userId => request(`/users/${id(userId)}/follow`, { method: 'POST' }),
+  unfollow: userId => request(`/users/${id(userId)}/follow`, { method: 'DELETE' }),
+  followers: (userId, { page, limit } = {}, signal) => request(`/users/${id(userId)}/followers${query({ page, limit })}`, { signal }),
+  following: (userId, { page, limit } = {}, signal) => request(`/users/${id(userId)}/following${query({ page, limit })}`, { signal }),
   userLogs: (userId, { page, limit } = {}, signal) => request(`/users/${id(userId)}/logs${query({ page, limit })}`, { signal }),
   userWishlist: (userId, { page, limit } = {}, signal) => request(`/users/${id(userId)}/wishlist${query({ page, limit })}`, { signal }),
 }

@@ -2,6 +2,7 @@ const { once } = require('node:events');
 const { MemoryStore } = require('express-session');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const { connectDatabase, disconnectDatabase } = require('sidequest-database');
+const Follow = require('sidequest-database/models/Follow');
 const Game = require('sidequest-database/models/Game');
 const Review = require('sidequest-database/models/Review');
 const User = require('sidequest-database/models/User');
@@ -21,7 +22,7 @@ const sessionSecret = 'test-secret-with-at-least-32-bytes';
 async function startApi(routers, { writeRateLimit = false } = {}) {
   const mongod = await MongoMemoryServer.create();
   await connectDatabase({ uri: mongod.getUri(), dbName: 'sidequest_api_test' });
-  await Promise.all([Game.init(), Review.init(), User.init()]);
+  await Promise.all([Follow.init(), Game.init(), Review.init(), User.init()]);
 
   const store = new MemoryStore();
   const server = createApp({
@@ -44,11 +45,12 @@ async function startApi(routers, { writeRateLimit = false } = {}) {
   }
 
   const base = `http://127.0.0.1:${server.address().port}/api`;
-  async function request(path, { method = 'GET', cookie, body } = {}) {
+  // Pass `origin: null` to leave out the Origin header, or another origin to spoof one.
+  async function request(path, { method = 'GET', cookie, body, origin: requestOrigin = origin } = {}) {
     const response = await fetch(base + path, {
       method,
       headers: {
-        Origin: origin,
+        ...(requestOrigin && { Origin: requestOrigin }),
         ...(cookie && { Cookie: cookie }),
         ...(body !== undefined && { 'Content-Type': 'application/json' }),
       },
@@ -69,10 +71,17 @@ async function startApi(routers, { writeRateLimit = false } = {}) {
   }
 
   async function reset() {
-    await Promise.all([Game.deleteMany({}), Review.deleteMany({}), User.deleteMany({})]);
+    await Promise.all([Follow.deleteMany({}), Game.deleteMany({}), Review.deleteMany({}), User.deleteMany({})]);
   }
 
-  return { request, signIn, reset, stop };
+  // Clears everything except accounts and their sessions, and restores default
+  // settings, so a suite can sign in once in before() (sign-in is rate limited).
+  async function resetActivity() {
+    await Promise.all([Follow.deleteMany({}), Game.deleteMany({}), Review.deleteMany({})]);
+    await User.updateMany({}, { $set: { activityVisibility: 'public', wishlistVisibility: 'private' } });
+  }
+
+  return { request, signIn, reset, resetActivity, stop };
 }
 
 module.exports = { startApi };
