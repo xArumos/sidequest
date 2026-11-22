@@ -16,7 +16,9 @@ const sessionSecret = 'test-secret-with-at-least-32-bytes';
 // Call stop() in an after() hook.
 // Sign-in goes through the real /api/auth/google route; the "Google token" is
 // just the subject, so signIn('alice') always returns the same user.
-async function startApi(routers) {
+// The shared write limiter is off by default so suites can write freely; pass
+// `{ writeRateLimit: { windowMs, limit } }` to exercise it.
+async function startApi(routers, { writeRateLimit = false } = {}) {
   const mongod = await MongoMemoryServer.create();
   await connectDatabase({ uri: mongod.getUri(), dbName: 'sidequest_api_test' });
   await Promise.all([Game.init(), Review.init(), User.init()]);
@@ -32,6 +34,7 @@ async function startApi(routers) {
       verifyGoogleToken: async sub => ({ sub, email: `${sub}@example.com`, email_verified: true, name: sub }),
     }),
     routers,
+    writeRateLimit,
   }).listen(0, '127.0.0.1');
   await once(server, 'listening');
   async function stop() {

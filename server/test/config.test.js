@@ -5,9 +5,11 @@ const { readConfig } = require('../src/config');
 test('configuration supplies local defaults and accepts environment overrides', () => {
   assert.deepEqual(readConfig({}), {
     host: '127.0.0.1', port: 5000, frontendOrigin: 'http://localhost:5173', auth: null, rankingMinCount: 3,
+    writeRateLimit: { limit: 300, windowMs: 900000 },
   });
   assert.deepEqual(readConfig({ HOST: '0.0.0.0', PORT: '5001', FRONTEND_ORIGIN: 'https://sidequest.example' }), {
     host: '0.0.0.0', port: 5001, frontendOrigin: 'https://sidequest.example', auth: null, rankingMinCount: 3,
+    writeRateLimit: { limit: 300, windowMs: 900000 },
   });
 });
 
@@ -15,6 +17,15 @@ test('configuration reads and validates the ranking minimum count', () => {
   assert.equal(readConfig({ RANKING_MIN_COUNT: '5' }).rankingMinCount, 5);
   for (const RANKING_MIN_COUNT of ['', '0', '-1', '1.5', 'abc']) {
     assert.throws(() => readConfig({ RANKING_MIN_COUNT }), /RANKING_MIN_COUNT/);
+  }
+});
+
+test('configuration reads and validates the write rate limit', () => {
+  assert.deepEqual(readConfig({ WRITE_RATE_LIMIT_MAX: '50', WRITE_RATE_LIMIT_WINDOW_MINUTES: '1' }).writeRateLimit,
+    { limit: 50, windowMs: 60000 });
+  for (const value of ['', '0', '-1', '1.5', 'abc']) {
+    assert.throws(() => readConfig({ WRITE_RATE_LIMIT_MAX: value }), /WRITE_RATE_LIMIT_MAX/);
+    assert.throws(() => readConfig({ WRITE_RATE_LIMIT_WINDOW_MINUTES: value }), /WRITE_RATE_LIMIT_WINDOW_MINUTES/);
   }
 });
 

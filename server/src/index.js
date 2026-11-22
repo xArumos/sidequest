@@ -36,6 +36,7 @@ async function main() {
     frontendOrigin: config.frontendOrigin,
     authRouter,
     sessionMiddleware,
+    writeRateLimit: config.writeRateLimit,
     routers: {
       '/games': createGamesRouter({ rankingMinCount: config.rankingMinCount }),
       // These span /games/:id/log, /logs, /me, and /users, so they mount at /api itself.
