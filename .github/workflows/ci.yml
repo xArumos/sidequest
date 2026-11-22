@@ -45,3 +45,50 @@ jobs:
       - run: npm run lint --if-present
       - run: npm test
       - run: npm run build --if-present
+
+  # Full-stack browser tests: real API + mongodb-memory-server + Vite (PBI-34).
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            database/package-lock.json
+            server/package-lock.json
+            frontend/package-lock.json
+
+      - name: Cache mongodb-memory-server binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('server/package-lock.json', 'database/package-lock.json') }}
+
+      - name: Install dependencies
+        run: |
+          npm ci --prefix database
+          npm ci --prefix server
+          npm ci --prefix frontend
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run end-to-end tests
+        working-directory: frontend
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-playwright-report
+          path: |
+            frontend/playwright-report/e2e/
+            frontend/test-results/
+          retention-days: 14
