@@ -48,8 +48,8 @@ function createGamesRouter({ rankingMinCount = 3 } = {}) {
   router.get('/:id', async (req, res) => {
     const game = await getGameById(objectIdParam(req.params.id, 'game id'));
     if (!game) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found.');
-    // ratingCount counts star ratings; reviewCount counts records with written text.
-    const reviewCount = await Review.countDocuments({ game: game._id, text: { $gt: '' } });
+    // ratingCount counts star ratings; reviewCount counts visible records with written text.
+    const reviewCount = await Review.countDocuments({ game: game._id, text: { $gt: '' }, removedAt: null });
     res.json({ game: { ...gameSummary(game), summary: game.summary ?? '', reviewCount } });
   });
 

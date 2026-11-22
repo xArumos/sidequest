@@ -33,7 +33,7 @@ describe('ratings and reviews API', () => {
     const response = await save(alice, { rating: 4, text: '  Tough but fair.  ' });
     assert.equal(response.status, 201);
     assert.deepEqual({ ...response.body.log, id: undefined, createdAt: undefined, updatedAt: undefined }, {
-      id: undefined, game: String(game._id), rating: 4, text: 'Tough but fair.', status: null,
+      id: undefined, game: String(game._id), rating: 4, text: 'Tough but fair.', status: null, removed: null,
       createdAt: undefined, updatedAt: undefined,
     });
     assert.ok(Date.parse(response.body.log.createdAt));
