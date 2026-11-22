@@ -3,12 +3,7 @@ const { createApp } = require('./app');
 const { readConfig } = require('./config');
 const { createAuthRouter, requireAuth } = require('./auth');
 const { createSessionMiddleware, authNotConfigured } = require('./session');
-const { createGamesRouter } = require('./games');
-const { createLogsRouter } = require('./logs');
-const { createUsersRouter } = require('./users');
-const { createFeedRouter } = require('./feed');
-const { createDevelopersRouter } = require('./developers');
-const { createAdminRouter } = require('./admin');
+const { createApiRouters } = require('./routes');
 const { createGoogleVerifier } = require('./google');
 const { MongoStore } = require('connect-mongo');
 const { assertUserIndexes } = require('./user-indexes');
@@ -47,14 +42,7 @@ async function main() {
     authRouter,
     sessionMiddleware,
     writeRateLimit: config.writeRateLimit,
-    routers: {
-      '/games': createGamesRouter({ rankingMinCount: config.rankingMinCount }),
-      '/feed': createFeedRouter({ requireAuth: requireUser }),
-      // These span /games/:id/..., /logs, /me, /users, and /dev, so they mount at /api itself.
-      '': [createLogsRouter({ requireAuth: requireUser }), createUsersRouter({ requireAuth: requireUser }),
-        createDevelopersRouter({ requireAuth: requireUser })],
-      '/admin': createAdminRouter({ requireAuth: requireUser }),
-    },
+    routers: createApiRouters({ requireAuth: requireUser, rankingMinCount: config.rankingMinCount }),
     isDatabaseReady: async () => {
       if (connection.readyState !== 1) return false;
       await connection.db.command({ ping: 1 }, { timeoutMS: 1500 });

@@ -21,12 +21,7 @@ const User = require('sidequest-database/models/User');
 const { createApp } = require('../../src/app');
 const { createAuthRouter, requireAuth } = require('../../src/auth');
 const { createSessionMiddleware } = require('../../src/session');
-const { createGamesRouter } = require('../../src/games');
-const { createLogsRouter } = require('../../src/logs');
-const { createUsersRouter } = require('../../src/users');
-const { createFeedRouter } = require('../../src/feed');
-const { createDevelopersRouter } = require('../../src/developers');
-const { createAdminRouter } = require('../../src/admin');
+const { createApiRouters } = require('../../src/routes');
 const { seedDatabase } = require('./seed');
 
 const HOST = '127.0.0.1';
@@ -69,12 +64,7 @@ async function main() {
     authRouter: createAuthRouter({
       ...auth, frontendOrigin, users: User, store, verifyGoogleToken: boundaries.verifyGoogleToken,
     }),
-    routers: {
-      '/games': createGamesRouter({ rankingMinCount: 1 }),
-      '/feed': createFeedRouter({ requireAuth }),
-      '': [createLogsRouter({ requireAuth }), createUsersRouter({ requireAuth }), createDevelopersRouter({ requireAuth })],
-      '/admin': createAdminRouter({ requireAuth }),
-    },
+    routers: createApiRouters({ requireAuth, rankingMinCount: 1 }),
     isDatabaseReady: async () => connection.readyState === 1,
   });
 
