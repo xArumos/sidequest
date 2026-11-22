@@ -9,11 +9,15 @@ const { createUsersRouter } = require('./users');
 const { createGoogleVerifier } = require('./google');
 const { MongoStore } = require('connect-mongo');
 const { assertUserIndexes } = require('./user-indexes');
+const Follow = require('sidequest-database/models/Follow');
 const User = require('sidequest-database/models/User');
 
 async function main() {
   const config = readConfig();
   const connection = await connectDatabase();
+  // The unique (follower, followee) index keeps follows idempotent, so it must
+  // exist before the API accepts requests.
+  await Follow.init();
   let authRouter;
   let sessionMiddleware;
   if (config.auth) {
