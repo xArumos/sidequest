@@ -80,6 +80,12 @@ describe('User wishlist visibility', () => {
   });
 });
 
+describe('User admin flag', () => {
+  it('defaults to false', () => {
+    expect(new User({ googleId: 'g-2', email: 'b@example.com', displayName: 'B' }).admin).toBe(false);
+  });
+});
+
 describe('Game', () => {
   it('starts with no rating and allows several games without an IGDB id', async () => {
     const [a] = await Game.create([{ title: 'Hades' }, { title: 'Celeste' }]);

@@ -766,3 +766,22 @@ button:disabled { cursor: not-allowed; opacity: .65; transform: none; }
 .feed-item .review-header { flex-wrap: nowrap; align-items: flex-start; }
 .feed-item .review-header > div { min-width: 0; }
 .feed-item .review-title { flex-shrink: 0; white-space: nowrap; }
+
+/* Developer access, developer reviews, and admin pages. */
+.link-button { padding: 0; background: none; border: 0; color: #d5dbff; font: inherit; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+.link-button:hover { color: #8da0ff; transform: none; }
+.developer-access { margin-top: 1rem; }
+.developer-access textarea { min-height: 5rem; resize: vertical; }
+.removed-note { padding: .75rem .9rem; border: 1px solid rgba(250, 204, 21, .35); border-radius: .8rem; background: rgba(250, 204, 21, .08); }
+.review-panel .review-item p.removed-note { color: #fde68a; }
+.developer-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; }
+.developer-filters .two-field-row { gap: .8rem; }
+.date-field { display: flex; flex-direction: column; gap: .35rem; color: #b7bed6; font-size: .9rem; }
+.review-item .stack-form textarea { min-height: 3.5rem; resize: vertical; }
+.review-item > .secondary-button { margin-top: .5rem; padding: .5rem .9rem; }
+.panel-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+.compact-select { padding: .55rem .8rem; background: rgba(12, 17, 31, .8); color: #f6f8ff; border: 1px solid rgba(139, 146, 185, .24); border-radius: .8rem; font: inherit; }
+@media (max-width: 900px) { .developer-filters { grid-template-columns: 1fr; } }
+.request-game { display: block; margin-top: .25rem; }
+.inline-actions > p { margin: 0; align-self: center; }
+.developer-filters + .inline-actions { margin-bottom: 1rem; }

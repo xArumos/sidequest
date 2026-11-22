@@ -4,6 +4,7 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 const { connectDatabase, disconnectDatabase } = require('sidequest-database');
 const Follow = require('sidequest-database/models/Follow');
 const Game = require('sidequest-database/models/Game');
+const GameDeveloper = require('sidequest-database/models/GameDeveloper');
 const Review = require('sidequest-database/models/Review');
 const User = require('sidequest-database/models/User');
 const { createApp } = require('../../src/app');
@@ -22,7 +23,7 @@ const sessionSecret = 'test-secret-with-at-least-32-bytes';
 async function startApi(routers, { writeRateLimit = false } = {}) {
   const mongod = await MongoMemoryServer.create();
   await connectDatabase({ uri: mongod.getUri(), dbName: 'sidequest_api_test' });
-  await Promise.all([Follow.init(), Game.init(), Review.init(), User.init()]);
+  await Promise.all([Follow.init(), Game.init(), Review.init(), User.init(), GameDeveloper.init()]);
 
   const store = new MemoryStore();
   const server = createApp({
@@ -71,17 +72,20 @@ async function startApi(routers, { writeRateLimit = false } = {}) {
   }
 
   async function reset() {
-    await Promise.all([Follow.deleteMany({}), Game.deleteMany({}), Review.deleteMany({}), User.deleteMany({})]);
+    await Promise.all([
+      Follow.deleteMany({}), Game.deleteMany({}), Review.deleteMany({}), User.deleteMany({}), GameDeveloper.deleteMany({}),
+    ]);
   }
 
   // Clears everything except accounts and their sessions, and restores default
   // settings, so a suite can sign in once in before() (sign-in is rate limited).
   async function resetActivity() {
-    await Promise.all([Follow.deleteMany({}), Game.deleteMany({}), Review.deleteMany({})]);
+    await Promise.all([Follow.deleteMany({}), Game.deleteMany({}), Review.deleteMany({}), GameDeveloper.deleteMany({})]);
     await User.updateMany({}, { $set: { activityVisibility: 'public', wishlistVisibility: 'private' } });
   }
 
-  return { request, signIn, reset, resetActivity, stop };
+  // The database URI lets tests run the server scripts against the same database.
+  return { request, signIn, reset, resetActivity, stop, mongoUri: mongod.getUri(), dbName: 'sidequest_api_test' };
 }
 
 module.exports = { startApi };

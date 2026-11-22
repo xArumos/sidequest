@@ -13,9 +13,16 @@ const {
 // Wishlists have their own visibility setting (PBI-29); backlogs stay private
 // to their owner for now.
 const PUBLIC_STATUSES = ['playing', 'played'];
+// A review removed by a developer (PBI-32) no longer counts as history on its own.
 const HISTORY_FILTER = {
-  $or: [{ rating: { $ne: null } }, { text: { $gt: '' } }, { status: { $in: PUBLIC_STATUSES } }],
+  $or: [
+    { removedAt: null, $or: [{ rating: { $ne: null } }, { text: { $gt: '' } }] },
+    { status: { $in: PUBLIC_STATUSES } },
+  ],
 };
+
+// Only the author still sees a removed review's rating and text.
+const hideRemoved = log => (log.removed ? { ...log, rating: null, text: '', removed: null } : log);
 
 function pageParams(query) {
   return {
@@ -190,7 +197,8 @@ function createUsersRouter({ requireAuth }) {
     const user = await findUser(req.params.id);
     await assertCanViewActivity(req.session?.userId, user);
     const result = await listUserLogs(user._id, { filter: HISTORY_FILTER, ...pageParams(req.query) });
-    const logs = result.logs.map(log => (PUBLIC_STATUSES.includes(log.status) ? log : { ...log, status: null }));
+    const logs = result.logs.map(hideRemoved)
+      .map(log => (PUBLIC_STATUSES.includes(log.status) ? log : { ...log, status: null }));
     res.json({ ...result, logs });
   });
 
@@ -203,7 +211,8 @@ function createUsersRouter({ requireAuth }) {
         ? "Only this user's followers can see their wishlist."
         : "This user's wishlist is private.");
     }
-    res.json(await listUserLogs(user._id, { filter: { status: 'wishlist' }, ...pageParams(req.query) }));
+    const result = await listUserLogs(user._id, { filter: { status: 'wishlist' }, ...pageParams(req.query) });
+    res.json(isOwner ? result : { ...result, logs: result.logs.map(hideRemoved) });
   });
 
   return router;

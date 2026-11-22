@@ -16,6 +16,8 @@ const userSchema = new mongoose.Schema({
   // activityVisibility existed have no value and are treated as `public`.
   wishlistVisibility: { type: String, enum: VISIBILITIES, default: 'private' },
   activityVisibility: { type: String, enum: VISIBILITIES, default: 'public' },
+  // Grants the admin pages and routes. Set only by server/scripts/set-admin.js, never by an API route.
+  admin: { type: Boolean, default: false },
 }, { timestamps: true, autoIndex: false });
 
 userSchema.index({ googleId: 1 }, {

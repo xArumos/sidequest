@@ -69,6 +69,8 @@ Stop MongoDB with `docker compose stop mongodb` when you're done.
 | | `npm test` | Unit tests (no MongoDB needed) |
 | | `npm run test:integration` | Integration tests against local MongoDB |
 | | `npm run e2e:server` | Test-only API on an in-memory MongoDB with seeded data (port 5055) |
+| | `npm run approve:developer` | List, approve, or reject developer access requests |
+| | `npm run set:admin` | Grant or revoke the admin flag on an account |
 | `database/` | `npm run check` | Connect to MongoDB and print the database name |
 | | `npm test` | Tests against an in-memory MongoDB |
 | `frontend/` | `npm run dev` | Vite dev server with HMR on port 5173 |

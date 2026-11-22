@@ -7,18 +7,23 @@ const { createGamesRouter } = require('./games');
 const { createLogsRouter } = require('./logs');
 const { createUsersRouter } = require('./users');
 const { createFeedRouter } = require('./feed');
+const { createDevelopersRouter } = require('./developers');
+const { createAdminRouter } = require('./admin');
 const { createGoogleVerifier } = require('./google');
 const { MongoStore } = require('connect-mongo');
 const { assertUserIndexes } = require('./user-indexes');
 const Follow = require('sidequest-database/models/Follow');
 const User = require('sidequest-database/models/User');
+const Review = require('sidequest-database/models/Review');
+const GameDeveloper = require('sidequest-database/models/GameDeveloper');
 
 async function main() {
   const config = readConfig();
   const connection = await connectDatabase();
-  // The unique (follower, followee) index keeps follows idempotent, so it must
-  // exist before the API accepts requests.
-  await Follow.init();
+  // These indexes must exist before the API accepts requests: the unique
+  // (follower, followee) index keeps follows idempotent, and unique (user, game)
+  // and (game, user) hold reviews and developer mappings to one row each.
+  await Promise.all([Follow.init(), Review.init(), GameDeveloper.init()]);
   let authRouter;
   let sessionMiddleware;
   if (config.auth) {
@@ -45,8 +50,10 @@ async function main() {
     routers: {
       '/games': createGamesRouter({ rankingMinCount: config.rankingMinCount }),
       '/feed': createFeedRouter({ requireAuth: requireUser }),
-      // These span /games/:id/log, /logs, /me, and /users, so they mount at /api itself.
-      '': [createLogsRouter({ requireAuth: requireUser }), createUsersRouter({ requireAuth: requireUser })],
+      // These span /games/:id/..., /logs, /me, /users, and /dev, so they mount at /api itself.
+      '': [createLogsRouter({ requireAuth: requireUser }), createUsersRouter({ requireAuth: requireUser }),
+        createDevelopersRouter({ requireAuth: requireUser })],
+      '/admin': createAdminRouter({ requireAuth: requireUser }),
     },
     isDatabaseReady: async () => {
       if (connection.readyState !== 1) return false;

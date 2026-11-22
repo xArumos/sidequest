@@ -81,6 +81,13 @@ describe('recalculateGameRating', () => {
     expect(await stored()).toEqual({ ratingAvg: 5, ratingCount: 1 });
   });
 
+  it('excludes reviews removed by a developer', async () => {
+    const [low] = await rate(1, 5, 4);
+    await Review.updateOne({ _id: low._id }, { removedAt: new Date(), removalReason: 'Spam' });
+    await recalculateGameRating(game._id);
+    expect(await stored()).toEqual({ ratingAvg: 4.5, ratingCount: 2 });
+  });
+
   it('does not touch other games', async () => {
     const other = await Game.create({ title: 'Celeste' });
     await rate(2);

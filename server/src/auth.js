@@ -13,6 +13,8 @@ function publicUser(user) {
     username: user.username ?? null,
     displayName: user.displayName,
     avatarUrl: user.avatarUrl,
+    // Only ever sent to the account holder: every response using publicUser is their own.
+    admin: user.admin === true,
   };
 }
 
