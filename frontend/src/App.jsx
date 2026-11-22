@@ -10,6 +10,7 @@ import { api } from './services/api'
 import { useApi } from './services/useApi'
 import LoadState from './components/LoadState'
 import Pager from './components/Pager'
+import DeleteAccountSection from './components/DeleteAccount'
 import { AdminPage, DeveloperAccess, DeveloperPage } from './pages/DeveloperPages'
 import { formatDate, ratingLabel, stars } from './utils/games'
 
@@ -23,9 +24,10 @@ const SORTS = [
 const STATUS_LABELS = { wishlist: 'Wishlist', backlog: 'Backlog', playing: 'Playing', played: 'Played' }
 const PAGE_SIZE = 24
 
-function ProtectedRoute({ isAuthenticated, children }) {
+// `signedOutTo` is where a signed-out visitor goes instead, e.g. home after deleting their account.
+function ProtectedRoute({ isAuthenticated, signedOutTo = '/login', children }) {
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to={signedOutTo} replace />
   }
 
   return children
@@ -560,8 +562,8 @@ const VISIBILITY_OPTIONS = [
   ['private', 'Private (only you)'],
 ]
 
-// PBI-29 and PBI-31: who can see the profile's activity and wishlist.
-function EditProfilePage() {
+// PBI-29 and PBI-31: who can see the profile's activity and wishlist. #92: account deletion.
+function EditProfilePage({ user, onAccountDeleted }) {
   const settings = useApi(signal => Promise.all([api.activityVisibility(signal), api.wishlistVisibility(signal)])
     .then(([activity, wishlist]) => ({ ...activity, ...wishlist })), [])
   const [saved, setSaved] = useState(null)
@@ -610,7 +612,8 @@ function EditProfilePage() {
       {message && <p role={message.role}>{message.text}</p>}
       <p className="subtle-text">Bio and display name editing are coming soon.</p>
     </LoadState>
-    <Link to="/profile">Back to profile</Link>
+    <DeleteAccountSection user={user} onDeleted={onAccountDeleted} />
+    <p className="back-link"><Link to="/profile">Back to profile</Link></p>
   </section>
 }
 
@@ -710,6 +713,8 @@ function App() {
   const isAuthenticated = Boolean(userProfile)
   const library = useLibrary(isAuthenticated)
   const [actionError, setActionError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [accountDeleted, setAccountDeleted] = useState(false)
   const navigate = useNavigate()
   useEffect(() => {
     const controller = new AbortController()
@@ -727,7 +732,7 @@ function App() {
     if (loginInFlight.current) return
     loginInFlight.current = true
     setBusy(true)
-    try { setUserProfile(await request()); setError('') }
+    try { setUserProfile(await request()); setError(''); setNotice(''); setAccountDeleted(false) }
     finally { loginInFlight.current = false; setBusy(false) }
   }
   const login = credential => authenticate(() => auth.login(credential))
@@ -743,6 +748,14 @@ function App() {
       window.google?.accounts?.id?.disableAutoSelect()
     } catch (error) { setError(error.message) }
     finally { setBusy(false) }
+  }
+  // The server already ended the session. Signing out here makes the edit page's
+  // ProtectedRoute redirect home instead of to the sign-in page.
+  function onAccountDeleted() {
+    setAccountDeleted(true)
+    setUserProfile(null)
+    setNotice('Your account and its data have been deleted.')
+    window.google?.accounts?.id?.disableAutoSelect()
   }
   // Props for any wishlist toggle; signed-out visitors are sent to log in.
   function wishlistProps(gameId) {
@@ -761,6 +774,7 @@ function App() {
   return (
     <Layout isAuthenticated={isAuthenticated} isAdmin={userProfile?.admin === true} onLogout={logout} busy={busy}>
       {error && <div className="card-panel" role="alert">{error} <button type="button" className="secondary-button" onClick={() => { setError(''); setChecking(true); setAttempt(value => value + 1) }}>Retry connection</button></div>}
+      {notice && <div className="card-panel notice" role="status">{notice} <button type="button" className="secondary-button" onClick={() => setNotice('')}>Dismiss</button></div>}
       {actionError && <div className="card-panel" role="alert">{actionError} <button type="button" className="secondary-button" onClick={() => setActionError('')}>Dismiss</button></div>}
       {checking ? <p role="status">Checking your session…</p> : <>
       <Routes>
@@ -785,8 +799,8 @@ function App() {
         <Route
           path="/profile/edit"
           element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <EditProfilePage />
+            <ProtectedRoute isAuthenticated={isAuthenticated} signedOutTo={accountDeleted ? '/' : '/login'}>
+              <EditProfilePage user={userProfile} onAccountDeleted={onAccountDeleted} />
             </ProtectedRoute>
           }
         />

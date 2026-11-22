@@ -143,3 +143,46 @@ test('[TC-E2E-04] Google sign-in is stubbed at the server boundary', async ({ re
   const me = await request.get('/api/auth/me')
   expect((await me.json()).user.id).toBe(user.id)
 })
+
+test('[TC-E2E-05] a password user deletes their account and their rating leaves the game', async ({ page }) => {
+  const lin = users.lin
+  const game = games.ember
+  const openGame = async () => {
+    await page.goto('/games')
+    await page.getByRole('searchbox', { name: 'Search games' }).fill('Ember')
+    await expect(page.getByRole('status')).toHaveText('1 game found')
+    await page.getByRole('link', { name: 'View details' }).click()
+    await expect(page.getByRole('heading', { level: 1, name: game.title })).toBeVisible()
+  }
+  await openGame()
+  await expect(page.locator('.rating-summary')).toContainText('Based on 2 community ratings')
+
+  await logIn(page, lin)
+  await page.getByRole('link', { name: 'Edit profile' }).click()
+  await page.getByRole('button', { name: 'Delete account…' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Delete your account?' })
+  const password = dialog.getByLabel('Password')
+  await expect(password).toBeFocused()
+
+  await password.fill('wrong-password-for-e2e-test')
+  await dialog.getByRole('button', { name: 'Delete account' }).click()
+  await expect(dialog.getByRole('alert')).toHaveText('That password is incorrect.')
+
+  await password.fill(lin.password)
+  await dialog.getByRole('button', { name: 'Delete account' }).click()
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.getByText('Your account and its data have been deleted.')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Log in', exact: true }).first()).toBeVisible()
+
+  // The session, the account, and the rating are gone on the server.
+  await page.goto('/profile')
+  await expect(page).toHaveURL(/\/login$/)
+  await page.getByLabel('Username or email').fill(lin.username)
+  await page.getByLabel('Password').fill(lin.password)
+  await page.getByRole('button', { name: 'Log in' }).click()
+  await expect(page.getByRole('alert')).toBeVisible()
+  await openGame()
+  await expect(page.locator('.rating-summary')).toContainText('3.0')
+  await expect(page.locator('.rating-summary')).toContainText('Based on 1 community rating')
+  await expect(page.getByText('Seeded review: deleted with its account.')).toHaveCount(0)
+})

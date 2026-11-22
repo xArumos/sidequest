@@ -36,5 +36,6 @@ export function createApiMock() {
     removeReview: vi.fn(async () => { throw new Error('Not mocked.') }),
     developerRequests: vi.fn(async () => ({ requests: [], total: 0, page: 1, pages: 0 })),
     decideDeveloperRequest: vi.fn(async () => { throw new Error('Not mocked.') }),
+    deleteAccount: vi.fn(async () => null),
   }
 }

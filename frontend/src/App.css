@@ -785,3 +785,20 @@ button:disabled { cursor: not-allowed; opacity: .65; transform: none; }
 .request-game { display: block; margin-top: .25rem; }
 .inline-actions > p { margin: 0; align-self: center; }
 .developer-filters + .inline-actions { margin-bottom: 1rem; }
+
+/* Account deletion (#92): danger zone on the edit profile page and its dialog. */
+.back-link { margin: 1.5rem 0 0; }
+.danger-zone { margin-top: 2rem; padding: 1.2rem; border: 1px solid rgba(248, 113, 113, .4); border-radius: 1rem; background: rgba(248, 113, 113, .06); }
+.danger-zone h2 { margin: 0 0 .35rem; color: #fecaca; font-size: 1.15rem; }
+.danger-zone p { margin: 0 0 1rem; }
+.danger-button { display: inline-flex; align-items: center; justify-content: center; padding: .8rem 1.1rem; background: #b91c1c; color: #ffffff; border: 1px solid #ef4444; font-weight: 600; }
+.danger-button:hover { background: #991b1b; }
+.danger-button:focus-visible, .modal .secondary-button:focus-visible { outline: 2px solid #fca5a5; outline-offset: 2px; }
+.modal-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(4, 7, 15, .75); }
+.modal { width: min(480px, 100%); max-height: calc(100vh - 2rem); overflow-y: auto; padding: 1.5rem; background: #12182a; }
+.modal h2 { margin: 0 0 .75rem; }
+.modal p { margin: 0; }
+.modal-actions { justify-content: flex-end; margin-top: .25rem; }
+.form-error { color: #fca5a5; }
+.notice { margin-bottom: 1rem; }
+@media (max-width: 400px) { .modal-actions > button { flex: 1 1 100%; } }

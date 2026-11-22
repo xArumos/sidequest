@@ -55,6 +55,8 @@ export const api = {
     request('/me/activity-visibility', { method: 'PATCH', body: { activityVisibility } }),
   feed: ({ page, limit } = {}, signal) => request(`/feed${query({ page, limit })}`, { signal }),
   user: (userId, signal) => request(`/users/${id(userId)}`, { signal }),
+  // Account deletion (#92): `{ password }` for password accounts, `{ confirm }` for Google ones.
+  deleteAccount: confirmation => request('/users/me', { method: 'DELETE', body: confirmation }),
   follow: userId => request(`/users/${id(userId)}/follow`, { method: 'POST' }),
   unfollow: userId => request(`/users/${id(userId)}/follow`, { method: 'DELETE' }),
   followers: (userId, { page, limit } = {}, signal) => request(`/users/${id(userId)}/followers${query({ page, limit })}`, { signal }),
