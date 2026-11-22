@@ -3,6 +3,8 @@ import { defineConfig } from '@playwright/test'
 export default defineConfig({
   testDir: './e2e',
   testMatch: 'frontend.spec.js',
+  // Full-stack specs need the real API; they run from playwright.e2e.config.js.
+  testIgnore: 'real/**',
   fullyParallel: true,
   workers: 2,
   reporter: [['list'], ['json', { outputFile: 'docs/testing/artifacts/browser-results.json' }]],
