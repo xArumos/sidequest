@@ -69,15 +69,18 @@ jobs:
           path: ~/.cache/mongodb-binaries
           key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('server/package-lock.json', 'database/package-lock.json') }}
 
+      # No install scripts run; mongodb-memory-server downloads mongod lazily on
+      # first use into the cached ~/.cache/mongodb-binaries instead.
       - name: Install dependencies
         run: |
-          npm ci --prefix database
-          npm ci --prefix server
-          npm ci --prefix frontend
+          npm ci --ignore-scripts --prefix database
+          npm ci --ignore-scripts --prefix server
+          npm ci --ignore-scripts --prefix frontend
 
+      # Uses the Playwright version pinned in frontend/package-lock.json.
       - name: Install Playwright Chromium
         working-directory: frontend
-        run: npx playwright install --with-deps chromium
+        run: npm run test:e2e:install
 
       - name: Run end-to-end tests
         working-directory: frontend

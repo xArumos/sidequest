@@ -110,7 +110,7 @@ npm test --prefix frontend             # Vitest + React Testing Library (jsdom)
 
 `npm run test:e2e --prefix frontend` runs Playwright against the whole stack with nothing mocked in the browser.
 It starts `server/test/e2e/server.js` (the real app and routers on `mongodb-memory-server`, seeded from `server/test/e2e/seed.js`) on port 5055 and the Vite dev server on port 4175, which proxies `/api` to it.
-Install dependencies in `database/`, `server/`, and `frontend/` first, plus `npx playwright install chromium` in `frontend/`.
+Install dependencies in `database/`, `server/`, and `frontend/` first, then run `npm run test:e2e:install --prefix frontend` once to install Chromium with the pinned Playwright version.
 No local MongoDB or `.env` is needed.
 
 - Seed data, including the test users' passwords, lives only in `server/test/e2e/seed.js`. Specs import it, so extend it there.
