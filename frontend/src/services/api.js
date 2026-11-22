@@ -53,4 +53,16 @@ export const api = {
   user: (userId, signal) => request(`/users/${id(userId)}`, { signal }),
   userLogs: (userId, { page, limit } = {}, signal) => request(`/users/${id(userId)}/logs${query({ page, limit })}`, { signal }),
   userWishlist: (userId, { page, limit } = {}, signal) => request(`/users/${id(userId)}/wishlist${query({ page, limit })}`, { signal }),
+  // Developer access and review moderation (PBI-32, PBI-33) and admin tooling (#93).
+  myDeveloperRequest: (gameId, signal) => request(`/games/${id(gameId)}/developer-requests/me`, { signal }),
+  requestDeveloperAccess: (gameId, justification) =>
+    request(`/games/${id(gameId)}/developer-requests`, { method: 'POST', body: { justification } }),
+  devGames: signal => request('/dev/games', { signal }),
+  devReviews: ({ gameId, minRating, maxRating, from, to, hasText, sort, page, limit } = {}, signal) =>
+    request(`/dev/reviews${query({ gameId, minRating, maxRating, from, to, hasText, sort, page, limit })}`, { signal }),
+  removeReview: (reviewId, reason) => request(`/dev/reviews/${id(reviewId)}`, { method: 'DELETE', body: { reason } }),
+  developerRequests: ({ status, page, limit } = {}, signal) =>
+    request(`/admin/developer-requests${query({ status, page, limit })}`, { signal }),
+  decideDeveloperRequest: (requestId, action) =>
+    request(`/admin/developer-requests/${id(requestId)}/${action === 'approve' ? 'approve' : 'reject'}`, { method: 'POST' }),
 }

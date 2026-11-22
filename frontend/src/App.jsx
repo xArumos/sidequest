@@ -8,7 +8,10 @@ import GoogleSignIn from './components/GoogleSignIn'
 import { auth } from './services/auth'
 import { api } from './services/api'
 import { useApi } from './services/useApi'
-import { ratingLabel } from './utils/games'
+import LoadState from './components/LoadState'
+import Pager from './components/Pager'
+import { AdminPage, DeveloperAccess, DeveloperPage } from './pages/DeveloperPages'
+import { formatDate, ratingLabel, stars } from './utils/games'
 
 const SORTS = [
   ['title', 'Title (A–Z)'],
@@ -19,34 +22,6 @@ const SORTS = [
 ]
 const STATUS_LABELS = { wishlist: 'Wishlist', backlog: 'Backlog', playing: 'Playing', played: 'Played' }
 const PAGE_SIZE = 24
-
-function stars(rating) {
-  return Number.isInteger(rating) ? `${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}` : ''
-}
-
-function formatDate(value) {
-  return value ? new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''
-}
-
-function LoadState({ loading, error, onRetry, children }) {
-  if (error) {
-    return <div className="empty-state card-panel" role="alert">
-      <h3>Couldn&apos;t load this</h3><p>{error.message}</p>
-      {onRetry && <button type="button" className="secondary-button" onClick={onRetry}>Try again</button>}
-    </div>
-  }
-  if (loading) return <p role="status">Loading…</p>
-  return children
-}
-
-function Pager({ page, pages, onPage }) {
-  if (!pages || pages <= 1) return null
-  return <div className="inline-actions pager">
-    <button type="button" className="secondary-button" disabled={page <= 1} onClick={() => onPage(page - 1)}>Previous</button>
-    <span className="subtle-text">Page {page} of {pages}</span>
-    <button type="button" className="secondary-button" disabled={page >= pages} onClick={() => onPage(page + 1)}>Next</button>
-  </div>
-}
 
 function ProtectedRoute({ isAuthenticated, children }) {
   if (!isAuthenticated) {
@@ -377,6 +352,7 @@ function GameDetailsPage({ isAuthenticated, library, onError }) {
               </label>
             </div>
           ) : <p className="subtle-text"><Link to="/login">Log in</Link> to rate this game or add it to your lists.</p>}
+          {isAuthenticated && <DeveloperAccess gameId={gameId} />}
         </div>
       </div>
 
@@ -395,15 +371,19 @@ function GameDetailsPage({ isAuthenticated, library, onError }) {
 
       {isAuthenticated && (
         <div className="card-panel review-panel">
-          <h2>{myLog?.rating || myLog?.text ? 'Update your review' : 'Rate and review'}</h2>
+          <h2>{myLog?.removed ? 'Your review' : myLog?.rating || myLog?.text ? 'Update your review' : 'Rate and review'}</h2>
           {(myLog?.rating || myLog?.text) && (
             <div className="review-item">
               <p>Your rating: {myLog.rating ? stars(myLog.rating) : 'none'}</p>
               {myLog.text && <p>{myLog.text}</p>}
+              {myLog.removed && <p role="status" className="removed-note">
+                A developer removed this review, so only you can see it and it no longer counts toward the rating.
+                {myLog.removed.reason && <> Reason: {myLog.removed.reason}</>}
+              </p>}
               <button type="button" className="secondary-button" onClick={deleteReview}>Delete my review</button>
             </div>
           )}
-          <ReviewForm available onSubmit={saveReview} />
+          {!myLog?.removed && <ReviewForm available onSubmit={saveReview} />}
         </div>
       )}
 
@@ -700,7 +680,7 @@ function App() {
   }
 
   return (
-    <Layout isAuthenticated={isAuthenticated} onLogout={logout} busy={busy}>
+    <Layout isAuthenticated={isAuthenticated} isAdmin={userProfile?.admin === true} onLogout={logout} busy={busy}>
       {error && <div className="card-panel" role="alert">{error} <button type="button" className="secondary-button" onClick={() => { setError(''); setChecking(true); setAttempt(value => value + 1) }}>Retry connection</button></div>}
       {actionError && <div className="card-panel" role="alert">{actionError} <button type="button" className="secondary-button" onClick={() => setActionError('')}>Dismiss</button></div>}
       {checking ? <p role="status">Checking your session…</p> : <>
@@ -747,6 +727,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/dev" element={<ProtectedRoute isAuthenticated={isAuthenticated}><DeveloperPage /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute isAuthenticated={isAuthenticated}>{userProfile?.admin ? <AdminPage /> : <NotFoundPage />}</ProtectedRoute>} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </>}
