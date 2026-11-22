@@ -4,7 +4,7 @@ const Review = require('sidequest-database/models/Review');
 const User = require('sidequest-database/models/User');
 const { gameSummary } = require('./games');
 const { ownLog } = require('./logs');
-const { HISTORY_FILTER, PUBLIC_STATUSES, pageParams, userSummary } = require('./users');
+const { HISTORY_FILTER, PUBLIC_STATUSES, hideRemoved, pageParams, userSummary } = require('./users');
 const { FOLLOWER_VISIBLE, activityVisibilityOf } = require('./visibility');
 
 // Users whose activity the caller sees in their feed: everyone they follow,
@@ -20,7 +20,8 @@ async function visibleFollowees(userId) {
 
 function feedEntry(log) {
   return {
-    ...ownLog(log),
+    // A review a developer removed shows only its playing/played status, as on profiles.
+    ...hideRemoved(ownLog(log)),
     // Same rule as profile history: wishlist and backlog statuses stay hidden.
     status: PUBLIC_STATUSES.includes(log.status) ? log.status : null,
     game: gameSummary(log.game),

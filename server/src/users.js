@@ -212,6 +212,7 @@ function createUsersRouter({ requireAuth }) {
         : "This user's wishlist is private.");
     }
     const result = await listUserLogs(user._id, { filter: { status: 'wishlist' }, ...pageParams(req.query) });
+    const isOwner = req.session?.userId === String(user._id);
     res.json(isOwner ? result : { ...result, logs: result.logs.map(hideRemoved) });
   });
 
@@ -219,5 +220,6 @@ function createUsersRouter({ requireAuth }) {
 }
 
 module.exports = {
-  createUsersRouter, listUserLogs, pageParams, publicProfile, userSummary, findUser, PUBLIC_STATUSES, HISTORY_FILTER,
+  createUsersRouter, listUserLogs, pageParams, publicProfile, userSummary, findUser, hideRemoved,
+  PUBLIC_STATUSES, HISTORY_FILTER,
 };

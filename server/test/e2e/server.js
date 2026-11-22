@@ -13,7 +13,9 @@
 const { MemoryStore } = require('express-session');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const { connectDatabase, disconnectDatabase } = require('sidequest-database');
+const Follow = require('sidequest-database/models/Follow');
 const Game = require('sidequest-database/models/Game');
+const GameDeveloper = require('sidequest-database/models/GameDeveloper');
 const Review = require('sidequest-database/models/Review');
 const User = require('sidequest-database/models/User');
 const { createApp } = require('../../src/app');
@@ -22,6 +24,9 @@ const { createSessionMiddleware } = require('../../src/session');
 const { createGamesRouter } = require('../../src/games');
 const { createLogsRouter } = require('../../src/logs');
 const { createUsersRouter } = require('../../src/users');
+const { createFeedRouter } = require('../../src/feed');
+const { createDevelopersRouter } = require('../../src/developers');
+const { createAdminRouter } = require('../../src/admin');
 const { seedDatabase } = require('./seed');
 
 const HOST = '127.0.0.1';
@@ -52,7 +57,7 @@ async function main() {
   const mongod = await MongoMemoryServer.create();
   const connection = await connectDatabase({ uri: mongod.getUri(), dbName: 'sidequest_e2e' });
   // User sets autoIndex: false; build the indexes the real startup builds.
-  await Promise.all([Game.init(), Review.init(), User.createIndexes()]);
+  await Promise.all([Follow.init(), Game.init(), GameDeveloper.init(), Review.init(), User.createIndexes()]);
   await seedDatabase();
 
   const store = new MemoryStore();
@@ -66,7 +71,9 @@ async function main() {
     }),
     routers: {
       '/games': createGamesRouter({ rankingMinCount: 1 }),
-      '': [createLogsRouter({ requireAuth }), createUsersRouter({ requireAuth })],
+      '/feed': createFeedRouter({ requireAuth }),
+      '': [createLogsRouter({ requireAuth }), createUsersRouter({ requireAuth }), createDevelopersRouter({ requireAuth })],
+      '/admin': createAdminRouter({ requireAuth }),
     },
     isDatabaseReady: async () => connection.readyState === 1,
   });

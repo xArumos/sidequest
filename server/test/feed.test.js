@@ -1,6 +1,7 @@
 const { describe, test, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const Game = require('sidequest-database/models/Game');
+const Review = require('sidequest-database/models/Review');
 const { requireAuth } = require('../src/auth');
 const { createFeedRouter } = require('../src/feed');
 const { createLogsRouter } = require('../src/logs');
@@ -100,5 +101,17 @@ describe('activity feed API', () => {
     assert.deepEqual(summary(second), [['bob', 'Celeste']]);
     assert.deepEqual({ total: second.body.total, page: second.body.page, pages: second.body.pages }, { total: 4, page: 2, pages: 2 });
     assert.equal((await feed('?limit=100')).status, 400);
+  });
+  test('hides reviews a developer removed, keeping only a public play status', async () => {
+    await follow(me, bob);
+    await save(bob, games[0], { rating: 1, text: 'Spam' });
+    await save(bob, games[1], { status: 'playing', rating: 2, text: 'Also spam' });
+    await Review.updateMany({ user: bob.id }, { $set: { removedAt: new Date(), removalReason: 'Spam' } });
+
+    const response = await feed();
+    assert.deepEqual(summary(response), [['bob', 'Hades']]);
+    const [entry] = response.body.entries;
+    assert.deepEqual({ status: entry.status, rating: entry.rating, text: entry.text, removed: entry.removed },
+      { status: 'playing', rating: null, text: '', removed: null });
   });
 });
