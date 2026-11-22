@@ -89,6 +89,14 @@ Run any of these from the root with `--prefix <package>`, e.g. `npm test --prefi
 | POST | `/api/auth/google` | Verify a Google ID token, find or create the account, start a session |
 | GET | `/api/auth/me` | The signed-in user, or `401` |
 | POST | `/api/auth/logout` | End the session (`204`) |
+| POST / DELETE | `/api/users/:id/follow` | Follow or unfollow a user (idempotent) |
+| GET | `/api/users/:id/followers`, `/api/users/:id/following` | Paginated public follower lists |
+| GET / PATCH | `/api/me/activity-visibility` | Who sees your history: `public`, `followers`, or `private` |
+| GET | `/api/feed` | Recent activity from users you follow |
+
+Follows are one-way.
+Profile history and wishlists are checked by `server/src/visibility.js`; denied viewers get `403 ACTIVITY_PRIVATE` or `403 WISHLIST_PRIVATE`.
+Reviews always appear on game pages and count toward game ratings, whatever the reviewer's activity setting.
 
 Request limits, error formats, and auth details are in [server/README.md](server/README.md).
 
