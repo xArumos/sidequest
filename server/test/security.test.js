@@ -188,4 +188,14 @@ describe('write rate limit', () => {
     const disabled = await serve(t, { routers: { '/probe': probe }, writeRateLimit: false });
     assert.equal((await send(disabled.base, '/probe', { headers: { Origin: origin } })).headers.get('ratelimit-policy'), null);
   });
+
+  test('fills omitted settings from the defaults', async t => {
+    const probe = Router();
+    probe.post('/', (_req, res) => res.json({ ok: true }));
+    const { base } = await serve(t, { routers: { '/probe': probe }, writeRateLimit: { limit: 1 } });
+    const first = await send(base, '/probe', { headers: { Origin: origin } });
+    assert.equal(first.status, 200);
+    assert.match(first.headers.get('ratelimit-policy'), /q=1; w=900/);
+    assert.equal((await send(base, '/probe', { headers: { Origin: origin } })).status, 429);
+  });
 });

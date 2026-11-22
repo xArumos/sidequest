@@ -44,10 +44,9 @@ function writeKey(req) {
   return req.session?.userId ? `user:${req.session.userId}` : `ip:${ipKeyGenerator(req.ip)}`;
 }
 
-// Limits every non-GET /api request. Pass `false` to disable (tests) or
-// `{ windowMs, limit }` to tune it.
-function writeLimiter(options = DEFAULT_WRITE_LIMIT) {
-  if (options === false) return (_req, _res, next) => next();
+// Limits every non-GET /api request. Pass `{ windowMs, limit }` to tune it;
+// createApp decides whether to mount it at all.
+function writeLimiter(options = {}) {
   return createRateLimiter({
     ...DEFAULT_WRITE_LIMIT,
     ...options,

@@ -33,7 +33,7 @@ function createApp({
   app.use('/api', requireSameOrigin(frontendOrigin));
   if (sessionMiddleware) app.use('/api', sessionMiddleware);
   // After the session so signed-in writes are counted per account.
-  app.use('/api', writeLimiter(writeRateLimit));
+  if (writeRateLimit !== false) app.use('/api', writeLimiter(writeRateLimit));
   for (const [path, router] of Object.entries(routers)) app.use(`/api${path}`, router);
 
   app.use('/api/auth', authRouter || ((_req, res) => {
