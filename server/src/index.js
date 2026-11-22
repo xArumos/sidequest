@@ -6,6 +6,7 @@ const { createSessionMiddleware, authNotConfigured } = require('./session');
 const { createGamesRouter } = require('./games');
 const { createLogsRouter } = require('./logs');
 const { createUsersRouter } = require('./users');
+const { createFeedRouter } = require('./feed');
 const { createGoogleVerifier } = require('./google');
 const { MongoStore } = require('connect-mongo');
 const { assertUserIndexes } = require('./user-indexes');
@@ -42,6 +43,7 @@ async function main() {
     sessionMiddleware,
     routers: {
       '/games': createGamesRouter({ rankingMinCount: config.rankingMinCount }),
+      '/feed': createFeedRouter({ requireAuth: requireUser }),
       // These span /games/:id/log, /logs, /me, and /users, so they mount at /api itself.
       '': [createLogsRouter({ requireAuth: requireUser }), createUsersRouter({ requireAuth: requireUser })],
     },
