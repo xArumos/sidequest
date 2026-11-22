@@ -779,3 +779,4 @@ button:disabled { cursor: not-allowed; opacity: .65; transform: none; }
 .request-game { display: block; margin-top: .25rem; }
 .inline-actions > p { margin: 0; align-self: center; }
 .developer-filters + .inline-actions { margin-bottom: 1rem; }
+@media (max-width: 640px) { .request-item .review-header { flex-direction: column; align-items: flex-start; gap: .35rem; } }

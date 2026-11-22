@@ -218,7 +218,7 @@ export function AdminPage() {
       <LoadState loading={list.loading && !list.data} error={list.error} onRetry={list.reload}>
         <div className="review-list">
           {list.data?.requests.length ? list.data.requests.map(request => (
-            <article key={request.id} className="review-item">
+            <article key={request.id} className="review-item request-item">
               <div className="review-header">
                 <div>
                   <Reviewer user={request.user} />
