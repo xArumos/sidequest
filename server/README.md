@@ -73,7 +73,8 @@ Every authentication request should use `credentials: 'include'`.
 | `GET /me` | None | `200 { user }`, restores account state from the session |
 | `POST /logout` | `{}` | `204`, destroys the session and clears its cookie |
 
-The account shape returned to its own holder is `{ id, username, email, displayName, avatarUrl, admin }`.
+The account shape returned to its own holder is `{ id, username, email, displayName, avatarUrl, authMethod, admin }`.
+`authMethod` is `password` or `google`; every account has exactly one.
 `admin` is only ever sent to the account holder and can only be changed with `npm run set:admin`.
 `username` is `null` for Google accounts without one.
 Password accounts initially use their normalized username as the display name and have an empty avatar URL.
@@ -254,3 +255,39 @@ A removed review is soft-deleted: it is hidden from public reads and from the ga
 The developer review list accepts `gameId`, `minRating`, `maxRating`, `from`, `to`, `hasText`, `sort` (`newest`, `oldest`, `highest`, `lowest`), `page`, and `limit`.
 `from` and `to` take `YYYY-MM-DD` (a whole UTC day) or an ISO 8601 date and time with a time zone, and both ends are inclusive.
 Invalid parameters return `400 INVALID_QUERY` with every problem in `error.fields`, for example `{ "maxRating": "maxRating must be at least minRating." }`.
+
+## Account deletion
+
+`DELETE /api/users/me` permanently deletes the signed-in account (#92).
+It needs a session and the exact `Origin`, like every write.
+The JSON body re-confirms the account holder's identity:
+
+| Account | Body | Missing or malformed | Wrong |
+| --- | --- | --- | --- |
+| Password | `{ "password": "<current password>" }` | `400 PASSWORD_REQUIRED` | `403 INVALID_PASSWORD` |
+| Google | `{ "confirm": "<username or email>" }` (trimmed, case-insensitive) | `400 CONFIRMATION_REQUIRED` | `403 CONFIRMATION_MISMATCH` |
+
+Success returns `204` and clears the session cookie.
+Without a session, or when the session's account no longer exists, it returns `401 UNAUTHENTICATED`, so repeating the request is harmless.
+Besides the shared write limit, each account gets 10 attempts per 15 minutes, which slows password guessing from a stolen session.
+
+What is deleted, in this order (`deleteAccount` in `database/accounts.js`):
+
+1. Every session of the account, on all devices, so no other session can write new data during the deletion.
+   Production matches the serialized `userId` in connect-mongo's `sessions` collection; tests and the e2e server scan the MemoryStore (`createSessionRevoker` in `src/session.js`).
+2. The games the account reviewed are saved on the account (`pendingRatingGames`) before any review is deleted.
+3. Follows in both directions and developer mappings (`ACCOUNT_CLEANUP_STEPS`).
+4. The account's reviews, including ratings, text, and wishlist, backlog, and play statuses.
+5. The rating average and count of every saved game, recalculated with `recalculateGameRating`.
+6. The account itself, last.
+
+MongoDB transactions need a replica set, which local development does not run, so the steps are ordered to be safe to retry instead.
+Every step deletes by user id, and the account is deleted last, so a failure partway leaves the account in place with nothing pointing to a missing user.
+Signing in again and repeating the request finishes the deletion and still recalculates every saved game.
+
+References held by other accounts' records are kept as audit history and may point to a deleted account.
+`GameDeveloper.decidedBy` is the admin who decided a request; `null` already means the command-line script decided it, so it is not cleared.
+`Review.removedBy` is the developer who removed a review, and a review the deleted account removed stays removed.
+Nothing populates either field.
+
+When a new collection stores per-user data, such as the Steam library cache (PBI-25), add a step to `ACCOUNT_CLEANUP_STEPS` in `database/accounts.js`.

@@ -26,6 +26,15 @@ const users = [
     bio: 'Seeded e2e player with existing ratings and reviews.',
     wishlistVisibility: 'public',
   },
+  {
+    key: 'lin',
+    username: 'lin_e2e',
+    email: 'lin@e2e.sidequest.test',
+    displayName: 'Lin E2E',
+    password: 'lin-e2e-password-not-secret',
+    bio: 'Seeded e2e player who deletes their account (TC-E2E-05).',
+    wishlistVisibility: 'private',
+  },
 ];
 
 // Google users are not seeded: the stubbed verifier in server.js creates them on
@@ -75,6 +84,7 @@ const reviews = [
   { user: 'grace', game: 'harbor', rating: 4, status: 'played' },
   { user: 'grace', game: 'ember', rating: 3, text: 'Seeded review: fun but repetitive.', status: 'playing' },
   { user: 'grace', game: 'circuit', status: 'wishlist' },
+  { user: 'lin', game: 'ember', rating: 5, text: 'Seeded review: deleted with its account.', status: 'played' },
 ];
 
 // Writes the dataset into the connected database and returns maps from key to

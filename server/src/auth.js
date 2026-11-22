@@ -2,8 +2,8 @@ const { Router } = require('express');
 const session = require('express-session');
 const { hashPassword, verifyPassword, validPassword } = require('./password');
 const { createRateLimiter } = require('./security');
+const { COOKIE_NAME, sessionCookieOptions } = require('./session');
 
-const COOKIE_NAME = 'sidequest.sid';
 const SESSION_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
 function publicUser(user) {
@@ -13,6 +13,9 @@ function publicUser(user) {
     username: user.username ?? null,
     displayName: user.displayName,
     avatarUrl: user.avatarUrl,
+    // Every account has exactly one sign-in method; the frontend picks the account
+    // deletion confirmation (password or typed name) from it.
+    authMethod: user.googleId ? 'google' : 'password',
     // Only ever sent to the account holder: every response using publicUser is their own.
     admin: user.admin === true,
   };
@@ -27,7 +30,7 @@ function requireAuth(req, res, next) {
 
 function createAuthRouter({ frontendOrigin, sessionSecret, secureCookies, store, users, verifyGoogleToken }) {
   const router = Router();
-  const cookieOptions = { httpOnly: true, sameSite: 'lax', secure: secureCookies, path: '/' };
+  const cookieOptions = sessionCookieOptions({ secureCookies });
 
   router.use((_req, res, next) => {
     res.set('Cache-Control', 'no-store');

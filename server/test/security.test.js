@@ -6,9 +6,7 @@ const { MemoryStore } = require('express-session');
 const { createApp } = require('../src/app');
 const { createAuthRouter, requireAuth } = require('../src/auth');
 const { createSessionMiddleware } = require('../src/session');
-const { createGamesRouter } = require('../src/games');
-const { createLogsRouter } = require('../src/logs');
-const { createUsersRouter } = require('../src/users');
+const { createApiRouters } = require('../src/routes');
 
 const origin = 'http://localhost:5173';
 const sessionSecret = 'test-secret-with-at-least-32-bytes';
@@ -105,10 +103,8 @@ describe('Origin check', () => {
   let close;
 
   before(async () => {
-    const routers = {
-      '/games': createGamesRouter(),
-      '': [createLogsRouter({ requireAuth }), createUsersRouter({ requireAuth })],
-    };
+    // The same router table src/index.js mounts, so new routes are covered automatically.
+    const routers = createApiRouters({ requireAuth });
     const served = await start({ routers });
     ({ base, close } = served);
     routes = [
@@ -121,7 +117,9 @@ describe('Origin check', () => {
   test('discovers every mounted state-changing route', () => {
     const names = routes.map(route => route.join(' '));
     for (const expected of ['POST /auth/login', 'POST /auth/register', 'POST /auth/google', 'POST /auth/logout',
-      `POST /games/${objectId}/log`, `PATCH /logs/${objectId}`, `DELETE /logs/${objectId}`, 'PATCH /me/wishlist-visibility']) {
+      `POST /games/${objectId}/log`, `PATCH /logs/${objectId}`, `DELETE /logs/${objectId}`, 'PATCH /me/wishlist-visibility',
+      'DELETE /users/me', `POST /users/${objectId}/follow`, `DELETE /dev/reviews/${objectId}`,
+      `POST /admin/developer-requests/${objectId}/approve`]) {
       assert.ok(names.includes(expected), `${expected} is missing from ${names.join(', ')}`);
     }
   });

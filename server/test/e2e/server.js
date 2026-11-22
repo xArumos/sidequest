@@ -20,7 +20,7 @@ const Review = require('sidequest-database/models/Review');
 const User = require('sidequest-database/models/User');
 const { createApp } = require('../../src/app');
 const { createAuthRouter, requireAuth } = require('../../src/auth');
-const { createSessionMiddleware } = require('../../src/session');
+const { createSessionMiddleware, createSessionRevoker } = require('../../src/session');
 const { createApiRouters } = require('../../src/routes');
 const { seedDatabase } = require('./seed');
 
@@ -64,7 +64,7 @@ async function main() {
     authRouter: createAuthRouter({
       ...auth, frontendOrigin, users: User, store, verifyGoogleToken: boundaries.verifyGoogleToken,
     }),
-    routers: createApiRouters({ requireAuth, rankingMinCount: 1 }),
+    routers: createApiRouters({ requireAuth, rankingMinCount: 1, revokeUserSessions: createSessionRevoker({ store }) }),
     isDatabaseReady: async () => connection.readyState === 1,
   });
 

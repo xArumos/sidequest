@@ -18,7 +18,10 @@ const userSchema = new mongoose.Schema({
   activityVisibility: { type: String, enum: VISIBILITIES, default: 'public' },
   // Grants the admin pages and routes. Set only by server/scripts/set-admin.js, never by an API route.
   admin: { type: Boolean, default: false },
-}, { timestamps: true, autoIndex: false });
+  // Set only while the account is being deleted (database/accounts.js): the games whose
+  // ratings must be recalculated, kept so a retried deletion still recalculates them.
+  pendingRatingGames: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Game' }], default: undefined, select: false },
+},{ timestamps: true, autoIndex: false });
 
 userSchema.index({ googleId: 1 }, {
   name: 'googleId_unique', unique: true, partialFilterExpression: { googleId: { $type: 'string' } },

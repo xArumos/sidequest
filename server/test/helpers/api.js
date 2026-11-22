@@ -18,6 +18,7 @@ const sessionSecret = 'test-secret-with-at-least-32-bytes';
 // Call stop() in an after() hook.
 // Sign-in goes through the real /api/auth/google route; the "Google token" is
 // just the subject, so signIn('alice') always returns the same user.
+// `routers` may be a function of `{ store }` for routers that need the session store.
 // The shared write limiter is off by default so suites can write freely; pass
 // `{ writeRateLimit: { windowMs, limit } }` to exercise it.
 async function startApi(routers, { writeRateLimit = false } = {}) {
@@ -35,7 +36,7 @@ async function startApi(routers, { writeRateLimit = false } = {}) {
       frontendOrigin: origin, sessionSecret, secureCookies: false, store, users: User,
       verifyGoogleToken: async sub => ({ sub, email: `${sub}@example.com`, email_verified: true, name: sub }),
     }),
-    routers,
+    routers: typeof routers === 'function' ? routers({ store }) : routers,
     writeRateLimit,
   }).listen(0, '127.0.0.1');
   await once(server, 'listening');
@@ -85,7 +86,9 @@ async function startApi(routers, { writeRateLimit = false } = {}) {
   }
 
   // The database URI lets tests run the server scripts against the same database.
-  return { request, signIn, reset, resetActivity, stop, mongoUri: mongod.getUri(), dbName: 'sidequest_api_test' };
+  return {
+    request, signIn, reset, resetActivity, stop, base, origin, mongoUri: mongod.getUri(), dbName: 'sidequest_api_test',
+  };
 }
 
 module.exports = { startApi };
