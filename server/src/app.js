@@ -40,7 +40,8 @@ function createApp({ frontendOrigin, isDatabaseReady, authRouter, sessionMiddlew
   app.use((error, _req, res, next) => {
     if (res.headersSent) return next(error);
     if (error instanceof HttpError) {
-      return res.status(error.status).json({ error: { code: error.code, message: error.message } });
+      const body = { code: error.code, message: error.message, ...(error.fields && { fields: error.fields }) };
+      return res.status(error.status).json({ error: body });
     }
     const clientErrors = {
       'entity.parse.failed': [400, 'INVALID_JSON', 'Request body must be valid JSON.'],
