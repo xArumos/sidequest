@@ -21,7 +21,7 @@ export function createApiMock() {
     setWishlistVisibility: vi.fn(async wishlistVisibility => ({ wishlistVisibility })),
     activityVisibility: vi.fn(async () => ({ activityVisibility: 'public' })),
     setActivityVisibility: vi.fn(async activityVisibility => ({ activityVisibility })),
-    feed: vi.fn(async () => ({ entries: [], total: 0, page: 1, pages: 0 })),
+    feed: vi.fn(async () => ({ entries: [], total: 0, page: 1, pages: 0, followingCount: 0 })),
     follow: vi.fn(async () => ({ isFollowing: true, followerCount: 1 })),
     unfollow: vi.fn(async () => ({ isFollowing: false, followerCount: 0 })),
     followers: vi.fn(async () => ({ users: [], total: 0, page: 1, pages: 0 })),

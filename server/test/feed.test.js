@@ -46,7 +46,7 @@ describe('activity feed API', () => {
 
   test('is empty when following nobody', async () => {
     await save(bob, games[0], { rating: 5 });
-    assert.deepEqual((await feed()).body, { entries: [], total: 0, page: 1, pages: 0 });
+    assert.deepEqual((await feed()).body, { entries: [], total: 0, page: 1, pages: 0, followingCount: 0 });
   });
 
   test('shows recent ratings, reviews, and play updates from followed users only', async () => {
@@ -66,6 +66,14 @@ describe('activity feed API', () => {
     assert.deepEqual(review.user, { id: bob.id, displayName: 'bob', username: null, avatarUrl: '' });
     assert.equal(review.game.id, String(games[0]._id));
     assert.doesNotMatch(JSON.stringify(response.body), /example\.com|googleId/);
+  });
+
+  test('reports follows even when none of them has visible activity', async () => {
+    await follow(me, bob);
+    await follow(me, carol);
+    await save(carol, games[0], { rating: 4 });
+    await setActivity(carol, 'private');
+    assert.deepEqual((await feed()).body, { entries: [], total: 0, page: 1, pages: 0, followingCount: 2 });
   });
 
   test('leaves out wishlists and backlogs, and hides those statuses on rated games', async () => {
@@ -90,7 +98,9 @@ describe('activity feed API', () => {
     await setActivity(carol, 'private');
     await setActivity(dave, 'public');
 
-    assert.deepEqual(summary(await feed()), [['bob', 'Celeste']], 'followers-only is visible to a follower; private is not');
+    const response = await feed();
+    assert.deepEqual(summary(response), [['bob', 'Celeste']], 'followers-only is visible to a follower; private is not');
+    assert.equal(response.body.followingCount, 2);
   });
 
   test('paginates newest first', async () => {

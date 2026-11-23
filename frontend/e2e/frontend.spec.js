@@ -13,7 +13,7 @@ async function emptyApi(page) {
       : path.startsWith('/api/games') ? { games: [], total: 0, page: 1, pages: 0 }
       : path === '/api/me/wishlist-visibility' ? { wishlistVisibility: 'private' }
       : path === '/api/me/activity-visibility' ? { activityVisibility: 'public' }
-      : path === '/api/feed' ? { entries: [], total: 0, page: 1, pages: 0 }
+      : path === '/api/feed' ? { entries: [], total: 0, page: 1, pages: 0, followingCount: 0 }
       : path.startsWith('/api/users/') && !path.endsWith('/logs') && !path.endsWith('/wishlist') ? null
       : { logs: [], total: 0, page: 1, pages: 0 }
     return body === null

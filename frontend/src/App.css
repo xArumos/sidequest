@@ -496,6 +496,12 @@ button:hover {
   padding-top: 0.8rem;
 }
 
+/* Separators go between items only, not above the first one. */
+.review-list > .review-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
 .review-header {
   justify-content: space-between;
   align-items: center;

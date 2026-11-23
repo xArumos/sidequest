@@ -247,10 +247,18 @@ it('[TC-FEED-01] shows followed players’ activity on the home page for signed-
   expect(feed).toHaveTextContent('Third Player is playing Hades')
   expect(api.feed).toHaveBeenCalledWith({ page: 1, limit: 10 }, expect.anything())
 })
-it('[TC-FEED-02] shows an empty feed state', async () => {
+it('[TC-FEED-02] prompts a viewer who follows nobody to follow players', async () => {
   auth.me.mockResolvedValue(user)
   visit('/')
   expect(await screen.findByText(/follow players from their profiles/i)).toBeInTheDocument()
+  expect(screen.queryByText('No recent activity from players you follow.')).not.toBeInTheDocument()
+})
+it('reports no recent activity when the viewer already follows players', async () => {
+  auth.me.mockResolvedValue(user)
+  api.feed.mockResolvedValue({ entries: [], total: 0, page: 1, pages: 0, followingCount: 2 })
+  visit('/')
+  expect(await screen.findByText('No recent activity from players you follow.')).toBeInTheDocument()
+  expect(screen.queryByText(/follow players from their profiles/i)).not.toBeInTheDocument()
 })
 it('[TC-FEED-03] does not load the feed for signed-out visitors', async () => {
   visit('/')

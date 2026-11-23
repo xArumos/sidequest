@@ -138,7 +138,9 @@ function ActivityFeed() {
               ))}
             </div>
           ) : (
-            <p className="subtle-text">Nothing here yet. Follow players from their profiles to see their ratings and reviews here.</p>
+            <p className="subtle-text">{feed.data?.followingCount
+              ? 'No recent activity from players you follow.'
+              : 'Nothing here yet. Follow players from their profiles to see their ratings and reviews here.'}</p>
           )}
           <Pager page={page} pages={feed.data?.pages} onPage={setPage} />
         </LoadState>
