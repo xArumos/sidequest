@@ -50,6 +50,8 @@ it('[TC-FE-DEL-01] deletes a password account and returns home signed out', asyn
   expect(screen.getByText('Your account and its data have been deleted.')).toHaveAttribute('role', 'status')
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   expect(screen.getAllByRole('link', { name: /^log in$/i }).length).toBeGreaterThan(0)
+  await userEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
+  expect(screen.queryByText('Your account and its data have been deleted.')).not.toBeInTheDocument()
 })
 
 it('[TC-FE-DEL-02] asks a Google account to type its email', async () => {

@@ -789,7 +789,12 @@ function App() {
   return (
     <Layout isAuthenticated={isAuthenticated} isAdmin={userProfile?.admin === true} isDeveloper={isDeveloper} onLogout={logout} busy={busy}>
       {error && <div className="card-panel" role="alert">{error} <button type="button" className="secondary-button" onClick={() => { setError(''); setChecking(true); setAttempt(value => value + 1) }}>Retry connection</button></div>}
-      {notice && <div className="card-panel notice" role="status">{notice} <button type="button" className="secondary-button" onClick={() => setNotice('')}>Dismiss</button></div>}
+      {notice && (
+        <div className="card-panel notice">
+          <p role="status">{notice}</p>
+          <button type="button" className="secondary-button" onClick={() => setNotice('')}>Dismiss</button>
+        </div>
+      )}
       {actionError && <div className="card-panel" role="alert">{actionError} <button type="button" className="secondary-button" onClick={() => setActionError('')}>Dismiss</button></div>}
       {checking ? <p role="status">Checking your session…</p> : <>
       <Routes>
