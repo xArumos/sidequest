@@ -186,12 +186,15 @@ describe('developer access and review moderation (PBI-32)', () => {
 
     test('hides the review from public reads and the rating, but not from its author', async () => {
       assert.deepEqual((await api.request(`/games/${game._id}`)).body.game.ratingAvg, 3);
+      const originalUpdatedAt = new Date('2026-11-01T12:00:00Z');
+      await Review.updateOne({ _id: reviewId }, { $set: { updatedAt: originalUpdatedAt } }, { timestamps: false });
       const removed = await remove(dev, reviewId, { reason: '  Spam link.  ' });
       assert.equal(removed.status, 200);
       assert.equal(removed.body.review.removalReason, 'Spam link.');
       const stored = await Review.findById(reviewId).lean();
       assert.equal(String(stored.removedBy), dev.id);
       assert.ok(stored.removedAt);
+      assert.deepEqual(stored.updatedAt, originalUpdatedAt);
       assert.equal((await remove(dev, reviewId)).body.error.code, 'REVIEW_ALREADY_REMOVED');
 
       const details = (await api.request(`/games/${game._id}`)).body.game;

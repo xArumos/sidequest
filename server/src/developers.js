@@ -209,9 +209,10 @@ function createDevelopersRouter({ requireAuth }) {
     if (!review || (review.rating == null && !review.text)) throw new HttpError(404, 'REVIEW_NOT_FOUND', 'Review not found.');
     if (!await isApprovedDeveloper(req.session.userId, review.game)) throw notDeveloper();
     const removedAt = new Date();
+    // Moderation does not count as new activity by the author.
     const { modifiedCount } = await Review.updateOne({ _id: review._id, removedAt: null }, {
       $set: { removedAt, removedBy: req.session.userId, removalReason: reason },
-    }, { runValidators: true });
+    }, { runValidators: true, timestamps: false });
     if (!modifiedCount) throw new HttpError(409, 'REVIEW_ALREADY_REMOVED', 'This review was already removed.');
     await recalculateGameRating(review.game);
     res.json({ review: { id: String(review._id), removedAt, removalReason: reason } });

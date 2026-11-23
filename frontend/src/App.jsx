@@ -429,10 +429,7 @@ function GameDetailsPage({ isAuthenticated, library, onError }) {
             <div className="review-item">
               <p>Your rating: {myLog.rating ? stars(myLog.rating) : 'none'}</p>
               {myLog.text && <p>{myLog.text}</p>}
-              {myLog.removed && <p role="status" className="removed-note">
-                A developer removed this review, so only you can see it and it no longer counts toward the rating.
-                {myLog.removed.reason && <> Reason: {myLog.removed.reason}</>}
-              </p>}
+              <RemovedReviewNotice removed={myLog.removed} />
               <button type="button" className="secondary-button" onClick={deleteReview}>Delete my review</button>
             </div>
           )}
@@ -517,7 +514,15 @@ function GameCardWishlist({ game, isWishlisted, onToggleWishlist, busy }) {
   </button>
 }
 
-function HistoryList({ logs, emptyText }) {
+function RemovedReviewNotice({ removed }) {
+  if (!removed) return null
+  return <p role="status" className="removed-note">
+    A developer removed this review, so only you can see it and it no longer counts toward the rating.
+    {removed.reason && <> Reason: {removed.reason}</>}
+  </p>
+}
+
+function HistoryList({ logs, emptyText, showRemovalNotes = false }) {
   if (!logs.length) return <p className="subtle-text">{emptyText}</p>
   return <div className="review-list">
     {logs.map(log => (
@@ -530,6 +535,7 @@ function HistoryList({ logs, emptyText }) {
           <span className="review-title">{[STATUS_LABELS[log.status], formatDate(log.updatedAt)].filter(Boolean).join(' · ')}</span>
         </div>
         {log.text && <p>{log.text}</p>}
+        {showRemovalNotes && <RemovedReviewNotice removed={log.removed} />}
       </article>
     ))}
   </div>
@@ -551,7 +557,7 @@ function ProfilePage({ user, library }) {
       </div>
       <div className="card-panel"><h2>Played games and rating history</h2>
         <LoadState loading={history.loading && !history.data} error={history.error} onRetry={history.reload}>
-          <HistoryList logs={history.data?.logs ?? []} emptyText="Rate a game or add one to your lists and it will show up here." />
+          <HistoryList logs={history.data?.logs ?? []} emptyText="Rate a game or add one to your lists and it will show up here." showRemovalNotes />
         </LoadState>
       </div>
     </div>
@@ -713,6 +719,13 @@ function App() {
   const [attempt, setAttempt] = useState(0)
   const loginInFlight = useRef(false)
   const isAuthenticated = Boolean(userProfile)
+  const accountId = userProfile?.id
+  const developerGames = useApi(async signal => {
+    if (!accountId) return null
+    const { games } = await api.devGames(signal)
+    return { accountId, games }
+  }, [accountId])
+  const isDeveloper = developerGames.data?.accountId === accountId && Boolean(developerGames.data?.games?.length)
   const library = useLibrary(isAuthenticated)
   const [actionError, setActionError] = useState('')
   const [notice, setNotice] = useState('')
@@ -774,7 +787,7 @@ function App() {
   }
 
   return (
-    <Layout isAuthenticated={isAuthenticated} isAdmin={userProfile?.admin === true} onLogout={logout} busy={busy}>
+    <Layout isAuthenticated={isAuthenticated} isAdmin={userProfile?.admin === true} isDeveloper={isDeveloper} onLogout={logout} busy={busy}>
       {error && <div className="card-panel" role="alert">{error} <button type="button" className="secondary-button" onClick={() => { setError(''); setChecking(true); setAttempt(value => value + 1) }}>Retry connection</button></div>}
       {notice && <div className="card-panel notice" role="status">{notice} <button type="button" className="secondary-button" onClick={() => setNotice('')}>Dismiss</button></div>}
       {actionError && <div className="card-panel" role="alert">{actionError} <button type="button" className="secondary-button" onClick={() => setActionError('')}>Dismiss</button></div>}
@@ -822,7 +835,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/dev" element={<ProtectedRoute isAuthenticated={isAuthenticated}><DeveloperPage /></ProtectedRoute>} />
+        <Route path="/dev" element={<ProtectedRoute isAuthenticated={isAuthenticated}><DeveloperPage games={developerGames} /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute isAuthenticated={isAuthenticated}>{userProfile?.admin ? <AdminPage /> : <NotFoundPage />}</ProtectedRoute>} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

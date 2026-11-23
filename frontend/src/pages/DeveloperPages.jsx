@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import LoadState from '../components/LoadState'
 import Pager from '../components/Pager'
@@ -22,6 +22,8 @@ export function DeveloperAccess({ gameId }) {
   const [justification, setJustification] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const field = useRef(null)
+  const errorId = useId()
   if (!mine.data) return null
   const request = mine.data.request
 
@@ -41,7 +43,11 @@ export function DeveloperAccess({ gameId }) {
   async function submit(event) {
     event.preventDefault()
     setError('')
-    if (!justification.trim()) { setError('Tell us how you worked on this game.'); return }
+    if (!justification.trim()) {
+      setError('Tell us how you worked on this game.')
+      field.current?.focus()
+      return
+    }
     setBusy(true)
     try {
       await api.requestDeveloperAccess(gameId, justification.trim())
@@ -54,7 +60,9 @@ export function DeveloperAccess({ gameId }) {
   return <form className="stack-form developer-access" onSubmit={submit} noValidate>
     <fieldset disabled={busy}>
       <label>How did you work on this game?
-        <textarea rows={3} maxLength={MAX_TEXT} value={justification} onChange={event => setJustification(event.target.value)} />
+        <textarea ref={field} autoFocus rows={3} maxLength={MAX_TEXT} value={justification}
+          aria-invalid={error ? true : undefined} aria-describedby={error ? errorId : undefined}
+          onChange={event => { setJustification(event.target.value); setError('') }} />
       </label>
       <p className="subtle-text">{justification.length}/{MAX_TEXT} characters. An admin reviews every request.</p>
       <div className="inline-actions">
@@ -62,7 +70,7 @@ export function DeveloperAccess({ gameId }) {
         <button className="secondary-button" type="button" onClick={() => { setOpen(false); setError('') }}>Cancel</button>
       </div>
     </fieldset>
-    {error && <p role="alert">{error}</p>}
+    {error && <p id={errorId} role="alert">{error}</p>}
   </form>
 }
 
@@ -71,11 +79,17 @@ function DeveloperReview({ review, onRemoved }) {
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const field = useRef(null)
+  const errorId = useId()
   const author = review.user?.displayName ?? 'a former player'
   async function remove(event) {
     event.preventDefault()
     setError('')
-    if (!reason.trim()) { setError('Give a reason for removing this review.'); return }
+    if (!reason.trim()) {
+      setError('Give a reason for removing this review.')
+      field.current?.focus()
+      return
+    }
     setBusy(true)
     try {
       await api.removeReview(review.id, reason.trim())
@@ -95,15 +109,17 @@ function DeveloperReview({ review, onRemoved }) {
       <form className="stack-form" onSubmit={remove} noValidate>
         <fieldset disabled={busy}>
           <label>Reason for removal
-            <textarea rows={2} maxLength={MAX_TEXT} value={reason} onChange={event => setReason(event.target.value)} />
+            <textarea ref={field} autoFocus rows={2} maxLength={MAX_TEXT} value={reason}
+              aria-invalid={error ? true : undefined} aria-describedby={error ? errorId : undefined}
+              onChange={event => { setReason(event.target.value); setError('') }} />
           </label>
           <p className="subtle-text">The review is hidden from everyone else and no longer counts toward the rating. Its author still sees it with this reason.</p>
           <div className="inline-actions">
-            <button className="primary-button" type="submit">{busy ? 'Removing…' : 'Remove review'}</button>
+            <button className="danger-button" type="submit">{busy ? 'Removing…' : 'Remove review'}</button>
             <button className="secondary-button" type="button" onClick={() => { setRemoving(false); setError('') }}>Cancel</button>
           </div>
         </fieldset>
-        {error && <p role="alert">{error}</p>}
+        {error && <p id={errorId} role="alert">{error}</p>}
       </form>
     ) : (
       <button type="button" className="secondary-button" aria-label={`Remove review by ${author}`} onClick={() => setRemoving(true)}>Remove</button>
@@ -115,11 +131,11 @@ const NO_FILTERS = { sort: 'newest', minRating: '', maxRating: '', from: '', to:
 
 // Reviews of the signed-in developer's games, with filters (PBI-32, PBI-33). A
 // minimal page; the full dashboard is planned separately.
-export function DeveloperPage() {
+export function DeveloperPage({ games }) {
   const [searchParams] = useSearchParams()
   const [filters, setFilters] = useState(() => ({ ...NO_FILTERS, gameId: searchParams.get('gameId') ?? '' }))
   const [page, setPage] = useState(1)
-  const games = useApi(signal => api.devGames(signal), [])
+  const [success, setSuccess] = useState('')
   const problem = filters.minRating && filters.maxRating && Number(filters.minRating) > Number(filters.maxRating)
     ? 'The minimum rating must not be above the maximum.'
     : filters.from && filters.to && filters.from > filters.to ? 'The start date must not be after the end date.' : ''
@@ -127,6 +143,11 @@ export function DeveloperPage() {
     [filters, page, problem])
   const change = name => event => { setFilters(previous => ({ ...previous, [name]: event.target.value })); setPage(1) }
   const myGames = games.data?.games ?? []
+
+  function onRemoved() {
+    setSuccess('Review removed.')
+    reviews.reload()
+  }
 
   return <section className="content-section">
     <div className="section-header-inline">
@@ -141,27 +162,29 @@ export function DeveloperPage() {
         </div>
       ) : <>
         <div className="filter-panel developer-filters">
-          <select aria-label="Game" value={filters.gameId} onChange={change('gameId')}>
-            <option value="">All my games</option>
-            {myGames.map(game => <option key={game.id} value={game.id}>{game.title}</option>)}
-          </select>
-          <select aria-label="Sort reviews" value={filters.sort} onChange={change('sort')}>
-            {REVIEW_SORTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-          </select>
-          <select aria-label="Written text" value={filters.hasText} onChange={change('hasText')}>
-            <option value="">With or without text</option>
-            <option value="true">With written text</option>
-            <option value="false">Rating only</option>
-          </select>
-          <select aria-label="Minimum rating" value={filters.minRating} onChange={change('minRating')}>
-            <option value="">Any minimum rating</option>
-            {RATINGS.map(rating => <option key={rating} value={rating}>At least {rating} {rating === 1 ? 'star' : 'stars'}</option>)}
-          </select>
-          <select aria-label="Maximum rating" value={filters.maxRating} onChange={change('maxRating')}>
-            <option value="">Any maximum rating</option>
-            {RATINGS.map(rating => <option key={rating} value={rating}>At most {rating} {rating === 1 ? 'star' : 'stars'}</option>)}
-          </select>
-          <div className="two-field-row">
+          <div className="developer-filter-selects">
+            <select aria-label="Game" value={filters.gameId} onChange={change('gameId')}>
+              <option value="">All my games</option>
+              {myGames.map(game => <option key={game.id} value={game.id}>{game.title}</option>)}
+            </select>
+            <select aria-label="Sort reviews" value={filters.sort} onChange={change('sort')}>
+              {REVIEW_SORTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+            <select aria-label="Written text" value={filters.hasText} onChange={change('hasText')}>
+              <option value="">With or without text</option>
+              <option value="true">With written text</option>
+              <option value="false">Rating only</option>
+            </select>
+            <select aria-label="Minimum rating" value={filters.minRating} onChange={change('minRating')}>
+              <option value="">Any minimum rating</option>
+              {RATINGS.map(rating => <option key={rating} value={rating}>At least {rating} {rating === 1 ? 'star' : 'stars'}</option>)}
+            </select>
+            <select aria-label="Maximum rating" value={filters.maxRating} onChange={change('maxRating')}>
+              <option value="">Any maximum rating</option>
+              {RATINGS.map(rating => <option key={rating} value={rating}>At most {rating} {rating === 1 ? 'star' : 'stars'}</option>)}
+            </select>
+          </div>
+          <div className="two-field-row developer-filter-dates">
             <label className="date-field">From<input type="date" value={filters.from} max={filters.to || undefined} onChange={change('from')} /></label>
             <label className="date-field">To<input type="date" value={filters.to} min={filters.from || undefined} onChange={change('to')} /></label>
           </div>
@@ -170,12 +193,13 @@ export function DeveloperPage() {
           <button type="button" className="secondary-button" onClick={() => { setFilters({ ...NO_FILTERS, gameId: '' }); setPage(1) }}>Reset filters</button>
           {reviews.data && <p role="status" className="subtle-text">{reviews.data.total} {reviews.data.total === 1 ? 'review' : 'reviews'} found</p>}
         </div>
+        <div role="status">{success && <p>{success}</p>}</div>
         {problem ? <p role="alert">{problem}</p> : (
           <div className="card-panel">
             <LoadState loading={reviews.loading && !reviews.data} error={reviews.error} onRetry={reviews.reload}>
               <div className="review-list">
                 {reviews.data?.reviews.length
-                  ? reviews.data.reviews.map(review => <DeveloperReview key={review.id} review={review} onRemoved={reviews.reload} />)
+                  ? reviews.data.reviews.map(review => <DeveloperReview key={review.id} review={review} onRemoved={onRemoved} />)
                   : <p className="subtle-text">No reviews match these filters.</p>}
               </div>
               <Pager page={page} pages={reviews.data?.pages} onPage={setPage} />
@@ -193,11 +217,14 @@ export function AdminPage() {
   const [page, setPage] = useState(1)
   const [busyId, setBusyId] = useState(null)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const list = useApi(signal => api.developerRequests({ status, page, limit: 20 }, signal), [status, page])
   async function decide(request, action) {
-    setBusyId(request.id); setError('')
+    setBusyId(request.id); setError(''); setSuccess('')
     try {
       await api.decideDeveloperRequest(request.id, action)
+      if (action === 'approve') setSuccess('Developer access approved.')
+      else setSuccess(request.status === 'approved' ? 'Developer access revoked.' : 'Developer access rejected.')
       list.reload()
     } catch (error) { setError(error.message) }
     finally { setBusyId(null) }
@@ -215,10 +242,11 @@ export function AdminPage() {
         </select>
       </div>
       {error && <p role="alert">{error}</p>}
+      <div role="status">{success && <p>{success}</p>}</div>
       <LoadState loading={list.loading && !list.data} error={list.error} onRetry={list.reload}>
         <div className="review-list">
           {list.data?.requests.length ? list.data.requests.map(request => (
-            <article key={request.id} className="review-item">
+            <article key={request.id} className="review-item request-item">
               <div className="review-header">
                 <div>
                   <Reviewer user={request.user} />

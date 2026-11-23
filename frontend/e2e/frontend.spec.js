@@ -10,6 +10,7 @@ async function emptyApi(page) {
     const path = new URL(route.request().url()).pathname
     const body = path.endsWith('/filters') ? { genres: [], platforms: [] }
       : path.endsWith('/games/top') ? { games: [], minCount: 3 }
+      : path === '/api/dev/games' ? { games: [] }
       : path.startsWith('/api/games') ? { games: [], total: 0, page: 1, pages: 0 }
       : path === '/api/me/wishlist-visibility' ? { wishlistVisibility: 'private' }
       : path === '/api/me/activity-visibility' ? { activityVisibility: 'public' }
