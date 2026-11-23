@@ -9,13 +9,17 @@ const { FOLLOWER_VISIBLE, activityVisibilityOf } = require('./visibility');
 
 // Users whose activity the caller sees in their feed: everyone they follow,
 // except those whose activity is private. A `followers` setting lets the caller
-// in because they follow that user.
+// in because they follow that user. Also returns how many users the caller
+// follows, so an empty feed can say whether to follow someone or just wait.
 async function visibleFollowees(userId) {
   const follows = await Follow.find({ follower: userId }, 'followee').lean();
-  if (!follows.length) return [];
+  if (!follows.length) return { followingCount: 0, users: [] };
   const users = await User.find({ _id: { $in: follows.map(follow => follow.followee) } },
     'activityVisibility').lean();
-  return users.filter(user => FOLLOWER_VISIBLE.includes(activityVisibilityOf(user))).map(user => user._id);
+  return {
+    followingCount: follows.length,
+    users: users.filter(user => FOLLOWER_VISIBLE.includes(activityVisibilityOf(user))).map(user => user._id),
+  };
 }
 
 function feedEntry(log) {
@@ -36,8 +40,8 @@ function createFeedRouter({ requireAuth }) {
   // most recently updated first.
   router.get('/', requireAuth, async (req, res) => {
     const { page, limit } = pageParams(req.query);
-    const users = await visibleFollowees(req.session.userId);
-    if (!users.length) return res.json({ entries: [], total: 0, page, pages: 0 });
+    const { followingCount, users } = await visibleFollowees(req.session.userId);
+    if (!users.length) return res.json({ entries: [], total: 0, page, pages: 0, followingCount });
     const query = { ...HISTORY_FILTER, user: { $in: users } };
     const [logs, total] = await Promise.all([
       Review.find(query)
@@ -55,6 +59,7 @@ function createFeedRouter({ requireAuth }) {
       total,
       page,
       pages: Math.ceil(total / limit),
+      followingCount,
     });
   });
 

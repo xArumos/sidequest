@@ -96,7 +96,7 @@ Run any of these from the root with `--prefix <package>`, e.g. `npm test --prefi
 | POST / DELETE | `/api/users/:id/follow` | Follow or unfollow a user (idempotent) |
 | GET | `/api/users/:id/followers`, `/api/users/:id/following` | Paginated public follower lists |
 | GET / PATCH | `/api/me/activity-visibility` | Who sees your history: `public`, `followers`, or `private` |
-| GET | `/api/feed` | Recent activity from users you follow |
+| GET | `/api/feed` | Recent activity from users you follow, with pagination and `followingCount` even when there are no entries |
 
 Follows are one-way.
 Profile history and wishlists are checked by `server/src/visibility.js`; denied viewers get `403 ACTIVITY_PRIVATE` or `403 WISHLIST_PRIVATE`.
