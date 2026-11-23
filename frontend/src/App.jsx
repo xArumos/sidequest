@@ -385,18 +385,18 @@ function GameDetailsPage({ isAuthenticated, library, onError }) {
           <p className="eyebrow">{details.genres.join(' · ')}</p>
           <h1>{details.title}</h1>
           <p className="detail-meta">
-            {[details.releaseDate && formatDate(details.releaseDate), `${details.reviewCount} written ${details.reviewCount === 1 ? 'review' : 'reviews'}`].filter(Boolean).join(' · ')}
+            {[details.releaseDate && formatDate(details.releaseDate, 'UTC'), `${details.reviewCount} written ${details.reviewCount === 1 ? 'review' : 'reviews'}`].filter(Boolean).join(' · ')}
           </p>
           <p className="lead small">{details.summary}</p>
           {isAuthenticated ? (
-            <div className="inline-actions">
+            <div className="inline-actions game-actions">
               <button type="button" className="primary-button" disabled={busy} aria-pressed={status === 'wishlist'} onClick={() => setStatus('wishlist')}>
                 {status === 'wishlist' ? 'Remove from wishlist' : 'Add to wishlist'}
               </button>
               <button type="button" className="secondary-button" disabled={busy} aria-pressed={status === 'backlog'} onClick={() => setStatus('backlog')}>
                 {status === 'backlog' ? 'Remove from backlog' : 'Add to backlog'}
               </button>
-              <label className="subtle-text">Status{' '}
+              <label className="subtle-text game-status">Status
                 <select aria-label="Play status" value={status ?? ''} disabled={busy}
                   onChange={event => library.setStatus(gameId, event.target.value || null).catch(error => onError(error.message))}>
                   <option value="">None</option>

@@ -11,12 +11,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 1rem;
   padding: 1.1rem 2rem;
   background: rgba(10, 12, 24, 0.92);
   border-bottom: 1px solid rgba(139, 146, 185, 0.2);
   backdrop-filter: blur(18px);
 }
+
+.topbar-content { display: contents; }
+.topbar .nav-toggle { display: none; }
 
 .brand {
   color: #f4f7ff;
@@ -335,6 +339,13 @@ button:hover {
   gap: 0.75rem;
 }
 
+.game-actions { align-items: center; }
+.game-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .nav-actions.auth-actions,
 .cta-row.auth-actions {
   display: flex;
@@ -383,6 +394,7 @@ button:hover {
 .stack-form textarea,
 .filter-panel input,
 .filter-panel select,
+.game-status select,
 .form-panel input,
 .form-panel textarea,
 .form-panel select {
@@ -664,7 +676,6 @@ button:hover {
 }
 
 @media (max-width: 640px) {
-  .topbar,
   .site-footer,
   .profile-header,
   .section-header-inline {
@@ -673,15 +684,28 @@ button:hover {
   }
 
   .topbar {
-    padding: 1rem 1rem 1.25rem;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .topbar .nav-toggle {
+    display: inline-flex;
+    padding: 0.5rem 0.9rem;
+  }
+
+  .topbar-content {
+    display: none;
+    width: 100%;
+  }
+
+  .topbar-content[data-open="true"] {
+    display: grid;
+    gap: 0.85rem;
+    padding-block: 0.25rem;
   }
 
   .main-nav {
     gap: 0.75rem;
-  }
-
-  .page-shell {
-    width: min(100% - 1rem, 1200px);
   }
 
   .two-field-row {
@@ -722,7 +746,6 @@ button:disabled { cursor: not-allowed; opacity: .65; transform: none; }
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
 }
 .community-panel { display: flex; flex-direction: column; gap: .35rem; }
-.topbar { flex-wrap: wrap; }
 .rating-summary { flex-wrap: wrap; }
 .cover-fallback { display: grid; place-items: center; padding: 1rem; color: #b7bed6; background: #12182a; }
 .google-signin { display: flex; flex-direction: column; align-items: center; margin: 1.5rem 0 0; text-align: center; }

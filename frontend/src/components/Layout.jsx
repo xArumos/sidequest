@@ -1,50 +1,77 @@
-import { NavLink, Link } from 'react-router-dom'
+import { useRef, useState } from 'react'
+import { NavLink, Link, useLocation } from 'react-router-dom'
 
 export default function Layout({ isAuthenticated, isAdmin = false, isDeveloper = false, onLogout, busy, children }) {
+  const location = useLocation()
+  const [openLocation, setOpenLocation] = useState(null)
+  const menuOpen = openLocation === location
+  const menuButton = useRef(null)
+
+  function onMenuKeyDown(event) {
+    if (event.key === 'Escape' && menuOpen) {
+      event.preventDefault()
+      setOpenLocation(null)
+      menuButton.current?.focus()
+    }
+  }
+
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Skip to content</a>
-      <header className="topbar">
+      <header className="topbar" onKeyDown={onMenuKeyDown}>
         <div className="brand-wrap">
           <Link to="/" className="brand">
             SideQuest
           </Link>
         </div>
 
-        <nav className="main-nav" aria-label="Main navigation">
-          <NavLink to="/">Home</NavLink>
-          <NavLink to="/games">Games</NavLink>
-          <NavLink to="/rankings">Rankings</NavLink>
-          {isAuthenticated && (
-            <>
-              <NavLink to="/profile">Profile</NavLink>
-              <NavLink to="/wishlist">Wishlist</NavLink>
-              <NavLink to="/backlog">Backlog</NavLink>
-            </>
-          )}
-          {isAuthenticated && isDeveloper && <NavLink to="/dev">Developer</NavLink>}
-          {isAuthenticated && isAdmin && <NavLink to="/admin">Admin</NavLink>}
-        </nav>
+        <button
+          ref={menuButton}
+          type="button"
+          className="secondary-button nav-toggle"
+          aria-expanded={menuOpen}
+          aria-controls="site-navigation"
+          onClick={() => setOpenLocation(menuOpen ? null : location)}
+        >
+          Menu
+        </button>
 
-        <div className="nav-actions auth-actions">
-          {isAuthenticated ? (
-            <button type="button" className="secondary-button" disabled={busy} onClick={onLogout}>
-              Log out
-            </button>
-          ) : (
-            <>
-              <Link to="/register" className="primary-button">
-                Join now
-              </Link>
-              <Link to="/login" className="secondary-button">
-                Log in
-              </Link>
-            </>
-          )}
+        <div className="topbar-content" id="site-navigation" data-open={menuOpen}>
+          <nav className="main-nav" aria-label="Main navigation">
+            <NavLink to="/">Home</NavLink>
+            <NavLink to="/games">Games</NavLink>
+            <NavLink to="/rankings">Rankings</NavLink>
+            {isAuthenticated && (
+              <>
+                <NavLink to="/profile">Profile</NavLink>
+                <NavLink to="/wishlist">Wishlist</NavLink>
+                <NavLink to="/backlog">Backlog</NavLink>
+              </>
+            )}
+            {isAuthenticated && isDeveloper && <NavLink to="/dev">Developer</NavLink>}
+            {isAuthenticated && isAdmin && <NavLink to="/admin">Admin</NavLink>}
+          </nav>
+
+          <div className="nav-actions auth-actions">
+            {isAuthenticated ? (
+              <button type="button" className="secondary-button" disabled={busy} onClick={onLogout}>
+                Log out
+              </button>
+            ) : (
+              <>
+                <Link to="/register" className="primary-button">
+                  Join now
+                </Link>
+                <Link to="/login" className="secondary-button">
+                  Log in
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
-      <main id="main-content" className="page-shell">{children}</main>
+      <main id="main-content" className="page-shell" tabIndex={-1}>{children}</main>
 
       <footer className="site-footer">
         <div>

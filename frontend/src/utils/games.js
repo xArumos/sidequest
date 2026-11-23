@@ -9,6 +9,6 @@ export function stars(rating) {
   return Number.isInteger(rating) ? `${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}` : ''
 }
 
-export function formatDate(value) {
-  return value ? new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''
+export function formatDate(value, timeZone) {
+  return value ? new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone }) : ''
 }
