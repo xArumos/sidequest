@@ -711,7 +711,8 @@ button:disabled { cursor: not-allowed; opacity: .65; transform: none; }
 :focus-visible { outline: 3px solid #b7c2ff; outline-offset: 4px; }
 .skip-link { position: fixed; top: -100px; left: 1rem; z-index: 100; padding: .7rem; background: #12182a; }
 .skip-link:focus { top: 1rem; }
-[role="alert"] { color: #ffc9c9; margin-bottom: 1rem; }
+/* .review-item p mutes text colour; errors inside review items must stay red. */
+[role="alert"], .review-item [role="alert"] { color: #ffc9c9; margin-bottom: 1rem; }
 @media (max-width: 400px) {
   .ranking-row { grid-template-columns: 40px minmax(0, 1fr); }
   .ranking-cover { display: none; }
@@ -783,7 +784,8 @@ button:disabled { cursor: not-allowed; opacity: .65; transform: none; }
 .developer-filters { grid-template-columns: 1fr; }
 .developer-filter-selects {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  /* Wide enough for the longest label ("With or without text") so values never truncate. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13.5rem), 1fr));
   gap: .8rem;
 }
 .developer-filter-dates { width: min(100%, 26rem); gap: .8rem; }
@@ -838,3 +840,5 @@ button:disabled { cursor: not-allowed; opacity: .65; transform: none; }
   margin-inline-start: auto;
 }
 @media (max-width: 400px) { .modal-actions > button { flex: 1 1 100%; } }
+.action-status:focus { outline: none; }
+.action-status > p { margin: 0 0 1rem; }

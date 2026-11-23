@@ -109,6 +109,9 @@ describe('developer reviews page (TC-DEV-02, TC-DEV-03)', () => {
     api.removeReview.mockResolvedValue({ review: { id: 'r1' } })
     visit('/dev')
     await userEvent.click(await screen.findByRole('button', { name: 'Remove review by Spammer' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.getByRole('button', { name: 'Remove review by Spammer' })).toHaveFocus()
+    await userEvent.click(screen.getByRole('button', { name: 'Remove review by Spammer' }))
     const reason = screen.getByRole('textbox', { name: /reason for removal/i })
     const form = reason.closest('form')
     expect(reason).toHaveFocus()
@@ -120,8 +123,12 @@ describe('developer reviews page (TC-DEV-02, TC-DEV-03)', () => {
     await userEvent.type(reason, 'Spam.')
     await userEvent.click(within(form).getByRole('button', { name: 'Remove review' }))
     expect(api.removeReview).toHaveBeenCalledWith('r1', 'Spam.')
-    expect(await screen.findByText('Review removed.')).toBeInTheDocument()
+    const removed = await screen.findByText('Review removed.')
+    expect(removed.closest('[role="status"]')).toHaveFocus()
     expect(await screen.findByText('No reviews match these filters.')).toBeInTheDocument()
+
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Sort reviews' }), 'oldest')
+    expect(screen.queryByText('Review removed.')).not.toBeInTheDocument()
   })
 
   it('explains how to get access when the user develops no games', async () => {
@@ -155,10 +162,12 @@ describe('admin page (#93)', () => {
     api.developerRequests.mockResolvedValue({ requests: [], total: 0, page: 1, pages: 0 })
     await userEvent.click(screen.getByRole('button', { name: 'Approve Dana for Celeste' }))
     expect(api.decideDeveloperRequest).toHaveBeenCalledWith('d1', 'approve')
-    expect(await screen.findByText('Developer access approved.')).toBeInTheDocument()
+    const approved = await screen.findByText('Developer access approved.')
+    expect(approved.closest('[role="status"]')).toHaveFocus()
     expect(await screen.findByText('No pending developer requests.')).toBeInTheDocument()
 
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Request status' }), 'all')
     await waitFor(() => expect(lastCall(api.developerRequests)).toMatchObject({ status: 'all', page: 1 }))
+    expect(screen.queryByText('Developer access approved.')).not.toBeInTheDocument()
   })
 })
