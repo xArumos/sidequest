@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import LoadState from '../components/LoadState'
 import Pager from '../components/Pager'
@@ -10,6 +10,25 @@ const MAX_TEXT = 500
 const REVIEW_SORTS = [['newest', 'Newest first'], ['oldest', 'Oldest first'], ['highest', 'Highest rated'], ['lowest', 'Lowest rated']]
 const REQUEST_STATUSES = [['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['all', 'All']]
 const RATINGS = [1, 2, 3, 4, 5]
+
+// A polite status message that takes focus whenever a new one appears, so keyboard
+// and screen reader users are not dropped to the page body when the control they
+// used disappears. `message` is { text } so repeating the same text still refocuses.
+function ActionStatus({ message }) {
+  const ref = useRef(null)
+  useEffect(() => { if (message) ref.current?.focus() }, [message])
+  return <div ref={ref} role="status" tabIndex={-1} className="action-status">{message && <p>{message.text}</p>}</div>
+}
+
+// Cancelling a form unmounts it along with the focused control; this returns focus
+// to the button that opened it. Returns [ref for that button, function to call on cancel].
+function useReturnFocus() {
+  const pending = useRef(false)
+  const ref = node => {
+    if (node && pending.current) { node.focus(); pending.current = false }
+  }
+  return [ref, () => { pending.current = true }]
+}
 
 function Reviewer({ user }) {
   return user ? <Link to={`/users/${user.id}`}><strong>{user.displayName}</strong></Link> : <strong>Former player</strong>
@@ -24,6 +43,7 @@ export function DeveloperAccess({ gameId }) {
   const [error, setError] = useState('')
   const field = useRef(null)
   const errorId = useId()
+  const [opener, returnFocus] = useReturnFocus()
   if (!mine.data) return null
   const request = mine.data.request
 
@@ -37,7 +57,7 @@ export function DeveloperAccess({ gameId }) {
     return <p className="developer-access subtle-text">Your developer access request was not approved.</p>
   }
   if (!open) {
-    return <p className="developer-access"><button type="button" className="link-button" onClick={() => setOpen(true)}>Request developer access</button></p>
+    return <p className="developer-access"><button ref={opener} type="button" className="link-button" onClick={() => setOpen(true)}>Request developer access</button></p>
   }
 
   async function submit(event) {
@@ -67,7 +87,7 @@ export function DeveloperAccess({ gameId }) {
       <p className="subtle-text">{justification.length}/{MAX_TEXT} characters. An admin reviews every request.</p>
       <div className="inline-actions">
         <button className="primary-button" type="submit">{busy ? 'Sending…' : 'Send request'}</button>
-        <button className="secondary-button" type="button" onClick={() => { setOpen(false); setError('') }}>Cancel</button>
+        <button className="secondary-button" type="button" onClick={() => { returnFocus(); setOpen(false); setError('') }}>Cancel</button>
       </div>
     </fieldset>
     {error && <p id={errorId} role="alert">{error}</p>}
@@ -81,6 +101,7 @@ function DeveloperReview({ review, onRemoved }) {
   const [error, setError] = useState('')
   const field = useRef(null)
   const errorId = useId()
+  const [opener, returnFocus] = useReturnFocus()
   const author = review.user?.displayName ?? 'a former player'
   async function remove(event) {
     event.preventDefault()
@@ -116,13 +137,13 @@ function DeveloperReview({ review, onRemoved }) {
           <p className="subtle-text">The review is hidden from everyone else and no longer counts toward the rating. Its author still sees it with this reason.</p>
           <div className="inline-actions">
             <button className="danger-button" type="submit">{busy ? 'Removing…' : 'Remove review'}</button>
-            <button className="secondary-button" type="button" onClick={() => { setRemoving(false); setError('') }}>Cancel</button>
+            <button className="secondary-button" type="button" onClick={() => { returnFocus(); setRemoving(false); setError('') }}>Cancel</button>
           </div>
         </fieldset>
         {error && <p id={errorId} role="alert">{error}</p>}
       </form>
     ) : (
-      <button type="button" className="secondary-button" aria-label={`Remove review by ${author}`} onClick={() => setRemoving(true)}>Remove</button>
+      <button ref={opener} type="button" className="secondary-button" aria-label={`Remove review by ${author}`} onClick={() => setRemoving(true)}>Remove</button>
     )}
   </article>
 }
@@ -135,17 +156,19 @@ export function DeveloperPage({ games }) {
   const [searchParams] = useSearchParams()
   const [filters, setFilters] = useState(() => ({ ...NO_FILTERS, gameId: searchParams.get('gameId') ?? '' }))
   const [page, setPage] = useState(1)
-  const [success, setSuccess] = useState('')
+  const [success, setSuccess] = useState(null)
   const problem = filters.minRating && filters.maxRating && Number(filters.minRating) > Number(filters.maxRating)
     ? 'The minimum rating must not be above the maximum.'
     : filters.from && filters.to && filters.from > filters.to ? 'The start date must not be after the end date.' : ''
   const reviews = useApi(signal => (problem ? Promise.resolve(null) : api.devReviews({ ...filters, page, limit: 20 }, signal)),
     [filters, page, problem])
-  const change = name => event => { setFilters(previous => ({ ...previous, [name]: event.target.value })); setPage(1) }
+  // Any new query makes an earlier success message stale.
+  const query = (nextFilters, nextPage = 1) => { setFilters(nextFilters); setPage(nextPage); setSuccess(null) }
+  const change = name => event => query({ ...filters, [name]: event.target.value })
   const myGames = games.data?.games ?? []
 
   function onRemoved() {
-    setSuccess('Review removed.')
+    setSuccess({ text: 'Review removed.' })
     reviews.reload()
   }
 
@@ -190,10 +213,10 @@ export function DeveloperPage({ games }) {
           </div>
         </div>
         <div className="inline-actions">
-          <button type="button" className="secondary-button" onClick={() => { setFilters({ ...NO_FILTERS, gameId: '' }); setPage(1) }}>Reset filters</button>
+          <button type="button" className="secondary-button" onClick={() => query({ ...NO_FILTERS, gameId: '' })}>Reset filters</button>
           {reviews.data && <p role="status" className="subtle-text">{reviews.data.total} {reviews.data.total === 1 ? 'review' : 'reviews'} found</p>}
         </div>
-        <div role="status">{success && <p>{success}</p>}</div>
+        <ActionStatus message={success} />
         {problem ? <p role="alert">{problem}</p> : (
           <div className="card-panel">
             <LoadState loading={reviews.loading && !reviews.data} error={reviews.error} onRetry={reviews.reload}>
@@ -202,7 +225,7 @@ export function DeveloperPage({ games }) {
                   ? reviews.data.reviews.map(review => <DeveloperReview key={review.id} review={review} onRemoved={onRemoved} />)
                   : <p className="subtle-text">No reviews match these filters.</p>}
               </div>
-              <Pager page={page} pages={reviews.data?.pages} onPage={setPage} />
+              <Pager page={page} pages={reviews.data?.pages} onPage={next => query(filters, next)} />
             </LoadState>
           </div>
         )}
@@ -217,14 +240,15 @@ export function AdminPage() {
   const [page, setPage] = useState(1)
   const [busyId, setBusyId] = useState(null)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [success, setSuccess] = useState(null)
   const list = useApi(signal => api.developerRequests({ status, page, limit: 20 }, signal), [status, page])
   async function decide(request, action) {
-    setBusyId(request.id); setError(''); setSuccess('')
+    setBusyId(request.id); setError(''); setSuccess(null)
     try {
       await api.decideDeveloperRequest(request.id, action)
-      if (action === 'approve') setSuccess('Developer access approved.')
-      else setSuccess(request.status === 'approved' ? 'Developer access revoked.' : 'Developer access rejected.')
+      const text = action === 'approve' ? 'Developer access approved.'
+        : request.status === 'approved' ? 'Developer access revoked.' : 'Developer access rejected.'
+      setSuccess({ text })
       list.reload()
     } catch (error) { setError(error.message) }
     finally { setBusyId(null) }
@@ -237,12 +261,12 @@ export function AdminPage() {
     <div className="card-panel">
       <div className="panel-header">
         <h2>Developer requests</h2>
-        <select aria-label="Request status" className="compact-select" value={status} onChange={event => { setStatus(event.target.value); setPage(1) }}>
+        <select aria-label="Request status" className="compact-select" value={status} onChange={event => { setStatus(event.target.value); setPage(1); setSuccess(null) }}>
           {REQUEST_STATUSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
       </div>
       {error && <p role="alert">{error}</p>}
-      <div role="status">{success && <p>{success}</p>}</div>
+      <ActionStatus message={success} />
       <LoadState loading={list.loading && !list.data} error={list.error} onRetry={list.reload}>
         <div className="review-list">
           {list.data?.requests.length ? list.data.requests.map(request => (
@@ -266,7 +290,7 @@ export function AdminPage() {
             </article>
           )) : <p className="subtle-text">No {status === 'all' ? '' : `${status} `}developer requests.</p>}
         </div>
-        <Pager page={page} pages={list.data?.pages} onPage={setPage} />
+        <Pager page={page} pages={list.data?.pages} onPage={next => { setPage(next); setSuccess(null) }} />
       </LoadState>
     </div>
   </section>
