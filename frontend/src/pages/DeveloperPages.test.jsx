@@ -36,12 +36,15 @@ describe('game page developer access (TC-DEV-01)', () => {
     api.requestDeveloperAccess.mockResolvedValue({ request: { id: 'd1', status: 'pending' } })
     visit(`/games/${celeste.id}`)
     await userEvent.click(await screen.findByRole('button', { name: 'Request developer access' }))
+    const justification = screen.getByRole('textbox', { name: /how did you work/i })
+    expect(justification).toHaveFocus()
     await userEvent.click(screen.getByRole('button', { name: 'Send request' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Tell us how you worked on this game.')
+    expect(justification).toHaveAccessibleDescription('Tell us how you worked on this game.')
     expect(api.requestDeveloperAccess).not.toHaveBeenCalled()
 
     api.myDeveloperRequest.mockResolvedValue({ request: { id: 'd1', status: 'pending', requestedAt: '2026-11-01T12:00:00.000Z' } })
-    await userEvent.type(screen.getByRole('textbox', { name: /how did you work/i }), '  Level designer.  ')
+    await userEvent.type(justification, '  Level designer.  ')
     await userEvent.click(screen.getByRole('button', { name: 'Send request' }))
     expect(api.requestDeveloperAccess).toHaveBeenCalledWith(celeste.id, 'Level designer.')
     expect(await screen.findByText(/developer access requested on .*waiting for approval/i)).toBeInTheDocument()
@@ -69,6 +72,12 @@ describe('game page developer access (TC-DEV-01)', () => {
     expect(screen.queryByRole('button', { name: /submit review/i })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /delete my review/i })).toBeInTheDocument()
   })
+
+  it('shows the author the removal reason in their profile history', async () => {
+    api.myLogs.mockResolvedValue({ logs: [{ ...review, removed: { reason: 'Off-topic advertising.' } }], pages: 1 })
+    visit('/profile')
+    expect(await screen.findByText(/a developer removed this review/i)).toHaveTextContent('Reason: Off-topic advertising.')
+  })
 })
 
 describe('developer reviews page (TC-DEV-02, TC-DEV-03)', () => {
@@ -80,6 +89,7 @@ describe('developer reviews page (TC-DEV-02, TC-DEV-03)', () => {
   it('starts from the game in the link and sends filter changes to the API', async () => {
     visit(`/dev?gameId=${celeste.id}`)
     expect(await screen.findByText('Spam link.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Developer' })).toHaveAttribute('href', '/dev')
     expect(lastCall(api.devReviews)).toMatchObject({ gameId: celeste.id, sort: 'newest', page: 1, limit: 20 })
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Minimum rating' }), '2')
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Sort reviews' }), 'lowest')
@@ -99,14 +109,18 @@ describe('developer reviews page (TC-DEV-02, TC-DEV-03)', () => {
     api.removeReview.mockResolvedValue({ review: { id: 'r1' } })
     visit('/dev')
     await userEvent.click(await screen.findByRole('button', { name: 'Remove review by Spammer' }))
-    const form = screen.getByRole('textbox', { name: /reason for removal/i }).closest('form')
+    const reason = screen.getByRole('textbox', { name: /reason for removal/i })
+    const form = reason.closest('form')
+    expect(reason).toHaveFocus()
     await userEvent.click(within(form).getByRole('button', { name: 'Remove review' }))
     expect(await within(form).findByRole('alert')).toHaveTextContent('Give a reason')
+    expect(reason).toHaveAccessibleDescription('Give a reason for removing this review.')
 
     api.devReviews.mockResolvedValue({ reviews: [], total: 0, page: 1, pages: 0 })
-    await userEvent.type(screen.getByRole('textbox', { name: /reason for removal/i }), 'Spam.')
+    await userEvent.type(reason, 'Spam.')
     await userEvent.click(within(form).getByRole('button', { name: 'Remove review' }))
     expect(api.removeReview).toHaveBeenCalledWith('r1', 'Spam.')
+    expect(await screen.findByText('Review removed.')).toBeInTheDocument()
     expect(await screen.findByText('No reviews match these filters.')).toBeInTheDocument()
   })
 
@@ -114,6 +128,7 @@ describe('developer reviews page (TC-DEV-02, TC-DEV-03)', () => {
     api.devGames.mockResolvedValue({ games: [] })
     visit('/dev')
     expect(await screen.findByRole('heading', { name: 'No developer access yet' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Developer' })).not.toBeInTheDocument()
   })
 })
 
@@ -140,6 +155,7 @@ describe('admin page (#93)', () => {
     api.developerRequests.mockResolvedValue({ requests: [], total: 0, page: 1, pages: 0 })
     await userEvent.click(screen.getByRole('button', { name: 'Approve Dana for Celeste' }))
     expect(api.decideDeveloperRequest).toHaveBeenCalledWith('d1', 'approve')
+    expect(await screen.findByText('Developer access approved.')).toBeInTheDocument()
     expect(await screen.findByText('No pending developer requests.')).toBeInTheDocument()
 
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Request status' }), 'all')
