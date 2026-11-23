@@ -22,6 +22,11 @@ async function emptyApi(page) {
 async function fitsViewport(page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 }
+async function openMobileMenu(page) {
+  const menu = page.getByRole('button', { name: 'Menu' })
+  if (await menu.isVisible()) await menu.click()
+}
+
 test('[TC-FE-BROWSER-01] homepage navigation fits the viewport and links reach auth pages', async ({ page }) => {
   await signedOut(page)
   const errors = []
@@ -29,6 +34,7 @@ test('[TC-FE-BROWSER-01] homepage navigation fits the viewport and links reach a
   await page.goto('/')
   await expect(page.getByRole('heading', { name: /rate, review, and track/i })).toBeVisible()
   await fitsViewport(page)
+  await openMobileMenu(page)
   await expect(page.getByRole('link', { name: 'Join now', exact: true })).toHaveCount(1)
   await page.getByRole('link', { name: 'Join now', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Welcome to SideQuest' })).toBeVisible()
@@ -76,11 +82,47 @@ test('[TC-FE-BROWSER-05] signed-in library navigation remains usable and shows e
   await page.goto('/profile')
   await expect(page.getByRole('heading', { name: 'Synthetic Browser Player' })).toBeVisible()
   const navigation = page.getByRole('navigation', { name: 'Main navigation' })
+  await openMobileMenu(page)
   await navigation.getByRole('link', { name: 'Wishlist' }).click()
   await expect(page.getByRole('heading', { name: 'Your wishlist is empty' })).toBeVisible()
+  await openMobileMenu(page)
   await navigation.getByRole('link', { name: 'Backlog' }).click()
   await expect(page.getByRole('heading', { name: 'Your backlog is empty' })).toBeVisible()
   await fitsViewport(page)
+})
+
+test('mobile navigation opens by keyboard and closes on Escape or navigation', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 })
+  await signedOut(page)
+  await page.goto('/')
+  const menu = page.getByRole('button', { name: 'Menu' })
+  const navigation = page.getByRole('navigation', { name: 'Main navigation' })
+  await expect(menu).toHaveAttribute('aria-expanded', 'false')
+  await expect(navigation).toBeHidden()
+  await menu.press('Enter')
+  await expect(menu).toHaveAttribute('aria-expanded', 'true')
+  await navigation.getByRole('link', { name: 'Games' }).focus()
+  await page.keyboard.press('Escape')
+  await expect(menu).toBeFocused()
+  await expect(navigation).toBeHidden()
+  await menu.press('Enter')
+  await navigation.getByRole('link', { name: 'Games' }).click()
+  await expect(page).toHaveURL(/\/games$/)
+  await expect(menu).toHaveAttribute('aria-expanded', 'false')
+  await fitsViewport(page)
+})
+
+test.describe('release date outside UTC', () => {
+  test.use({ locale: 'en-US', timezoneId: 'America/Los_Angeles' })
+  test('shows the catalog day for releases recorded at UTC midnight', async ({ page }) => {
+    await signedOut(page)
+    await page.route('**/api/games/celeste', route => route.fulfill({
+      json: { game: { title: 'Celeste', genres: [], platforms: [], releaseDate: '2018-01-25T00:00:00.000Z', reviewCount: 0 } },
+    }))
+    await page.route('**/api/games/celeste/reviews?*', route => route.fulfill({ json: { reviews: [], total: 0, page: 1, pages: 0 } }))
+    await page.goto('/games/celeste')
+    await expect(page.getByText(/Jan 25, 2018/)).toBeVisible()
+  })
 })
 test('[TC-FE-BROWSER-06] unknown profile route reveals no list data or edit controls', async ({ page }) => {
   await signedOut(page)
