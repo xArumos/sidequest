@@ -235,11 +235,13 @@ These objects appear in several routes.
   "username": "player_1",
   "displayName": "player_1",
   "avatarUrl": "",
+  "authMethod": "password",
   "admin": false
 }
 ```
 
 `username` is `null` for Google accounts.
+`authMethod` is `password` or `google` and was added in #107.
 `admin` is added in #105.
 
 **Game summary**:
@@ -795,10 +797,10 @@ Errors:
 
 ### DELETE /api/users/me
 
-Planned, see #92.
-This route is in progress and not available yet; the details below may change.
+Added in #107 for #92.
 
 Deletes the caller's account.
+On success the server clears the session cookie and revokes the account's sessions on all devices.
 Password accounts confirm with their password.
 Google-only accounts have no password, so they confirm by typing their username or email.
 
@@ -823,8 +825,12 @@ Errors:
 
 | Status | Code | When |
 | --- | --- | --- |
-| `400` | to be decided | The required `password` or `confirm` is missing. |
-| `403` | to be decided | The password or confirmation text is wrong. |
+| `400` | `PASSWORD_REQUIRED` | A password account sent no password or a password longer than 128 characters. |
+| `400` | `CONFIRMATION_REQUIRED` | A Google account sent no confirmation or a confirmation longer than 254 characters. |
+| `401` | `UNAUTHENTICATED` | There is no session or the account is gone. |
+| `403` | `INVALID_PASSWORD` | The password is incorrect. |
+| `403` | `CONFIRMATION_MISMATCH` | The confirmation does not match the username or email. |
+| `429` | `RATE_LIMITED` | The account has reached its limit of 10 deletion attempts per 15 minutes or the shared write limit. |
 
 ## Users
 
@@ -985,6 +991,7 @@ Added in #104.
 Lists recent ratings, reviews, and `playing` or `played` updates from users the caller follows, most recently updated first.
 Users whose activity is `private` are left out; `public` and `followers` users are included.
 Statuses other than `playing` and `played` are returned as `null`.
+`followingCount` counts all players the caller follows, including those whose activity is private.
 
 - Auth: signed in
 - Origin check: no
@@ -993,11 +1000,12 @@ Statuses other than `playing` and `played` are returned as `null`.
 Response `200`:
 
 ```json
-{ "entries": [{ "id": "6650f1c2a1b2c3d4e5f69999", "game": { "id": "6650f1c2a1b2c3d4e5f60001", "title": "Hollow Knight", "slug": "hollow-knight", "coverUrl": "", "genres": [], "platforms": [], "releaseDate": null, "ratingAvg": 4.5, "ratingCount": 12 }, "rating": 4, "text": "Great atmosphere.", "status": "played", "removed": null, "createdAt": "2026-11-01T12:00:00.000Z", "updatedAt": "2026-11-01T12:00:00.000Z", "user": { "id": "6650f1c2a1b2c3d4e5f60720", "displayName": "friend", "username": "friend", "avatarUrl": "" } }], "total": 1, "page": 1, "pages": 1 }
+{ "entries": [{ "id": "6650f1c2a1b2c3d4e5f69999", "game": { "id": "6650f1c2a1b2c3d4e5f60001", "title": "Hollow Knight", "slug": "hollow-knight", "coverUrl": "", "genres": [], "platforms": [], "releaseDate": null, "ratingAvg": 4.5, "ratingCount": 12 }, "rating": 4, "text": "Great atmosphere.", "status": "played", "removed": null, "createdAt": "2026-11-01T12:00:00.000Z", "updatedAt": "2026-11-01T12:00:00.000Z", "user": { "id": "6650f1c2a1b2c3d4e5f60720", "displayName": "friend", "username": "friend", "avatarUrl": "" } }], "total": 1, "page": 1, "pages": 1, "followingCount": 2 }
 ```
 
 Each entry is a log with a game summary and a user summary.
-`removed` is only present once #105 is merged as well.
+After #107, a removed review appears in the feed only if it has a public play status.
+Those entries contain the status with no rating, review text, or removal reason.
 
 ## Developer access
 
@@ -1133,6 +1141,7 @@ Added in #105.
 
 Removes a review that breaks the guidelines.
 The review is soft-deleted, the game's rating is recalculated, and the author sees the reason on their own log.
+Removing a review preserves its activity timestamp.
 The author can no longer change its rating or text, but can still change its status or delete it.
 
 - Auth: approved developer of the review's game
