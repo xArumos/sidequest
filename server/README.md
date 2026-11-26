@@ -73,7 +73,9 @@ Every authentication request should use `credentials: 'include'`.
 | `GET /me` | None | `200 { user }`, restores account state from the session |
 | `POST /logout` | `{}` | `204`, destroys the session and clears its cookie |
 
-The public user shape is `{ id, username, email, displayName, avatarUrl }`.
+The account shape returned to its own holder is `{ id, username, email, displayName, avatarUrl, authMethod, admin }`.
+`authMethod` is `password` or `google`; every account has exactly one.
+`admin` is only ever sent to the account holder and can only be changed with `npm run set:admin`.
 `username` is `null` for Google accounts without one.
 Password accounts initially use their normalized username as the display name and have an empty avatar URL.
 Credential hashes and Google IDs are never included in public user responses.
@@ -95,9 +97,9 @@ Login trims and lowercases the identifier and accepts the exact password.
 | `401` | `INVALID_CREDENTIALS` | Unknown password account or incorrect password; same message for both |
 | `401` | `INVALID_GOOGLE_TOKEN` | Invalid Google token or unverified email |
 | `401` | `UNAUTHENTICATED` | Missing, expired, tampered, or deleted-user session |
-| `403` | `INVALID_ORIGIN` | Missing or incorrect POST Origin |
+| `403` | `INVALID_ORIGIN` | Missing or incorrect Origin on a non-GET request |
 | `409` | `ACCOUNT_EXISTS` | Registration username or password-account email is already taken |
-| `429` | `RATE_LIMITED` | More than 30 attempts per IP per endpoint per 15 minutes |
+| `429` | `RATE_LIMITED` | More than 30 attempts per IP per endpoint per 15 minutes, or the shared write limit below |
 | `503` | `GOOGLE_NOT_CONFIGURED` | Password auth is enabled but Google is not configured |
 | `503` | `AUTH_NOT_CONFIGURED` | Session secret is not configured |
 
@@ -177,6 +179,51 @@ A real Google browser login requires a configured OAuth client.
 Email verification, password recovery and changes, account linking, and profile editing are deferred.
 Emails collected by password registration are unverified contact information and must not be treated as proof of ownership.
 
+## Security headers, Origin checks, and rate limits
+
+Every API response carries `helmet` headers, including `Content-Security-Policy: default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, and HSTS.
+The API returns only JSON, so its own CSP never needs to allow anything.
+Browsers ignore HSTS over plain HTTP, so local development is unaffected.
+
+Every non-GET `/api` request, including routes added later, must carry the exact configured `Origin` or it receives `403 INVALID_ORIGIN`.
+`test/security.test.js` enumerates every mounted state-changing route and checks this.
+
+Besides the per-endpoint sign-in limits, all non-GET `/api` requests share one write limit.
+It counts per signed-in account, or per IP for signed-out requests, and defaults to 300 requests per 15 minutes.
+Tune it with `WRITE_RATE_LIMIT_MAX` and `WRITE_RATE_LIMIT_WINDOW_MINUTES`.
+Exceeding it returns `429 RATE_LIMITED` with `RateLimit` and `RateLimit-Policy` headers.
+For an expensive route, stack a tighter limiter from `src/security.js` on top of the shared one:
+
+```js
+const { createRateLimiter, writeKey } = require('./security');
+
+router.post('/steam/sync', requireAuth, createRateLimiter({
+  windowMs: 60 * 60 * 1000, limit: 5, keyGenerator: writeKey,
+  message: 'Too many sync requests. Try again later.',
+}), handler);
+```
+
+Limiter counters live in memory per API process; a multi-instance deployment should use a shared store.
+The API test helper disables the write limit unless a test passes `writeRateLimit`.
+
+### Frontend host CSP
+
+The frontend is served separately (Vite in development, static hosting in production), so its host must send its own CSP.
+The repository has no hosting configuration yet; apply this policy wherever the built `frontend/dist` is served:
+
+```text
+Content-Security-Policy: default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' https://accounts.google.com/gsi/style; frame-src https://accounts.google.com/gsi/; connect-src 'self' https://accounts.google.com/gsi/ <API origin>; img-src 'self' data: https://images.igdb.com https://lh3.googleusercontent.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+Referrer-Policy: strict-origin-when-cross-origin
+Cross-Origin-Opener-Policy: same-origin-allow-popups
+```
+
+The `accounts.google.com/gsi/` entries are what Google Identity Services needs for its script, button stylesheet, button and One Tap iframes, and credential requests.
+Replace `<API origin>` with the value of `VITE_API_BASE_URL`, or drop it when the API is proxied under the same origin.
+`images.igdb.com` serves game covers and `lh3.googleusercontent.com` serves Google avatars.
+GIS requires a referrer, so do not use `no-referrer` on the frontend.
+`same-origin-allow-popups` keeps the Google sign-in popup able to report back to the page.
+Do not apply this policy to the Vite dev server, which relies on inline scripts for hot reload.
+
 ## Game catalog import (IGDB)
 
 Games come from [IGDB](https://api-docs.igdb.com/), which uses Twitch app credentials.
@@ -190,3 +237,57 @@ npm run import:games -- --limit 500
 ```
 
 The import upserts by IGDB id, so re-running it refreshes titles, covers, genres, platforms, and Steam app IDs without touching stored ratings. Requests are throttled to IGDB's limit of 4 per second. Tests use `test/fixtures/igdb-games.json` and never call the live API.
+
+## Developer access and admin tools
+
+A user asks to become a developer of a game with `POST /api/games/:id/developer-requests`.
+An admin approves or rejects the request on the frontend's `/admin` page, or from the command line:
+
+```bash
+npm run approve:developer -- --list                     # pending requests with their ids
+npm run approve:developer -- --id <requestId>           # approve
+npm run approve:developer -- --id <requestId> --reject  # reject or revoke
+npm run set:admin -- --user <username, email, or id>    # grant admin; add --revoke to remove it
+```
+
+Approved developers read reviews of their games under `/api/dev` and can remove a review that breaks the guidelines.
+A removed review is soft-deleted: it is hidden from public reads and from the game's rating, and its author still sees it with the reason.
+The developer review list accepts `gameId`, `minRating`, `maxRating`, `from`, `to`, `hasText`, `sort` (`newest`, `oldest`, `highest`, `lowest`), `page`, and `limit`.
+`from` and `to` take `YYYY-MM-DD` (a whole UTC day) or an ISO 8601 date and time with a time zone, and both ends are inclusive.
+Invalid parameters return `400 INVALID_QUERY` with every problem in `error.fields`, for example `{ "maxRating": "maxRating must be at least minRating." }`.
+
+## Account deletion
+
+`DELETE /api/users/me` permanently deletes the signed-in account (#92).
+It needs a session and the exact `Origin`, like every write.
+The JSON body re-confirms the account holder's identity:
+
+| Account | Body | Missing or malformed | Wrong |
+| --- | --- | --- | --- |
+| Password | `{ "password": "<current password>" }` | `400 PASSWORD_REQUIRED` | `403 INVALID_PASSWORD` |
+| Google | `{ "confirm": "<username or email>" }` (trimmed, case-insensitive) | `400 CONFIRMATION_REQUIRED` | `403 CONFIRMATION_MISMATCH` |
+
+Success returns `204` and clears the session cookie.
+Without a session, or when the session's account no longer exists, it returns `401 UNAUTHENTICATED`, so repeating the request is harmless.
+Besides the shared write limit, each account gets 10 attempts per 15 minutes, which slows password guessing from a stolen session.
+
+What is deleted, in this order (`deleteAccount` in `database/accounts.js`):
+
+1. Every session of the account, on all devices, so no other session can write new data during the deletion.
+   Production matches the serialized `userId` in connect-mongo's `sessions` collection; tests and the e2e server scan the MemoryStore (`createSessionRevoker` in `src/session.js`).
+2. The games the account reviewed are saved on the account (`pendingRatingGames`) before any review is deleted.
+3. Follows in both directions and developer mappings (`ACCOUNT_CLEANUP_STEPS`).
+4. The account's reviews, including ratings, text, and wishlist, backlog, and play statuses.
+5. The rating average and count of every saved game, recalculated with `recalculateGameRating`.
+6. The account itself, last.
+
+MongoDB transactions need a replica set, which local development does not run, so the steps are ordered to be safe to retry instead.
+Every step deletes by user id, and the account is deleted last, so a failure partway leaves the account in place with nothing pointing to a missing user.
+Signing in again and repeating the request finishes the deletion and still recalculates every saved game.
+
+References held by other accounts' records are kept as audit history and may point to a deleted account.
+`GameDeveloper.decidedBy` is the admin who decided a request; `null` already means the command-line script decided it, so it is not cleared.
+`Review.removedBy` is the developer who removed a review, and a review the deleted account removed stays removed.
+Nothing populates either field.
+
+When a new collection stores per-user data, such as the Steam library cache (PBI-25), add a step to `ACCOUNT_CLEANUP_STEPS` in `database/accounts.js`.

@@ -2,12 +2,17 @@ const express = require('express');
 const cors = require('cors');
 const { requireSameOrigin } = require('./session');
 const { HttpError } = require('./http');
+const { securityHeaders, writeLimiter } = require('./security');
 
 // `sessionMiddleware` is mounted on all of /api so feature routers can use
 // req.session. `routers` maps a path under /api to a router, e.g. { '/games': gamesRouter }.
-function createApp({ frontendOrigin, isDatabaseReady, authRouter, sessionMiddleware, routers = {}, logger = console }) {
+// `writeRateLimit` tunes the shared non-GET limiter ({ windowMs, limit }) or disables it (false).
+function createApp({
+  frontendOrigin, isDatabaseReady, authRouter, sessionMiddleware, routers = {}, logger = console, writeRateLimit,
+}) {
   const app = express();
   app.disable('x-powered-by');
+  app.use(securityHeaders());
   app.use(cors({ origin: frontendOrigin, credentials: true }));
   app.use(express.json({ limit: '100kb' }));
 
@@ -27,6 +32,8 @@ function createApp({ frontendOrigin, isDatabaseReady, authRouter, sessionMiddlew
 
   app.use('/api', requireSameOrigin(frontendOrigin));
   if (sessionMiddleware) app.use('/api', sessionMiddleware);
+  // After the session so signed-in writes are counted per account.
+  if (writeRateLimit !== false) app.use('/api', writeLimiter(writeRateLimit));
   for (const [path, router] of Object.entries(routers)) app.use(`/api${path}`, router);
 
   app.use('/api/auth', authRouter || ((_req, res) => {
@@ -40,7 +47,8 @@ function createApp({ frontendOrigin, isDatabaseReady, authRouter, sessionMiddlew
   app.use((error, _req, res, next) => {
     if (res.headersSent) return next(error);
     if (error instanceof HttpError) {
-      return res.status(error.status).json({ error: { code: error.code, message: error.message } });
+      const body = { code: error.code, message: error.message, ...(error.fields && { fields: error.fields }) };
+      return res.status(error.status).json({ error: body });
     }
     const clientErrors = {
       'entity.parse.failed': [400, 'INVALID_JSON', 'Request body must be valid JSON.'],

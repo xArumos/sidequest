@@ -26,6 +26,12 @@ const reviewSchema = new mongoose.Schema({
   },
   text: { type: String, default: '', trim: true, maxlength: 2000 },
   status: { type: String, enum: STATUSES },
+  // Set when a developer of the game removes the review for breaking the guidelines
+  // (PBI-32). A removed review is hidden from public reads and from the game's rating;
+  // its author still sees it, marked as removed. The play status is unaffected.
+  removedAt: { type: Date, default: null },
+  removedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  removalReason: { type: String, default: '', trim: true, maxlength: 500 },
 }, { timestamps: true });
 
 reviewSchema.pre('validate', function requireContent() {
@@ -35,8 +41,12 @@ reviewSchema.pre('validate', function requireContent() {
 });
 
 reviewSchema.index({ user: 1, game: 1 }, { unique: true });
-reviewSchema.index({ game: 1 });
+// Public and developer review lists filter by game and sort by date or rating.
+reviewSchema.index({ game: 1, createdAt: -1 });
+reviewSchema.index({ game: 1, rating: -1, createdAt: -1 });
 reviewSchema.index({ user: 1, status: 1 });
+// Profile history and the activity feed list a user's records newest first.
+reviewSchema.index({ user: 1, updatedAt: -1 });
 
 const Review = mongoose.model('Review', reviewSchema);
 Review.STATUSES = STATUSES;

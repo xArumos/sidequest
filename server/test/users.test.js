@@ -108,6 +108,7 @@ describe('wishlist, backlog, and profile history API', () => {
     const profile = await api.request(`/users/${alice.id}`);
     assert.deepEqual(profile.body.user, {
       id: alice.id, displayName: 'alice', username: null, avatarUrl: '', bio: '', wishlistVisibility: 'private',
+      activityVisibility: 'public', followerCount: 0, followingCount: 0, isFollowing: false,
     });
     assert.doesNotMatch(JSON.stringify(profile.body), /example\.com|googleId/);
 

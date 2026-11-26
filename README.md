@@ -68,6 +68,9 @@ Stop MongoDB with `docker compose stop mongodb` when you're done.
 | | `npm start` | API without automatic restarts |
 | | `npm test` | Unit tests (no MongoDB needed) |
 | | `npm run test:integration` | Integration tests against local MongoDB |
+| | `npm run e2e:server` | Test-only API on an in-memory MongoDB with seeded data (port 5055) |
+| | `npm run approve:developer` | List, approve, or reject developer access requests |
+| | `npm run set:admin` | Grant or revoke the admin flag on an account |
 | `database/` | `npm run check` | Connect to MongoDB and print the database name |
 | | `npm test` | Tests against an in-memory MongoDB |
 | `frontend/` | `npm run dev` | Vite dev server with HMR on port 5173 |
@@ -75,6 +78,7 @@ Stop MongoDB with `docker compose stop mongodb` when you're done.
 | | `npm run preview` | Serve the production build locally |
 | | `npm run lint` | Lint with oxlint |
 | | `npm test` / `npm run test:watch` | Component tests, once or in watch mode |
+| | `npm run test:e2e` | Playwright tests against the real API and an in-memory MongoDB |
 
 Run any of these from the root with `--prefix <package>`, e.g. `npm test --prefix server`.
 
@@ -89,6 +93,14 @@ Run any of these from the root with `--prefix <package>`, e.g. `npm test --prefi
 | POST | `/api/auth/google` | Verify a Google ID token, find or create the account, start a session |
 | GET | `/api/auth/me` | The signed-in user, or `401` |
 | POST | `/api/auth/logout` | End the session (`204`) |
+| POST / DELETE | `/api/users/:id/follow` | Follow or unfollow a user (idempotent) |
+| GET | `/api/users/:id/followers`, `/api/users/:id/following` | Paginated public follower lists |
+| GET / PATCH | `/api/me/activity-visibility` | Who sees your history: `public`, `followers`, or `private` |
+| GET | `/api/feed` | Recent activity from users you follow, with pagination and `followingCount` even when there are no entries |
+
+Follows are one-way.
+Profile history and wishlists are checked by `server/src/visibility.js`; denied viewers get `403 ACTIVITY_PRIVATE` or `403 WISHLIST_PRIVATE`.
+Reviews always appear on game pages and count toward game ratings, whatever the reviewer's activity setting.
 
 Request limits, error formats, and auth details are in [server/README.md](server/README.md).
 
@@ -104,7 +116,18 @@ npm test --prefix frontend             # Vitest + React Testing Library (jsdom)
 - **server/** uses Node's built-in test runner (`node --test`). Integration tests start child server processes on temporary ports, use the `sidequest_test` database, and delete only the records they create. Set `MONGODB_TEST_URI` to point them at a different MongoDB instance.
 - **database/** and **frontend/** use [Vitest](https://vitest.dev). The database tests use `mongodb-memory-server`, which downloads a `mongod` binary on the first run. Frontend tests sit next to the code as `*.test.jsx`, and database tests are under `database/tests/`.
 
-**CI:** GitHub Actions (`.github/workflows/ci.yml`) runs `npm ci`, lint, tests, and build for every package in its matrix, on every pull request and on pushes to `main`. When you add a package, add it to the matrix.
+### End-to-end tests
+
+`npm run test:e2e --prefix frontend` runs Playwright against the whole stack with nothing mocked in the browser.
+It starts `server/test/e2e/server.js` (the real app and routers on `mongodb-memory-server`, seeded from `server/test/e2e/seed.js`) on port 5055 and the Vite dev server on port 4175, which proxies `/api` to it.
+Install dependencies in `database/`, `server/`, and `frontend/` first, then run `npm run test:e2e:install --prefix frontend` once to install Chromium with the pinned Playwright version.
+No local MongoDB or `.env` is needed.
+
+- Seed data, including the test users' passwords, lives only in `server/test/e2e/seed.js`. Specs import it, so extend it there.
+- Google sign-in is stubbed at the server boundary: the test server accepts the credential `google:<name>`. Add stubs for other third-party services (for example Steam) to `boundaries` in `server/test/e2e/server.js`.
+- Specs live in `frontend/e2e/real/` and share one database per run, so each spec should write with its own seeded user and game.
+
+**CI:** GitHub Actions (`.github/workflows/ci.yml`) runs `npm ci`, lint, tests, and build for every package in its matrix, on every pull request and on pushes to `main`. When you add a package, add it to the matrix. A separate `e2e` job runs the end-to-end suite and uploads the Playwright report when it fails.
 
 ## Repository layout
 

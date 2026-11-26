@@ -14,6 +14,8 @@ function ownLog(log) {
     rating: log.rating ?? null,
     text: log.text ?? '',
     status: log.status ?? null,
+    // Set when a developer removed the review; only the author sees this record.
+    removed: log.removedAt ? { at: log.removedAt, reason: log.removalReason ?? '' } : null,
     createdAt: log.createdAt,
     updatedAt: log.updatedAt,
   };
@@ -66,8 +68,13 @@ function parseLogBody(req) {
     else if (Review.STATUSES.includes(body.status)) $set.status = body.status;
     else throw invalid(`Status must be one of: ${Review.STATUSES.join(', ')}, or null.`);
   }
-  return { update: { $set, $unset }, ratingChanged: 'rating' in body };
+  return { update: { $set, $unset }, ratingChanged: 'rating' in body, contentChanged: 'rating' in body || 'text' in body };
 }
+
+// A review removed by a developer can't be edited back into view. Its author may
+// still change the play status or delete the whole record.
+const reviewRemoved = () => new HttpError(409, 'REVIEW_REMOVED',
+  'A developer removed this review, so its rating and text can no longer be changed. You can delete it instead.');
 
 const isEmpty = log => log.rating == null && !log.text && !log.status;
 
@@ -88,10 +95,11 @@ function createLogsRouter({ requireAuth }) {
   // and removes wishlist/backlog via status, PBI-17/18/20/21).
   router.post('/games/:id/log', requireAuth, async (req, res) => {
     const gameId = objectIdParam(req.params.id, 'game id');
-    const { update, ratingChanged } = parseLogBody(req);
+    const { update, ratingChanged, contentChanged } = parseLogBody(req);
     if (!await Game.exists({ _id: gameId })) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found.');
 
     const filter = { user: req.session.userId, game: gameId };
+    if (contentChanged && await Review.exists({ ...filter, removedAt: { $ne: null } })) throw reviewRemoved();
     let result;
     for (let attempt = 0; ; attempt += 1) {
       try {
@@ -118,13 +126,14 @@ function createLogsRouter({ requireAuth }) {
     res.json({ log: log ? ownLog(log) : null });
   });
 
-  // Public reviews for a game page (PBI-09): anything with a rating or text, newest first.
+  // Public reviews for a game page (PBI-09): anything with a rating or text that a
+  // developer has not removed, newest first.
   router.get('/games/:id/reviews', async (req, res) => {
     const gameId = objectIdParam(req.params.id, 'game id');
     const page = intParam(req.query, 'page', { fallback: 1, min: 1, max: 100000 });
     const limit = intParam(req.query, 'limit', { fallback: 20, min: 1, max: 50 });
     if (!await Game.exists({ _id: gameId })) throw new HttpError(404, 'GAME_NOT_FOUND', 'Game not found.');
-    const filter = { game: gameId, $or: [{ rating: { $ne: null } }, { text: { $gt: '' } }] };
+    const filter = { game: gameId, removedAt: null, $or: [{ rating: { $ne: null } }, { text: { $gt: '' } }] };
     const [reviews, total] = await Promise.all([
       Review.find(filter)
         .sort({ createdAt: -1, _id: -1 })
@@ -149,7 +158,8 @@ function createLogsRouter({ requireAuth }) {
   // Edit or delete one's own record (PBI-08).
   router.patch('/logs/:id', requireAuth, async (req, res) => {
     const log = await findOwnLog(req);
-    const { update, ratingChanged } = parseLogBody(req);
+    const { update, ratingChanged, contentChanged } = parseLogBody(req);
+    if (contentChanged && log.removedAt) throw reviewRemoved();
     const updated = await Review.findOneAndUpdate({ _id: log._id }, update, {
       returnDocument: 'after', runValidators: true, lean: true,
     });

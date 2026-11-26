@@ -1,9 +1,9 @@
 const { Router } = require('express');
 const session = require('express-session');
-const { rateLimit } = require('express-rate-limit');
 const { hashPassword, verifyPassword, validPassword } = require('./password');
+const { createRateLimiter } = require('./security');
+const { COOKIE_NAME, sessionCookieOptions } = require('./session');
 
-const COOKIE_NAME = 'sidequest.sid';
 const SESSION_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
 function publicUser(user) {
@@ -13,6 +13,11 @@ function publicUser(user) {
     username: user.username ?? null,
     displayName: user.displayName,
     avatarUrl: user.avatarUrl,
+    // Every account has exactly one sign-in method; the frontend picks the account
+    // deletion confirmation (password or typed name) from it.
+    authMethod: user.googleId ? 'google' : 'password',
+    // Only ever sent to the account holder: every response using publicUser is their own.
+    admin: user.admin === true,
   };
 }
 
@@ -25,7 +30,7 @@ function requireAuth(req, res, next) {
 
 function createAuthRouter({ frontendOrigin, sessionSecret, secureCookies, store, users, verifyGoogleToken }) {
   const router = Router();
-  const cookieOptions = { httpOnly: true, sameSite: 'lax', secure: secureCookies, path: '/' };
+  const cookieOptions = sessionCookieOptions({ secureCookies });
 
   router.use((_req, res, next) => {
     res.set('Cache-Control', 'no-store');
@@ -48,12 +53,11 @@ function createAuthRouter({ frontendOrigin, sessionSecret, secureCookies, store,
     cookie: { ...cookieOptions, maxAge: SESSION_MAX_AGE },
   }));
 
-  const attempts = () => rateLimit({
+  // One independent per-IP counter for each sign-in endpoint.
+  const attempts = () => createRateLimiter({
     windowMs: 15 * 60 * 1000,
     limit: 30,
-    standardHeaders: 'draft-8',
-    legacyHeaders: false,
-    message: { error: { code: 'RATE_LIMITED', message: 'Too many authentication attempts. Try again later.' } },
+    message: 'Too many authentication attempts. Try again later.',
   });
   async function signIn(req, res, user, status = 200) {
     await new Promise((resolve, reject) => req.session.regenerate(error => error ? reject(error) : resolve()));

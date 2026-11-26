@@ -9,10 +9,13 @@
   "scripts": {
     "dev": "node --env-file-if-exists=../.env --watch src/index.js",
     "start": "node --env-file-if-exists=../.env src/index.js",
-    "test": "node --test test/users.test.js test/logs.test.js test/games.test.js test/session.test.js test/app.test.js test/config.test.js test/auth.test.js test/google.test.js test/igdb.test.js",
+    "test": "node --test test/users.test.js test/follows.test.js test/privacy.test.js test/feed.test.js test/logs.test.js test/games.test.js test/session.test.js test/app.test.js test/config.test.js test/auth.test.js test/google.test.js test/igdb.test.js test/security.test.js test/developers.test.js test/dev-reviews.test.js test/admin.test.js test/routes.test.js test/account.test.js",
     "test:integration": "node --env-file-if-exists=../.env --test test/startup.test.js test/auth.integration.test.js",
     "migrate:auth": "node --env-file-if-exists=../.env scripts/migrate-auth.js",
-    "import:games": "node --env-file-if-exists=../.env scripts/import-games.js"
+    "import:games": "node --env-file-if-exists=../.env scripts/import-games.js",
+    "e2e:server": "node test/e2e/server.js",
+    "approve:developer": "node --env-file-if-exists=../.env scripts/approve-developer.js",
+    "set:admin": "node --env-file-if-exists=../.env scripts/set-admin.js"
   },
   "dependencies": {
     "connect-mongo": "^6.0.0",
@@ -21,6 +24,7 @@
     "express-rate-limit": "^8.7.1",
     "express-session": "^1.19.0",
     "google-auth-library": "^11.3.1",
+    "helmet": "^8.3.0",
     "sidequest-database": "file:../database"
   },
   "devDependencies": {

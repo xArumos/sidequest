@@ -5,7 +5,8 @@ const Review = require('./models/Review');
 const MAX_ATTEMPTS = 10;
 
 // Recompute a game's average and count from its reviews and store them on the Game.
-// Call after any write that adds, changes, or removes a rating. Recomputing from
+// Reviews removed by a developer do not count.
+// Call after any write that adds, changes, or removes a rating, including a removal. Recomputing from
 // scratch keeps the stored values correct even if an earlier update was missed.
 //
 // Concurrent calls for the same game are made safe with an optimistic version check:
@@ -34,7 +35,7 @@ async function recalculateGameRating(gameId) {
 
 async function aggregateRatings(game) {
   const [stats] = await Review.aggregate([
-    { $match: { game, rating: { $ne: null } } },
+    { $match: { game, rating: { $ne: null }, removedAt: null } },
     { $group: { _id: null, avg: { $avg: '$rating' }, count: { $sum: 1 } } },
   ]);
   return {

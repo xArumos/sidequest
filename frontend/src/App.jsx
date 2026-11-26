@@ -8,7 +8,11 @@ import GoogleSignIn from './components/GoogleSignIn'
 import { auth } from './services/auth'
 import { api } from './services/api'
 import { useApi } from './services/useApi'
-import { ratingLabel } from './utils/games'
+import LoadState from './components/LoadState'
+import Pager from './components/Pager'
+import DeleteAccountSection from './components/DeleteAccount'
+import { AdminPage, DeveloperAccess, DeveloperPage } from './pages/DeveloperPages'
+import { formatDate, ratingLabel, stars } from './utils/games'
 
 const SORTS = [
   ['title', 'Title (A–Z)'],
@@ -20,37 +24,10 @@ const SORTS = [
 const STATUS_LABELS = { wishlist: 'Wishlist', backlog: 'Backlog', playing: 'Playing', played: 'Played' }
 const PAGE_SIZE = 24
 
-function stars(rating) {
-  return Number.isInteger(rating) ? `${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}` : ''
-}
-
-function formatDate(value) {
-  return value ? new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''
-}
-
-function LoadState({ loading, error, onRetry, children }) {
-  if (error) {
-    return <div className="empty-state card-panel" role="alert">
-      <h3>Couldn&apos;t load this</h3><p>{error.message}</p>
-      {onRetry && <button type="button" className="secondary-button" onClick={onRetry}>Try again</button>}
-    </div>
-  }
-  if (loading) return <p role="status">Loading…</p>
-  return children
-}
-
-function Pager({ page, pages, onPage }) {
-  if (!pages || pages <= 1) return null
-  return <div className="inline-actions pager">
-    <button type="button" className="secondary-button" disabled={page <= 1} onClick={() => onPage(page - 1)}>Previous</button>
-    <span className="subtle-text">Page {page} of {pages}</span>
-    <button type="button" className="secondary-button" disabled={page >= pages} onClick={() => onPage(page + 1)}>Next</button>
-  </div>
-}
-
-function ProtectedRoute({ isAuthenticated, children }) {
+// `signedOutTo` is where a signed-out visitor goes instead, e.g. home after deleting their account.
+function ProtectedRoute({ isAuthenticated, signedOutTo = '/login', children }) {
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to={signedOutTo} replace />
   }
 
   return children
@@ -100,7 +77,56 @@ function useLibrary(isAuthenticated) {
   return { statuses, pending, version, setStatus, forget }
 }
 
-function LandingPage({ wishlistProps }) {
+// What a followed player did, e.g. "reviewed", for one feed entry.
+function feedAction(entry) {
+  if (entry.text) return 'reviewed'
+  if (entry.rating) return 'rated'
+  return entry.status === 'playing' ? 'is playing' : 'played'
+}
+
+// Recent activity from followed players (#91), for signed-in users.
+function ActivityFeed() {
+  const [page, setPage] = useState(1)
+  const feed = useApi(signal => api.feed({ page, limit: 10 }, signal), [page])
+  return (
+    <section className="content-section" aria-labelledby="feed-heading">
+      <div className="section-header-inline">
+        <h2 id="feed-heading">From players you follow</h2>
+      </div>
+      <div className="card-panel">
+        <LoadState loading={feed.loading && !feed.data} error={feed.error} onRetry={feed.reload}>
+          {feed.data?.entries.length ? (
+            <div className="review-list">
+              {feed.data.entries.map(entry => (
+                <article key={entry.id} className="review-item feed-item">
+                  <div className="review-header">
+                    <div>
+                      <p className="feed-line">
+                        <Link to={`/users/${entry.user.id}`}><strong>{entry.user.displayName}</strong></Link>
+                        {` ${feedAction(entry)} `}
+                        <Link to={`/games/${entry.game.id}`}><strong>{entry.game.title}</strong></Link>
+                      </p>
+                      {entry.rating && <p aria-label={`${entry.rating} out of 5 stars`}>{stars(entry.rating)}</p>}
+                    </div>
+                    <span className="review-title">{formatDate(entry.updatedAt)}</span>
+                  </div>
+                  {entry.text && <p>{entry.text}</p>}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="subtle-text">{feed.data?.followingCount
+              ? 'No recent activity from players you follow.'
+              : 'Nothing here yet. Follow players from their profiles to see their ratings and reviews here.'}</p>
+          )}
+          <Pager page={page} pages={feed.data?.pages} onPage={setPage} />
+        </LoadState>
+      </div>
+    </section>
+  )
+}
+
+function LandingPage({ isAuthenticated, wishlistProps }) {
   const top = useApi(signal => api.topGames(3, signal), [])
   const popular = useApi(signal => api.games({ sort: 'popular', limit: 3 }, signal), [])
   const topGame = top.data?.games[0]
@@ -166,6 +192,8 @@ function LandingPage({ wishlistProps }) {
           </div>
         ))}
       </section>
+
+      {isAuthenticated && <ActivityFeed />}
 
       <section className="content-section">
         <div className="section-header-inline">
@@ -377,6 +405,7 @@ function GameDetailsPage({ isAuthenticated, library, onError }) {
               </label>
             </div>
           ) : <p className="subtle-text"><Link to="/login">Log in</Link> to rate this game or add it to your lists.</p>}
+          {isAuthenticated && <DeveloperAccess gameId={gameId} />}
         </div>
       </div>
 
@@ -395,15 +424,16 @@ function GameDetailsPage({ isAuthenticated, library, onError }) {
 
       {isAuthenticated && (
         <div className="card-panel review-panel">
-          <h2>{myLog?.rating || myLog?.text ? 'Update your review' : 'Rate and review'}</h2>
+          <h2>{myLog?.removed ? 'Your review' : myLog?.rating || myLog?.text ? 'Update your review' : 'Rate and review'}</h2>
           {(myLog?.rating || myLog?.text) && (
             <div className="review-item">
               <p>Your rating: {myLog.rating ? stars(myLog.rating) : 'none'}</p>
               {myLog.text && <p>{myLog.text}</p>}
+              <RemovedReviewNotice removed={myLog.removed} />
               <button type="button" className="secondary-button" onClick={deleteReview}>Delete my review</button>
             </div>
           )}
-          <ReviewForm available onSubmit={saveReview} />
+          {!myLog?.removed && <ReviewForm available onSubmit={saveReview} />}
         </div>
       )}
 
@@ -484,7 +514,15 @@ function GameCardWishlist({ game, isWishlisted, onToggleWishlist, busy }) {
   </button>
 }
 
-function HistoryList({ logs, emptyText }) {
+function RemovedReviewNotice({ removed }) {
+  if (!removed) return null
+  return <p role="status" className="removed-note">
+    A developer removed this review, so only you can see it and it no longer counts toward the rating.
+    {removed.reason && <> Reason: {removed.reason}</>}
+  </p>
+}
+
+function HistoryList({ logs, emptyText, showRemovalNotes = false }) {
   if (!logs.length) return <p className="subtle-text">{emptyText}</p>
   return <div className="review-list">
     {logs.map(log => (
@@ -497,6 +535,7 @@ function HistoryList({ logs, emptyText }) {
           <span className="review-title">{[STATUS_LABELS[log.status], formatDate(log.updatedAt)].filter(Boolean).join(' · ')}</span>
         </div>
         {log.text && <p>{log.text}</p>}
+        {showRemovalNotes && <RemovedReviewNotice removed={log.removed} />}
       </article>
     ))}
   </div>
@@ -518,42 +557,71 @@ function ProfilePage({ user, library }) {
       </div>
       <div className="card-panel"><h2>Played games and rating history</h2>
         <LoadState loading={history.loading && !history.data} error={history.error} onRetry={history.reload}>
-          <HistoryList logs={history.data?.logs ?? []} emptyText="Rate a game or add one to your lists and it will show up here." />
+          <HistoryList logs={history.data?.logs ?? []} emptyText="Rate a game or add one to your lists and it will show up here." showRemovalNotes />
         </LoadState>
       </div>
     </div>
   </section>
 }
 
-function EditProfilePage() {
-  const visibility = useApi(signal => api.wishlistVisibility(signal), [])
-  const [value, setValue] = useState(null)
+const VISIBILITY_OPTIONS = [
+  ['public', 'Public (anyone)'],
+  ['followers', 'Followers (people who follow you)'],
+  ['private', 'Private (only you)'],
+]
+
+// PBI-29 and PBI-31: who can see the profile's activity and wishlist. #92: account deletion.
+function EditProfilePage({ user, onAccountDeleted }) {
+  const settings = useApi(signal => Promise.all([api.activityVisibility(signal), api.wishlistVisibility(signal)])
+    .then(([activity, wishlist]) => ({ ...activity, ...wishlist })), [])
+  const [saved, setSaved] = useState(null)
+  const [draft, setDraft] = useState({})
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState(null)
-  const current = value ?? visibility.data?.wishlistVisibility ?? 'private'
+  const current = { ...settings.data, ...saved }
+  const value = field => draft[field] ?? current[field] ?? ''
+  function change(field) {
+    return event => { setDraft(previous => ({ ...previous, [field]: event.target.value })); setMessage(null) }
+  }
   async function save(event) {
     event.preventDefault()
     setSaving(true); setMessage(null)
     try {
-      const result = await api.setWishlistVisibility(current)
-      setValue(result.wishlistVisibility)
-      setMessage({ role: 'status', text: `Saved. Your wishlist is now ${result.wishlistVisibility}.` })
+      const next = { ...current }
+      // Save only what changed, one setting at a time, so a failure keeps the others.
+      if (value('activityVisibility') !== current.activityVisibility) {
+        Object.assign(next, await api.setActivityVisibility(value('activityVisibility')))
+        setSaved({ ...next })
+      }
+      if (value('wishlistVisibility') !== current.wishlistVisibility) {
+        Object.assign(next, await api.setWishlistVisibility(value('wishlistVisibility')))
+        setSaved({ ...next })
+      }
+      setDraft({})
+      setMessage({ role: 'status', text: 'Privacy settings saved.' })
     } catch (error) {
       setMessage({ role: 'alert', text: error.message })
     } finally { setSaving(false) }
   }
+  const options = VISIBILITY_OPTIONS.map(([option, label]) => <option key={option} value={option}>{label}</option>)
   return <section className="content-section card-panel form-panel"><h1>Edit profile</h1>
-    <LoadState loading={visibility.loading} error={visibility.error} onRetry={visibility.reload}>
+    <LoadState loading={settings.loading} error={settings.error} onRetry={settings.reload}>
       <form className="stack-form" onSubmit={save}><fieldset disabled={saving}>
-        <label>Wishlist visibility<select value={current} onChange={event => { setValue(event.target.value); setMessage(null) }}>
-          <option value="private">Private (only you)</option><option value="public">Public (anyone with your profile link)</option>
-        </select></label>
+        <legend className="form-legend">Privacy</legend>
+        <label>Activity visibility
+          <select value={value('activityVisibility')} onChange={change('activityVisibility')} aria-describedby="activity-help">{options}</select>
+        </label>
+        <p id="activity-help" className="subtle-text field-help">Your ratings, reviews, and played games on your profile and in your followers&apos; feeds. Reviews always appear on game pages and count toward game ratings.</p>
+        <label>Wishlist visibility
+          <select value={value('wishlistVisibility')} onChange={change('wishlistVisibility')}>{options}</select>
+        </label>
         <button className="primary-button" type="submit">{saving ? 'Saving…' : 'Save changes'}</button>
       </fieldset></form>
       {message && <p role={message.role}>{message.text}</p>}
       <p className="subtle-text">Bio and display name editing are coming soon.</p>
     </LoadState>
-    <Link to="/profile">Back to profile</Link>
+    <DeleteAccountSection user={user} onDeleted={onAccountDeleted} />
+    <p className="back-link"><Link to="/profile">Back to profile</Link></p>
   </section>
 }
 
@@ -613,7 +681,7 @@ function UserProfilePage() {
     <div className="list-grid">
       <div className="card-panel"><h2>Wishlist</h2>
         {wishlist.error?.code === 'WISHLIST_PRIVATE'
-          ? <p role="status">This wishlist is private.</p>
+          ? <p role="status" className="subtle-text">{person.wishlistVisibility === 'followers' ? 'Only followers can see this wishlist.' : 'This wishlist is private.'}</p>
           : <LoadState loading={wishlist.loading} error={wishlist.error} onRetry={wishlist.reload}>
             {wishlist.data?.logs.length
               ? <ul>{wishlist.data.logs.map(({ game }) => <li key={game.id}><Link to={`/games/${game.id}`}>{game.title}</Link></li>)}</ul>
@@ -621,9 +689,11 @@ function UserProfilePage() {
           </LoadState>}
       </div>
       <div className="card-panel"><h2>Played games and ratings</h2>
-        <LoadState loading={history.loading} error={history.error} onRetry={history.reload}>
-          <HistoryList logs={history.data?.logs ?? []} emptyText="No public activity yet." />
-        </LoadState>
+        {history.error?.code === 'ACTIVITY_PRIVATE'
+          ? <p role="status" className="subtle-text">{person.activityVisibility === 'followers' ? "Only followers can see this player's activity." : "This player's activity is private."}</p>
+          : <LoadState loading={history.loading} error={history.error} onRetry={history.reload}>
+            <HistoryList logs={history.data?.logs ?? []} emptyText="No public activity yet." />
+          </LoadState>}
       </div>
     </div>
   </section>
@@ -649,8 +719,17 @@ function App() {
   const [attempt, setAttempt] = useState(0)
   const loginInFlight = useRef(false)
   const isAuthenticated = Boolean(userProfile)
+  const accountId = userProfile?.id
+  const developerGames = useApi(async signal => {
+    if (!accountId) return null
+    const { games } = await api.devGames(signal)
+    return { accountId, games }
+  }, [accountId])
+  const isDeveloper = developerGames.data?.accountId === accountId && Boolean(developerGames.data?.games?.length)
   const library = useLibrary(isAuthenticated)
   const [actionError, setActionError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [accountDeleted, setAccountDeleted] = useState(false)
   const navigate = useNavigate()
   useEffect(() => {
     const controller = new AbortController()
@@ -668,7 +747,7 @@ function App() {
     if (loginInFlight.current) return
     loginInFlight.current = true
     setBusy(true)
-    try { setUserProfile(await request()); setError('') }
+    try { setUserProfile(await request()); setError(''); setNotice(''); setAccountDeleted(false) }
     finally { loginInFlight.current = false; setBusy(false) }
   }
   const login = credential => authenticate(() => auth.login(credential))
@@ -685,6 +764,14 @@ function App() {
     } catch (error) { setError(error.message) }
     finally { setBusy(false) }
   }
+  // The server already ended the session. Signing out here makes the edit page's
+  // ProtectedRoute redirect home instead of to the sign-in page.
+  function onAccountDeleted() {
+    setAccountDeleted(true)
+    setUserProfile(null)
+    setNotice('Your account and its data have been deleted.')
+    window.google?.accounts?.id?.disableAutoSelect()
+  }
   // Props for any wishlist toggle; signed-out visitors are sent to log in.
   function wishlistProps(gameId) {
     const isWishlisted = library.statuses[gameId] === 'wishlist'
@@ -700,12 +787,18 @@ function App() {
   }
 
   return (
-    <Layout isAuthenticated={isAuthenticated} onLogout={logout} busy={busy}>
+    <Layout isAuthenticated={isAuthenticated} isAdmin={userProfile?.admin === true} isDeveloper={isDeveloper} onLogout={logout} busy={busy}>
       {error && <div className="card-panel" role="alert">{error} <button type="button" className="secondary-button" onClick={() => { setError(''); setChecking(true); setAttempt(value => value + 1) }}>Retry connection</button></div>}
+      {notice && (
+        <div className="card-panel notice">
+          <p role="status">{notice}</p>
+          <button type="button" className="secondary-button" onClick={() => setNotice('')}>Dismiss</button>
+        </div>
+      )}
       {actionError && <div className="card-panel" role="alert">{actionError} <button type="button" className="secondary-button" onClick={() => setActionError('')}>Dismiss</button></div>}
       {checking ? <p role="status">Checking your session…</p> : <>
       <Routes>
-        <Route path="/" element={<LandingPage wishlistProps={wishlistProps} />} />
+        <Route path="/" element={<LandingPage isAuthenticated={isAuthenticated} wishlistProps={wishlistProps} />} />
         <Route path="/login" element={<LoginPage key="login" isAuthenticated={isAuthenticated} onLogin={login} onPasswordLogin={passwordLogin} onRegister={register} busy={busy} />} />
         <Route path="/register" element={<LoginPage key="register" registering isAuthenticated={isAuthenticated} onLogin={login} onPasswordLogin={passwordLogin} onRegister={register} busy={busy} />} />
         <Route path="/games" element={<GameDiscoveryPage wishlistProps={wishlistProps} />} />
@@ -726,8 +819,8 @@ function App() {
         <Route
           path="/profile/edit"
           element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <EditProfilePage />
+            <ProtectedRoute isAuthenticated={isAuthenticated} signedOutTo={accountDeleted ? '/' : '/login'}>
+              <EditProfilePage user={userProfile} onAccountDeleted={onAccountDeleted} />
             </ProtectedRoute>
           }
         />
@@ -747,6 +840,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/dev" element={<ProtectedRoute isAuthenticated={isAuthenticated}><DeveloperPage games={developerGames} /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute isAuthenticated={isAuthenticated}>{userProfile?.admin ? <AdminPage /> : <NotFoundPage />}</ProtectedRoute>} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </>}

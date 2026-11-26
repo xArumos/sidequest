@@ -2,7 +2,9 @@ const { once } = require('node:events');
 const { MemoryStore } = require('express-session');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const { connectDatabase, disconnectDatabase } = require('sidequest-database');
+const Follow = require('sidequest-database/models/Follow');
 const Game = require('sidequest-database/models/Game');
+const GameDeveloper = require('sidequest-database/models/GameDeveloper');
 const Review = require('sidequest-database/models/Review');
 const User = require('sidequest-database/models/User');
 const { createApp } = require('../../src/app');
@@ -16,10 +18,13 @@ const sessionSecret = 'test-secret-with-at-least-32-bytes';
 // Call stop() in an after() hook.
 // Sign-in goes through the real /api/auth/google route; the "Google token" is
 // just the subject, so signIn('alice') always returns the same user.
-async function startApi(routers) {
+// `routers` may be a function of `{ store }` for routers that need the session store.
+// The shared write limiter is off by default so suites can write freely; pass
+// `{ writeRateLimit: { windowMs, limit } }` to exercise it.
+async function startApi(routers, { writeRateLimit = false } = {}) {
   const mongod = await MongoMemoryServer.create();
   await connectDatabase({ uri: mongod.getUri(), dbName: 'sidequest_api_test' });
-  await Promise.all([Game.init(), Review.init(), User.init()]);
+  await Promise.all([Follow.init(), Game.init(), Review.init(), User.init(), GameDeveloper.init()]);
 
   const store = new MemoryStore();
   const server = createApp({
@@ -31,7 +36,8 @@ async function startApi(routers) {
       frontendOrigin: origin, sessionSecret, secureCookies: false, store, users: User,
       verifyGoogleToken: async sub => ({ sub, email: `${sub}@example.com`, email_verified: true, name: sub }),
     }),
-    routers,
+    routers: typeof routers === 'function' ? routers({ store }) : routers,
+    writeRateLimit,
   }).listen(0, '127.0.0.1');
   await once(server, 'listening');
   async function stop() {
@@ -41,11 +47,12 @@ async function startApi(routers) {
   }
 
   const base = `http://127.0.0.1:${server.address().port}/api`;
-  async function request(path, { method = 'GET', cookie, body } = {}) {
+  // Pass `origin: null` to leave out the Origin header, or another origin to spoof one.
+  async function request(path, { method = 'GET', cookie, body, origin: requestOrigin = origin } = {}) {
     const response = await fetch(base + path, {
       method,
       headers: {
-        Origin: origin,
+        ...(requestOrigin && { Origin: requestOrigin }),
         ...(cookie && { Cookie: cookie }),
         ...(body !== undefined && { 'Content-Type': 'application/json' }),
       },
@@ -66,10 +73,22 @@ async function startApi(routers) {
   }
 
   async function reset() {
-    await Promise.all([Game.deleteMany({}), Review.deleteMany({}), User.deleteMany({})]);
+    await Promise.all([
+      Follow.deleteMany({}), Game.deleteMany({}), Review.deleteMany({}), User.deleteMany({}), GameDeveloper.deleteMany({}),
+    ]);
   }
 
-  return { request, signIn, reset, stop };
+  // Clears everything except accounts and their sessions, and restores default
+  // settings, so a suite can sign in once in before() (sign-in is rate limited).
+  async function resetActivity() {
+    await Promise.all([Follow.deleteMany({}), Game.deleteMany({}), Review.deleteMany({}), GameDeveloper.deleteMany({})]);
+    await User.updateMany({}, { $set: { activityVisibility: 'public', wishlistVisibility: 'private' } });
+  }
+
+  // The database URI lets tests run the server scripts against the same database.
+  return {
+    request, signIn, reset, resetActivity, stop, base, origin, mongoUri: mongod.getUri(), dbName: 'sidequest_api_test',
+  };
 }
 
 module.exports = { startApi };

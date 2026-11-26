@@ -1,9 +1,12 @@
 // Thrown by route handlers; app.js turns it into `{ error: { code, message } }`.
+// `fields` optionally maps each invalid input name to its problem and is sent as
+// `error.fields`, so a client can show every field error at once.
 class HttpError extends Error {
-  constructor(status, code, message) {
+  constructor(status, code, message, fields) {
     super(message);
     this.status = status;
     this.code = code;
+    if (fields) this.fields = fields;
   }
 }
 

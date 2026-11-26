@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
@@ -189,7 +189,82 @@ it('[TC-FE-APP-16] saves wishlist visibility and confirms the server value', asy
   await userEvent.selectOptions(await screen.findByRole('combobox', { name: /wishlist visibility/i }), 'public')
   await userEvent.click(screen.getByRole('button', { name: /save changes/i }))
   expect(api.setWishlistVisibility).toHaveBeenCalledWith('public')
-  expect(await screen.findByText(/your wishlist is now public/i)).toBeInTheDocument()
+  expect(await screen.findByText('Privacy settings saved.')).toBeInTheDocument()
+  expect(api.setActivityVisibility).not.toHaveBeenCalled()
+})
+it('[TC-FE-PRIVACY-03] saves activity visibility, including followers-only', async () => {
+  auth.me.mockResolvedValue(user)
+  api.wishlistVisibility.mockResolvedValue({ wishlistVisibility: 'followers' })
+  visit('/profile/edit')
+  const activity = await screen.findByRole('combobox', { name: /activity visibility/i })
+  expect(activity).toHaveValue('public')
+  expect(screen.getByRole('combobox', { name: /wishlist visibility/i })).toHaveValue('followers')
+  await userEvent.selectOptions(activity, 'followers')
+  await userEvent.click(screen.getByRole('button', { name: /save changes/i }))
+  expect(api.setActivityVisibility).toHaveBeenCalledWith('followers')
+  expect(api.setWishlistVisibility).not.toHaveBeenCalled()
+  expect(await screen.findByText('Privacy settings saved.')).toBeInTheDocument()
+  expect(activity).toHaveValue('followers')
+})
+it('[TC-FE-PRIVACY-04] keeps the selection and reports a failed privacy save', async () => {
+  auth.me.mockResolvedValue(user)
+  api.setActivityVisibility.mockRejectedValueOnce(new ApiError('Cannot reach SideQuest.', 0))
+  visit('/profile/edit')
+  const activity = await screen.findByRole('combobox', { name: /activity visibility/i })
+  await userEvent.selectOptions(activity, 'private')
+  await userEvent.click(screen.getByRole('button', { name: /save changes/i }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('Cannot reach')
+  expect(activity).toHaveValue('private')
+})
+it.each([
+  ['private', "This player's activity is private."],
+  ['followers', "Only followers can see this player's activity."],
+])('[TC-FE-PRIVACY-05-%s] explains restricted activity on a profile', async (activityVisibility, text) => {
+  api.user.mockResolvedValue({ user: { id: 'u2', displayName: 'Other Player', username: null, avatarUrl: '', bio: '',
+    wishlistVisibility: activityVisibility, activityVisibility, followerCount: 0, followingCount: 0, isFollowing: false } })
+  api.userLogs.mockRejectedValue(new ApiError(text, 403, 'ACTIVITY_PRIVATE'))
+  api.userWishlist.mockRejectedValue(new ApiError('Hidden.', 403, 'WISHLIST_PRIVATE'))
+  visit('/users/u2')
+  expect(await screen.findByText(text)).toBeInTheDocument()
+  expect(screen.getByText(activityVisibility === 'followers' ? 'Only followers can see this wishlist.' : 'This wishlist is private.')).toBeInTheDocument()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+})
+it('[TC-FEED-01] shows followed players’ activity on the home page for signed-in users', async () => {
+  auth.me.mockResolvedValue(user)
+  api.feed.mockResolvedValue({ entries: [
+    { id: 'f1', rating: 4, text: 'So good.', status: 'played', updatedAt: '2026-10-02T00:00:00.000Z', game: celeste,
+      user: { id: 'u2', displayName: 'Other Player', username: null, avatarUrl: '' } },
+    { id: 'f2', rating: null, text: '', status: 'playing', updatedAt: '2026-10-01T00:00:00.000Z', game: { ...celeste, id: 'b'.repeat(24), title: 'Hades' },
+      user: { id: 'u3', displayName: 'Third Player', username: null, avatarUrl: '' } },
+  ], total: 2, page: 1, pages: 1 })
+  visit('/')
+  const feed = await screen.findByRole('region', { name: /from players you follow/i })
+  expect(await within(feed).findByText('So good.')).toBeInTheDocument()
+  expect(within(feed).getByRole('link', { name: 'Other Player' })).toHaveAttribute('href', '/users/u2')
+  expect(within(feed).getByRole('link', { name: 'Celeste' })).toHaveAttribute('href', `/games/${celeste.id}`)
+  expect(within(feed).getByLabelText('4 out of 5 stars')).toBeInTheDocument()
+  expect(feed).toHaveTextContent('Other Player reviewed Celeste')
+  expect(feed).toHaveTextContent('Third Player is playing Hades')
+  expect(api.feed).toHaveBeenCalledWith({ page: 1, limit: 10 }, expect.anything())
+})
+it('[TC-FEED-02] prompts a viewer who follows nobody to follow players', async () => {
+  auth.me.mockResolvedValue(user)
+  visit('/')
+  expect(await screen.findByText(/follow players from their profiles/i)).toBeInTheDocument()
+  expect(screen.queryByText('No recent activity from players you follow.')).not.toBeInTheDocument()
+})
+it('reports no recent activity when the viewer already follows players', async () => {
+  auth.me.mockResolvedValue(user)
+  api.feed.mockResolvedValue({ entries: [], total: 0, page: 1, pages: 0, followingCount: 2 })
+  visit('/')
+  expect(await screen.findByText('No recent activity from players you follow.')).toBeInTheDocument()
+  expect(screen.queryByText(/follow players from their profiles/i)).not.toBeInTheDocument()
+})
+it('[TC-FEED-03] does not load the feed for signed-out visitors', async () => {
+  visit('/')
+  await screen.findByRole('heading', { name: /rate, review, and track/i })
+  expect(screen.queryByRole('region', { name: /from players you follow/i })).not.toBeInTheDocument()
+  expect(api.feed).not.toHaveBeenCalled()
 })
 it('[TC-FE-APP-18] handles unmatched routes', async () => {
   visit('/missing')

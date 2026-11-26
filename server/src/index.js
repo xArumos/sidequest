@@ -2,25 +2,35 @@ const { connectDatabase, disconnectDatabase } = require('sidequest-database');
 const { createApp } = require('./app');
 const { readConfig } = require('./config');
 const { createAuthRouter, requireAuth } = require('./auth');
-const { createSessionMiddleware, authNotConfigured } = require('./session');
-const { createGamesRouter } = require('./games');
-const { createLogsRouter } = require('./logs');
-const { createUsersRouter } = require('./users');
+const { createSessionMiddleware, createSessionRevoker, authNotConfigured } = require('./session');
+const { createApiRouters } = require('./routes');
 const { createGoogleVerifier } = require('./google');
 const { MongoStore } = require('connect-mongo');
 const { assertUserIndexes } = require('./user-indexes');
+const Follow = require('sidequest-database/models/Follow');
 const User = require('sidequest-database/models/User');
+const Review = require('sidequest-database/models/Review');
+const GameDeveloper = require('sidequest-database/models/GameDeveloper');
 
 async function main() {
   const config = readConfig();
   const connection = await connectDatabase();
+  // These indexes must exist before the API accepts requests: the unique
+  // (follower, followee) index keeps follows idempotent, and unique (user, game)
+  // and (game, user) hold reviews and developer mappings to one row each.
+  await Promise.all([Follow.init(), Review.init(), GameDeveloper.init()]);
   let authRouter;
   let sessionMiddleware;
+  let revokeUserSessions;
   if (config.auth) {
     await assertUserIndexes(User.collection);
     await User.createIndexes();
     const store = MongoStore.create({ client: connection.getClient(), dbName: connection.name });
     sessionMiddleware = createSessionMiddleware({ ...config.auth, store });
+    // connect-mongo's default collection; account deletion signs the user out everywhere.
+    revokeUserSessions = createSessionRevoker({
+      collection: connection.getClient().db(connection.name).collection('sessions'),
+    });
     authRouter = createAuthRouter({
       ...config.auth,
       frontendOrigin: config.frontendOrigin,
@@ -36,11 +46,13 @@ async function main() {
     frontendOrigin: config.frontendOrigin,
     authRouter,
     sessionMiddleware,
-    routers: {
-      '/games': createGamesRouter({ rankingMinCount: config.rankingMinCount }),
-      // These span /games/:id/log, /logs, /me, and /users, so they mount at /api itself.
-      '': [createLogsRouter({ requireAuth: requireUser }), createUsersRouter({ requireAuth: requireUser })],
-    },
+    writeRateLimit: config.writeRateLimit,
+    routers: createApiRouters({
+      requireAuth: requireUser,
+      rankingMinCount: config.rankingMinCount,
+      revokeUserSessions,
+      secureCookies: config.auth?.secureCookies,
+    }),
     isDatabaseReady: async () => {
       if (connection.readyState !== 1) return false;
       await connection.db.command({ ping: 1 }, { timeoutMS: 1500 });

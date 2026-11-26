@@ -1,6 +1,6 @@
 import { NavLink, Link } from 'react-router-dom'
 
-export default function Layout({ isAuthenticated, onLogout, busy, children }) {
+export default function Layout({ isAuthenticated, isAdmin = false, isDeveloper = false, onLogout, busy, children }) {
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Skip to content</a>
@@ -22,6 +22,8 @@ export default function Layout({ isAuthenticated, onLogout, busy, children }) {
               <NavLink to="/backlog">Backlog</NavLink>
             </>
           )}
+          {isAuthenticated && isDeveloper && <NavLink to="/dev">Developer</NavLink>}
+          {isAuthenticated && isAdmin && <NavLink to="/admin">Admin</NavLink>}
         </nav>
 
         <div className="nav-actions auth-actions">
