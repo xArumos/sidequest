@@ -35,7 +35,20 @@ function readConfig(env = process.env) {
   if (!/^\d+$/.test(minText) || rankingMinCount < 1) {
     throw new Error('RANKING_MIN_COUNT must be a positive whole number.');
   }
-  return { port, host, frontendOrigin, auth, rankingMinCount };
+  const writeRateLimit = {
+    limit: positiveInteger(env, 'WRITE_RATE_LIMIT_MAX', '300'),
+    windowMs: positiveInteger(env, 'WRITE_RATE_LIMIT_WINDOW_MINUTES', '15') * 60 * 1000,
+  };
+  return { port, host, frontendOrigin, auth, rankingMinCount, writeRateLimit };
+}
+
+function positiveInteger(env, name, fallback) {
+  const text = env[name] ?? fallback;
+  const value = Number(text);
+  if (!/^\d+$/.test(text) || !Number.isSafeInteger(value) || value < 1) {
+    throw new Error(`${name} must be a positive whole number.`);
+  }
+  return value;
 }
 
 module.exports = { readConfig };

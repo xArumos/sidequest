@@ -95,9 +95,9 @@ Login trims and lowercases the identifier and accepts the exact password.
 | `401` | `INVALID_CREDENTIALS` | Unknown password account or incorrect password; same message for both |
 | `401` | `INVALID_GOOGLE_TOKEN` | Invalid Google token or unverified email |
 | `401` | `UNAUTHENTICATED` | Missing, expired, tampered, or deleted-user session |
-| `403` | `INVALID_ORIGIN` | Missing or incorrect POST Origin |
+| `403` | `INVALID_ORIGIN` | Missing or incorrect Origin on a non-GET request |
 | `409` | `ACCOUNT_EXISTS` | Registration username or password-account email is already taken |
-| `429` | `RATE_LIMITED` | More than 30 attempts per IP per endpoint per 15 minutes |
+| `429` | `RATE_LIMITED` | More than 30 attempts per IP per endpoint per 15 minutes, or the shared write limit below |
 | `503` | `GOOGLE_NOT_CONFIGURED` | Password auth is enabled but Google is not configured |
 | `503` | `AUTH_NOT_CONFIGURED` | Session secret is not configured |
 
@@ -176,6 +176,51 @@ Google credentials are injected only into test app instances; the production ver
 A real Google browser login requires a configured OAuth client.
 Email verification, password recovery and changes, account linking, and profile editing are deferred.
 Emails collected by password registration are unverified contact information and must not be treated as proof of ownership.
+
+## Security headers, Origin checks, and rate limits
+
+Every API response carries `helmet` headers, including `Content-Security-Policy: default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, and HSTS.
+The API returns only JSON, so its own CSP never needs to allow anything.
+Browsers ignore HSTS over plain HTTP, so local development is unaffected.
+
+Every non-GET `/api` request, including routes added later, must carry the exact configured `Origin` or it receives `403 INVALID_ORIGIN`.
+`test/security.test.js` enumerates every mounted state-changing route and checks this.
+
+Besides the per-endpoint sign-in limits, all non-GET `/api` requests share one write limit.
+It counts per signed-in account, or per IP for signed-out requests, and defaults to 300 requests per 15 minutes.
+Tune it with `WRITE_RATE_LIMIT_MAX` and `WRITE_RATE_LIMIT_WINDOW_MINUTES`.
+Exceeding it returns `429 RATE_LIMITED` with `RateLimit` and `RateLimit-Policy` headers.
+For an expensive route, stack a tighter limiter from `src/security.js` on top of the shared one:
+
+```js
+const { createRateLimiter, writeKey } = require('./security');
+
+router.post('/steam/sync', requireAuth, createRateLimiter({
+  windowMs: 60 * 60 * 1000, limit: 5, keyGenerator: writeKey,
+  message: 'Too many sync requests. Try again later.',
+}), handler);
+```
+
+Limiter counters live in memory per API process; a multi-instance deployment should use a shared store.
+The API test helper disables the write limit unless a test passes `writeRateLimit`.
+
+### Frontend host CSP
+
+The frontend is served separately (Vite in development, static hosting in production), so its host must send its own CSP.
+The repository has no hosting configuration yet; apply this policy wherever the built `frontend/dist` is served:
+
+```text
+Content-Security-Policy: default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' https://accounts.google.com/gsi/style; frame-src https://accounts.google.com/gsi/; connect-src 'self' https://accounts.google.com/gsi/ <API origin>; img-src 'self' data: https://images.igdb.com https://lh3.googleusercontent.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+Referrer-Policy: strict-origin-when-cross-origin
+Cross-Origin-Opener-Policy: same-origin-allow-popups
+```
+
+The `accounts.google.com/gsi/` entries are what Google Identity Services needs for its script, button stylesheet, button and One Tap iframes, and credential requests.
+Replace `<API origin>` with the value of `VITE_API_BASE_URL`, or drop it when the API is proxied under the same origin.
+`images.igdb.com` serves game covers and `lh3.googleusercontent.com` serves Google avatars.
+GIS requires a referrer, so do not use `no-referrer` on the frontend.
+`same-origin-allow-popups` keeps the Google sign-in popup able to report back to the page.
+Do not apply this policy to the Vite dev server, which relies on inline scripts for hot reload.
 
 ## Game catalog import (IGDB)
 
