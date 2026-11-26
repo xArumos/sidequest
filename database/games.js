@@ -65,4 +65,43 @@ async function getGameFilters() {
   return { genres: genres.sort(), platforms: platforms.sort() };
 }
 
-module.exports = { findGames, topGames, getGameById, getGameFilters, SORTS: Object.keys(SORTS) };
+const STEAM_APP_ID = /^[1-9]\d*$/;
+
+function normalizeSteamAppId(value) {
+  if (typeof value === 'number') return Number.isSafeInteger(value) && value > 0 ? String(value) : null;
+  if (typeof value !== 'string') return null;
+  const id = value.trim();
+  return STEAM_APP_ID.test(id) ? id : null;
+}
+
+/**
+ * Match Steam app IDs to local games in one query (PBI-25).
+ *
+ * @param {Array<number|string>} appIds Steam app IDs as numbers or numeric strings.
+ *   Values are trimmed, coerced to strings and deduped; anything that isn't a
+ *   positive whole number (empty strings, objects, "0", "12a", 1.5) is ignored.
+ * @returns {Promise<Map<string, object>>} Each matched app ID (as a string) mapped
+ *   to a lean Game document. App IDs with no game are left out. If several games
+ *   list the same app ID, the one with the most ratings wins, ties broken by the
+ *   oldest `_id`, so the result is stable. Empty input returns an empty Map
+ *   without querying.
+ */
+async function findGamesBySteamAppIds(appIds) {
+  if (!Array.isArray(appIds)) throw new TypeError('appIds must be an array.');
+  const ids = [...new Set(appIds.map(normalizeSteamAppId).filter(Boolean))];
+  const matches = new Map();
+  if (ids.length === 0) return matches;
+
+  const games = await Game.find({ steamAppIds: { $in: ids } })
+    .sort({ ratingCount: -1, _id: 1 })
+    .lean();
+  const wanted = new Set(ids);
+  for (const game of games) {
+    for (const appId of game.steamAppIds) {
+      if (wanted.has(appId) && !matches.has(appId)) matches.set(appId, game);
+    }
+  }
+  return matches;
+}
+
+module.exports = { findGames, topGames, getGameById, getGameFilters, findGamesBySteamAppIds, SORTS: Object.keys(SORTS) };

@@ -1,11 +1,11 @@
 import { createRequire } from 'node:module';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 const require = createRequire(import.meta.url);
 const { connectDatabase, disconnectDatabase } = require('../connection.js');
 const Game = require('../models/Game.js');
-const { findGames, topGames, getGameById, getGameFilters } = require('../games.js');
+const { findGames, topGames, getGameById, getGameFilters, findGamesBySteamAppIds } = require('../games.js');
 
 describe('game queries', () => {
   let mongod;
@@ -114,5 +114,83 @@ describe('game queries', () => {
     for (const options of [{ minCount: 0 }, { minCount: 1.5 }, { limit: 0 }, { limit: 51 }]) {
       await expect(topGames(options)).rejects.toThrow(RangeError);
     }
+  });
+});
+
+describe('findGamesBySteamAppIds', () => {
+  let mongod;
+  let portal;
+  let tf2;
+  let tf2Classic;
+  let tf2Beta;
+
+  beforeAll(async () => {
+    mongod = await MongoMemoryServer.create();
+    await connectDatabase({ uri: mongod.getUri(), dbName: 'sidequest_steam_test' });
+    await Game.init();
+    [portal, tf2Beta, tf2, tf2Classic] = await Game.create([
+      { title: 'Portal 2', steamAppIds: ['620', '323180'], ratingCount: 5 },
+      { title: 'TF2 Beta', steamAppIds: ['440'], ratingCount: 1 },
+      { title: 'Team Fortress 2', steamAppIds: ['440'], ratingCount: 9 },
+      { title: 'TF2 Classic', steamAppIds: ['440'], ratingCount: 9 },
+      { title: 'Zelda' },
+    ]);
+  });
+
+  afterAll(async () => {
+    await disconnectDatabase();
+    await mongod?.stop();
+  });
+
+  const titlesById = map => Object.fromEntries([...map].map(([id, game]) => [id, game.title]));
+
+  it('maps each matched app ID to its game and leaves misses out', async () => {
+    const result = await findGamesBySteamAppIds(['620', '323180', '999999']);
+    expect(result).toBeInstanceOf(Map);
+    expect(titlesById(result)).toEqual({ 620: 'Portal 2', 323180: 'Portal 2' });
+    expect(result.get('620')._id.toString()).toBe(portal._id.toString());
+  });
+
+  it('accepts numbers and strings and dedupes them', async () => {
+    const result = await findGamesBySteamAppIds([620, '620', ' 620 ', 440]);
+    expect([...result.keys()].sort()).toEqual(['440', '620']);
+  });
+
+  it('ignores empty or invalid IDs', async () => {
+    const result = await findGamesBySteamAppIds(['', '  ', null, undefined, 0, -5, 1.5, NaN, '12a',
+      { $ne: '' }, ['620'], '620']);
+    expect([...result.keys()]).toEqual(['620']);
+  });
+
+  it('returns an empty Map without querying for empty input', async () => {
+    const find = vi.spyOn(Game, 'find');
+    try {
+      expect((await findGamesBySteamAppIds([])).size).toBe(0);
+      expect((await findGamesBySteamAppIds(['', null])).size).toBe(0);
+      expect(find).not.toHaveBeenCalled();
+    } finally {
+      find.mockRestore();
+    }
+  });
+
+  it('rejects input that is not an array', async () => {
+    for (const input of [undefined, '620', 620, { 0: '620' }]) {
+      await expect(findGamesBySteamAppIds(input)).rejects.toThrow(TypeError);
+    }
+  });
+
+  it('picks the most-rated game, then the oldest, when games share an app ID', async () => {
+    const winner = tf2._id.toString() < tf2Classic._id.toString() ? tf2 : tf2Classic;
+    const game = (await findGamesBySteamAppIds(['440'])).get('440');
+    expect(game._id.toString()).toBe(winner._id.toString());
+    expect(game._id.toString()).not.toBe(tf2Beta._id.toString());
+  });
+
+  it('indexes steamAppIds without making it unique', async () => {
+    const index = (await Game.collection.indexes()).find(i => i.key.steamAppIds === 1);
+    expect(index).toBeDefined();
+    expect(index.unique).toBeFalsy();
+    const plan = await Game.find({ steamAppIds: { $in: ['440'] } }).explain('queryPlanner');
+    expect(JSON.stringify(plan.queryPlanner.winningPlan)).toContain('IXSCAN');
   });
 });
