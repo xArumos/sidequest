@@ -35,7 +35,17 @@ function readConfig(env = process.env) {
   if (!/^\d+$/.test(minText) || rankingMinCount < 1) {
     throw new Error('RANKING_MIN_COUNT must be a positive whole number.');
   }
-  return { port, host, frontendOrigin, auth, rankingMinCount };
+  return { port, host, frontendOrigin, auth, rankingMinCount, steam: readSteamConfig(env) };
+}
+
+// Steam is optional: without STEAM_API_KEY the Steam routes answer 503 and the
+// rest of the API runs normally. The key is non-enumerable so logging or
+// serializing the config can never reveal it.
+function readSteamConfig(env) {
+  const apiKey = (env.STEAM_API_KEY || '').trim();
+  const steam = { enabled: apiKey !== '' };
+  Object.defineProperty(steam, 'apiKey', { value: apiKey, enumerable: false });
+  return steam;
 }
 
 module.exports = { readConfig };

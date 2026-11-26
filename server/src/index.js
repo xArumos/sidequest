@@ -31,6 +31,7 @@ async function main() {
   } else {
     console.log('Authentication is disabled. Set SESSION_SECRET to enable password login; GOOGLE_CLIENT_ID additionally enables Google sign-in.');
   }
+  if (!config.steam.enabled) console.log('Steam features are disabled. Set STEAM_API_KEY to enable them.');
   const requireUser = config.auth ? requireAuth : authNotConfigured;
   const app = createApp({
     frontendOrigin: config.frontendOrigin,

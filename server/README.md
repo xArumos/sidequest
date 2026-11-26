@@ -190,3 +190,9 @@ npm run import:games -- --limit 500
 ```
 
 The import upserts by IGDB id, so re-running it refreshes titles, covers, genres, platforms, and Steam app IDs without touching stored ratings. Requests are throttled to IGDB's limit of 4 per second. Tests use `test/fixtures/igdb-games.json` and never call the live API.
+
+## Steam Web API key
+
+Steam features are optional. Put a key from https://steamcommunity.com/dev/apikey in the root `.env` as `STEAM_API_KEY`.
+When it is empty, the API starts normally, logs that Steam is disabled, and Steam data routes return `503 STEAM_UNAVAILABLE`.
+The key is never logged or included in responses.
