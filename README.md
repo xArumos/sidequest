@@ -91,6 +91,7 @@ Run any of these from the root with `--prefix <package>`, e.g. `npm test --prefi
 | POST | `/api/auth/logout` | End the session (`204`) |
 
 Request limits, error formats, and auth details are in [server/README.md](server/README.md).
+Every route, with its parameters, responses, and error codes, is documented in [docs/api.md](docs/api.md).
 
 ## Testing
 

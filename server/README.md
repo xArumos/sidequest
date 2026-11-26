@@ -60,6 +60,7 @@ Subsequent Google logins refresh only that Google account's email, display name,
 
 ## API contract
 
+This section covers the authentication routes; every API route is documented in [docs/api.md](../docs/api.md).
 All paths below are relative to `/api/auth`.
 POST requests must use JSON and include the exact configured `Origin`, including its port.
 Browsers set Origin automatically; non-browser clients must supply it explicitly.
