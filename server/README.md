@@ -73,7 +73,8 @@ Every authentication request should use `credentials: 'include'`.
 | `GET /me` | None | `200 { user }`, restores account state from the session |
 | `POST /logout` | `{}` | `204`, destroys the session and clears its cookie |
 
-The public user shape is `{ id, username, email, displayName, avatarUrl }`.
+The account shape returned to its own holder is `{ id, username, email, displayName, avatarUrl, admin }`.
+`admin` is only ever sent to the account holder and can only be changed with `npm run set:admin`.
 `username` is `null` for Google accounts without one.
 Password accounts initially use their normalized username as the display name and have an empty avatar URL.
 Credential hashes and Google IDs are never included in public user responses.
@@ -190,3 +191,21 @@ npm run import:games -- --limit 500
 ```
 
 The import upserts by IGDB id, so re-running it refreshes titles, covers, genres, platforms, and Steam app IDs without touching stored ratings. Requests are throttled to IGDB's limit of 4 per second. Tests use `test/fixtures/igdb-games.json` and never call the live API.
+
+## Developer access and admin tools
+
+A user asks to become a developer of a game with `POST /api/games/:id/developer-requests`.
+An admin approves or rejects the request on the frontend's `/admin` page, or from the command line:
+
+```bash
+npm run approve:developer -- --list                     # pending requests with their ids
+npm run approve:developer -- --id <requestId>           # approve
+npm run approve:developer -- --id <requestId> --reject  # reject or revoke
+npm run set:admin -- --user <username, email, or id>    # grant admin; add --revoke to remove it
+```
+
+Approved developers read reviews of their games under `/api/dev` and can remove a review that breaks the guidelines.
+A removed review is soft-deleted: it is hidden from public reads and from the game's rating, and its author still sees it with the reason.
+The developer review list accepts `gameId`, `minRating`, `maxRating`, `from`, `to`, `hasText`, `sort` (`newest`, `oldest`, `highest`, `lowest`), `page`, and `limit`.
+`from` and `to` take `YYYY-MM-DD` (a whole UTC day) or an ISO 8601 date and time with a time zone, and both ends are inclusive.
+Invalid parameters return `400 INVALID_QUERY` with every problem in `error.fields`, for example `{ "maxRating": "maxRating must be at least minRating." }`.

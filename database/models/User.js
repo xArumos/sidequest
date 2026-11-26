@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema({
   passwordHash: { type: String, select: false },
   bio: { type: String, default: '', trim: true, maxlength: 300 },
   wishlistVisibility: { type: String, enum: ['public', 'private'], default: 'private' },
+  // Grants the admin pages and routes. Set only by server/scripts/set-admin.js, never by an API route.
+  admin: { type: Boolean, default: false },
 }, { timestamps: true, autoIndex: false });
 
 userSchema.index({ googleId: 1 }, {

@@ -22,5 +22,12 @@ export function createApiMock() {
     user: vi.fn(async () => { throw Object.assign(new Error('User not found.'), { status: 404, code: 'USER_NOT_FOUND' }) }),
     userLogs: vi.fn(async () => emptyLogs),
     userWishlist: vi.fn(async () => emptyLogs),
+    myDeveloperRequest: vi.fn(async () => ({ request: null })),
+    requestDeveloperAccess: vi.fn(async () => { throw new Error('Not mocked.') }),
+    devGames: vi.fn(async () => ({ games: [] })),
+    devReviews: vi.fn(async () => ({ reviews: [], total: 0, page: 1, pages: 0 })),
+    removeReview: vi.fn(async () => { throw new Error('Not mocked.') }),
+    developerRequests: vi.fn(async () => ({ requests: [], total: 0, page: 1, pages: 0 })),
+    decideDeveloperRequest: vi.fn(async () => { throw new Error('Not mocked.') }),
   }
 }

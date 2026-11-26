@@ -3,6 +3,7 @@ const { MemoryStore } = require('express-session');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const { connectDatabase, disconnectDatabase } = require('sidequest-database');
 const Game = require('sidequest-database/models/Game');
+const GameDeveloper = require('sidequest-database/models/GameDeveloper');
 const Review = require('sidequest-database/models/Review');
 const User = require('sidequest-database/models/User');
 const { createApp } = require('../../src/app');
@@ -19,7 +20,7 @@ const sessionSecret = 'test-secret-with-at-least-32-bytes';
 async function startApi(routers) {
   const mongod = await MongoMemoryServer.create();
   await connectDatabase({ uri: mongod.getUri(), dbName: 'sidequest_api_test' });
-  await Promise.all([Game.init(), Review.init(), User.init()]);
+  await Promise.all([Game.init(), Review.init(), User.init(), GameDeveloper.init()]);
 
   const store = new MemoryStore();
   const server = createApp({
@@ -66,10 +67,11 @@ async function startApi(routers) {
   }
 
   async function reset() {
-    await Promise.all([Game.deleteMany({}), Review.deleteMany({}), User.deleteMany({})]);
+    await Promise.all([Game.deleteMany({}), Review.deleteMany({}), User.deleteMany({}), GameDeveloper.deleteMany({})]);
   }
 
-  return { request, signIn, reset, stop };
+  // The database URI lets tests run the server scripts against the same database.
+  return { request, signIn, reset, stop, mongoUri: mongod.getUri(), dbName: 'sidequest_api_test' };
 }
 
 module.exports = { startApi };

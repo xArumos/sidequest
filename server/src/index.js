@@ -6,14 +6,20 @@ const { createSessionMiddleware, authNotConfigured } = require('./session');
 const { createGamesRouter } = require('./games');
 const { createLogsRouter } = require('./logs');
 const { createUsersRouter } = require('./users');
+const { createDevelopersRouter } = require('./developers');
+const { createAdminRouter } = require('./admin');
 const { createGoogleVerifier } = require('./google');
 const { MongoStore } = require('connect-mongo');
 const { assertUserIndexes } = require('./user-indexes');
 const User = require('sidequest-database/models/User');
+const Review = require('sidequest-database/models/Review');
+const GameDeveloper = require('sidequest-database/models/GameDeveloper');
 
 async function main() {
   const config = readConfig();
   const connection = await connectDatabase();
+  // Mongoose builds these indexes on connect; wait so unique (user, game) holds from the first request.
+  await Promise.all([Review.init(), GameDeveloper.init()]);
   let authRouter;
   let sessionMiddleware;
   if (config.auth) {
@@ -38,8 +44,10 @@ async function main() {
     sessionMiddleware,
     routers: {
       '/games': createGamesRouter({ rankingMinCount: config.rankingMinCount }),
-      // These span /games/:id/log, /logs, /me, and /users, so they mount at /api itself.
-      '': [createLogsRouter({ requireAuth: requireUser }), createUsersRouter({ requireAuth: requireUser })],
+      // These span /games/:id/..., /logs, /me, /users, and /dev, so they mount at /api itself.
+      '': [createLogsRouter({ requireAuth: requireUser }), createUsersRouter({ requireAuth: requireUser }),
+        createDevelopersRouter({ requireAuth: requireUser })],
+      '/admin': createAdminRouter({ requireAuth: requireUser }),
     },
     isDatabaseReady: async () => {
       if (connection.readyState !== 1) return false;
