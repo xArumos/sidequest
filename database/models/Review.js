@@ -37,6 +37,8 @@ reviewSchema.pre('validate', function requireContent() {
 reviewSchema.index({ user: 1, game: 1 }, { unique: true });
 reviewSchema.index({ game: 1 });
 reviewSchema.index({ user: 1, status: 1 });
+// Profile history and the activity feed list a user's records newest first.
+reviewSchema.index({ user: 1, updatedAt: -1 });
 
 const Review = mongoose.model('Review', reviewSchema);
 Review.STATUSES = STATUSES;

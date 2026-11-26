@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+const VISIBILITIES = ['public', 'followers', 'private'];
+
 const userSchema = new mongoose.Schema({
   googleId: { type: String },
   email: { type: String, required: true, trim: true, lowercase: true },
@@ -9,7 +11,11 @@ const userSchema = new mongoose.Schema({
     required() { return Boolean(this.passwordHash); } },
   passwordHash: { type: String, select: false },
   bio: { type: String, default: '', trim: true, maxlength: 300 },
-  wishlistVisibility: { type: String, enum: ['public', 'private'], default: 'private' },
+  // Who may see the wishlist and the rest of the profile's activity (PBI-29, PBI-31).
+  // `followers` means users who follow this account. Documents saved before
+  // activityVisibility existed have no value and are treated as `public`.
+  wishlistVisibility: { type: String, enum: VISIBILITIES, default: 'private' },
+  activityVisibility: { type: String, enum: VISIBILITIES, default: 'public' },
 }, { timestamps: true, autoIndex: false });
 
 userSchema.index({ googleId: 1 }, {
@@ -26,4 +32,7 @@ userSchema.pre('validate', function () {
   }
 });
 
-module.exports = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+User.VISIBILITIES = VISIBILITIES;
+
+module.exports = User;
