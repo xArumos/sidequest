@@ -11,8 +11,9 @@ const profile = { sub: 'google-subject', email: 'player@example.com', email_veri
 async function fixture(t, options = {}) {
   const records = new Map();
   const users = options.users || {
-    async findOneAndUpdate({ googleId }, { $set }) {
-      const user = { _id: googleId, ...$set };
+    async findOneAndUpdate({ googleId }, { $set, $setOnInsert }) {
+      const existing = records.get(googleId);
+      const user = { ...(existing || { _id: googleId, ...$setOnInsert }), ...$set };
       records.set(googleId, user);
       return user;
     },
@@ -86,6 +87,31 @@ test('Google login creates an account, persists a cookie session, and logout inv
   assert.match(logout.headers.get('set-cookie'), /Expires=Thu, 01 Jan 1970/i);
   assert.equal((await request('/me', { cookie: rotated })).status, 401);
   assert.equal((await request('/logout', { method: 'POST' })).status, 204);
+});
+
+test('Google sign-in preserves an edited display name while refreshing email and avatar', async t => {
+  let googleProfile = { ...profile, picture: 'https://example.com/first-avatar.png' };
+  const { request, records } = await fixture(t, { verifyGoogleToken: async () => googleProfile });
+  const first = await request('/google', { method: 'POST', body: { credential: 'token' } });
+  assert.equal(first.status, 200);
+  const initialUser = (await first.json()).user;
+  assert.equal(initialUser.displayName, 'Player');
+  const account = records.get(initialUser.id);
+  account.displayName = 'My SideQuest name';
+  account.bio = 'Puzzle games.';
+  account.wishlistVisibility = 'public';
+  googleProfile = { ...googleProfile, name: 'Changed Google name', email: 'updated@example.com', picture: 'https://example.com/new-avatar.png' };
+
+  const next = await request('/google', { method: 'POST', body: { credential: 'token' } });
+  assert.equal(next.status, 200);
+  const signedInUser = (await next.json()).user;
+  assert.equal(signedInUser.id, initialUser.id);
+  assert.equal(signedInUser.displayName, 'My SideQuest name');
+  assert.equal(signedInUser.email, 'updated@example.com');
+  assert.equal(signedInUser.avatarUrl, 'https://example.com/new-avatar.png');
+  assert.equal(records.get(initialUser.id).bio, 'Puzzle games.');
+  assert.equal(records.get(initialUser.id).wishlistVisibility, 'public');
+  assert.equal(records.size, 1);
 });
 
 test('missing and invalid Google credentials do not create accounts or sessions', async t => {

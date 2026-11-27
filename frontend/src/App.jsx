@@ -503,11 +503,16 @@ function HistoryList({ logs, emptyText }) {
 }
 
 function ProfilePage({ user, library }) {
+  const profile = useApi(signal => api.myProfile(signal), [user.id])
+  const person = profile.data?.user.id === user.id ? profile.data.user : user
   const history = useApi(signal => api.myLogs({ limit: 50 }, signal), [library.version])
   const counts = Object.values(library.statuses).reduce((total, status) => ({ ...total, [status]: (total[status] ?? 0) + 1 }), {})
   return <section className="content-section">
     <div className="profile-header card-panel"><div><p className="eyebrow">Profile</p>
-      <h1>{user.displayName}</h1><p>{user.email}</p>
+      <h1>{person.displayName}</h1><p>{user.email}</p>
+      <LoadState loading={profile.loading} error={profile.error} onRetry={profile.reload}>
+        {person.bio && <p>{person.bio}</p>}
+      </LoadState>
       <p className="subtle-text"><Link to={`/users/${user.id}`}>View your public profile</Link></p></div>
       <Link to="/profile/edit" className="secondary-button">Edit profile</Link>
     </div>
@@ -525,7 +530,13 @@ function ProfilePage({ user, library }) {
   </section>
 }
 
-function EditProfilePage() {
+function EditProfilePage({ onProfileSaved }) {
+  const profile = useApi(signal => api.myProfile(signal), [])
+  const [changes, setChanges] = useState({})
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileMessage, setProfileMessage] = useState(null)
+  const displayName = changes.displayName ?? profile.data?.user.displayName ?? ''
+  const bio = changes.bio ?? profile.data?.user.bio ?? ''
   const visibility = useApi(signal => api.wishlistVisibility(signal), [])
   const [value, setValue] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -542,7 +553,43 @@ function EditProfilePage() {
       setMessage({ role: 'alert', text: error.message })
     } finally { setSaving(false) }
   }
+  async function saveProfile(event) {
+    event.preventDefault()
+    if (profileSaving) return
+    if (!displayName.trim()) {
+      setProfileMessage({ role: 'alert', text: 'Enter a display name.' })
+      return
+    }
+    setProfileSaving(true)
+    setProfileMessage(null)
+    try {
+      const result = await api.updateProfile({ displayName: displayName.trim(), bio: bio.trim() })
+      setChanges({ displayName: result.user.displayName, bio: result.user.bio })
+      onProfileSaved(result.user)
+      setProfileMessage({ role: 'status', text: 'Your profile has been saved.' })
+    } catch (error) {
+      setProfileMessage({ role: 'alert', text: error.message })
+    } finally {
+      setProfileSaving(false)
+    }
+  }
   return <section className="content-section card-panel form-panel"><h1>Edit profile</h1>
+    <LoadState loading={profile.loading} error={profile.error} onRetry={profile.reload}>
+      <form className="stack-form" onSubmit={saveProfile}><fieldset disabled={profileSaving}>
+        <label>Display name<input required maxLength={80} value={displayName} onChange={event => {
+          setChanges(previous => ({ ...previous, displayName: event.target.value }))
+          setProfileMessage(null)
+        }} /></label>
+        <label>Bio<textarea aria-label="Bio" rows={4} maxLength={300} value={bio} onChange={event => {
+          setChanges(previous => ({ ...previous, bio: event.target.value }))
+          setProfileMessage(null)
+        }} /></label>
+        <p className="subtle-text">{bio.length}/300 characters</p>
+        <button className="primary-button" type="submit">{profileSaving ? 'Saving profile…' : 'Save profile'}</button>
+      </fieldset></form>
+      {profileMessage && <p role={profileMessage.role}>{profileMessage.text}</p>}
+    </LoadState>
+    <h2>Wishlist privacy</h2>
     <LoadState loading={visibility.loading} error={visibility.error} onRetry={visibility.reload}>
       <form className="stack-form" onSubmit={save}><fieldset disabled={saving}>
         <label>Wishlist visibility<select value={current} onChange={event => { setValue(event.target.value); setMessage(null) }}>
@@ -551,7 +598,6 @@ function EditProfilePage() {
         <button className="primary-button" type="submit">{saving ? 'Saving…' : 'Save changes'}</button>
       </fieldset></form>
       {message && <p role={message.role}>{message.text}</p>}
-      <p className="subtle-text">Bio and display name editing are coming soon.</p>
     </LoadState>
     <Link to="/profile">Back to profile</Link>
   </section>
@@ -727,7 +773,9 @@ function App() {
           path="/profile/edit"
           element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <EditProfilePage />
+              <EditProfilePage onProfileSaved={updated => setUserProfile(previous => (
+                previous?.id === updated.id ? { ...previous, ...updated } : previous
+              ))} />
             </ProtectedRoute>
           }
         />
