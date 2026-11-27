@@ -5,7 +5,9 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 const require = createRequire(import.meta.url);
 const { connectDatabase, disconnectDatabase } = require('../connection.js');
 const Game = require('../models/Game.js');
-const { findGames, topGames, getGameById, getGameFilters, findGamesBySteamAppIds } = require('../games.js');
+const {
+  findGames, topGames, getGameById, getGameFilters, findGamesBySteamAppIds, computeSteamCoverage,
+} = require('../games.js');
 
 describe('game queries', () => {
   let mongod;
@@ -192,5 +194,57 @@ describe('findGamesBySteamAppIds', () => {
     expect(index.unique).toBeFalsy();
     const plan = await Game.find({ steamAppIds: { $in: ['440'] } }).explain('queryPlanner');
     expect(JSON.stringify(plan.queryPlanner.winningPlan)).toContain('IXSCAN');
+  });
+});
+
+describe('computeSteamCoverage', () => {
+  let mongod;
+
+  beforeAll(async () => {
+    mongod = await MongoMemoryServer.create();
+    await connectDatabase({ uri: mongod.getUri(), dbName: 'sidequest_coverage_test' });
+  });
+
+  afterAll(async () => {
+    await disconnectDatabase();
+    await mongod?.stop();
+  });
+
+  it('reports zeros for an empty catalog', async () => {
+    expect(await computeSteamCoverage()).toEqual({
+      total: 0, withSteam: 0, pc: { total: 0, missing: 0, missingSample: [] },
+    });
+  });
+
+  it('counts Steam IDs overall and PC games missing one', async () => {
+    const pc = 'PC (Microsoft Windows)';
+    await Game.create([
+      { title: 'Portal 2', platforms: [pc, 'Xbox 360'], steamAppIds: ['620'] },
+      { title: 'Halo Infinite', platforms: [pc, 'Xbox Series X|S'], steamAppIds: [] },
+      { title: 'Celeste', platforms: [pc] },
+      { title: 'Bloodborne', platforms: ['PlayStation 4'] },
+      { title: 'Stardew Valley', platforms: ['Nintendo Switch'], steamAppIds: ['413150'] },
+    ]);
+
+    expect(await computeSteamCoverage()).toEqual({
+      total: 5,
+      withSteam: 2,
+      pc: { total: 3, missing: 2, missingSample: ['Celeste', 'Halo Infinite'] },
+    });
+  });
+
+  it('limits the sample and accepts other PC platform names', async () => {
+    const result = await computeSteamCoverage({ pcPlatforms: ['Xbox 360', 'PlayStation 4'], sampleSize: 1 });
+    expect(result.pc).toEqual({ total: 2, missing: 1, missingSample: ['Bloodborne'] });
+    expect((await computeSteamCoverage({ sampleSize: 0 })).pc.missingSample).toEqual([]);
+  });
+
+  it('rejects bad options', async () => {
+    for (const options of [{ pcPlatforms: 'PC' }, { pcPlatforms: [{ $ne: '' }] }]) {
+      await expect(computeSteamCoverage(options)).rejects.toThrow(TypeError);
+    }
+    for (const sampleSize of [-1, 1.5, 51, '10']) {
+      await expect(computeSteamCoverage({ sampleSize })).rejects.toThrow(RangeError);
+    }
   });
 });

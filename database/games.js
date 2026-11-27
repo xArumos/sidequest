@@ -104,4 +104,40 @@ async function findGamesBySteamAppIds(appIds) {
   return matches;
 }
 
-module.exports = { findGames, topGames, getGameById, getGameFilters, findGamesBySteamAppIds, SORTS: Object.keys(SORTS) };
+// IGDB platform names (as stored by server/src/igdbImport.js) that count as PC for Steam coverage.
+const PC_PLATFORMS = ['PC (Microsoft Windows)'];
+
+/**
+ * Count how much of the catalog carries Steam app IDs (PBI-25, #47).
+ *
+ * @param {object} [options]
+ * @param {string[]} [options.pcPlatforms] Platform names that count as PC.
+ * @param {number} [options.sampleSize] How many PC titles missing a Steam ID to return (0 to 50).
+ * @returns {Promise<{total: number, withSteam: number, pc: {total: number, missing: number,
+ *   missingSample: string[]}}>} Counts only; the collection is never loaded whole.
+ */
+async function computeSteamCoverage({ pcPlatforms = PC_PLATFORMS, sampleSize = 10 } = {}) {
+  if (!Array.isArray(pcPlatforms) || pcPlatforms.some(name => typeof name !== 'string')) {
+    throw new TypeError('pcPlatforms must be an array of platform names.');
+  }
+  if (!Number.isInteger(sampleSize) || sampleSize < 0 || sampleSize > 50) {
+    throw new RangeError('sampleSize must be a whole number from 0 to 50.');
+  }
+  const hasSteam = { 'steamAppIds.0': { $exists: true } };
+  const isPc = { platforms: { $in: pcPlatforms } };
+  const pcMissing = { ...isPc, 'steamAppIds.0': { $exists: false } };
+
+  const [total, withSteam, pcTotal, missing, sample] = await Promise.all([
+    Game.countDocuments({}),
+    Game.countDocuments(hasSteam),
+    Game.countDocuments(isPc),
+    Game.countDocuments(pcMissing),
+    sampleSize === 0 ? [] : Game.find(pcMissing, { title: 1 }).sort({ title: 1, _id: 1 }).limit(sampleSize).lean(),
+  ]);
+  return { total, withSteam, pc: { total: pcTotal, missing, missingSample: sample.map(game => game.title) } };
+}
+
+module.exports = {
+  findGames, topGames, getGameById, getGameFilters, findGamesBySteamAppIds, computeSteamCoverage,
+  PC_PLATFORMS, SORTS: Object.keys(SORTS),
+};
